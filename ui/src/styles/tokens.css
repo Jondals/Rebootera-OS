@@ -1,0 +1,59 @@
+/* * Tokens del sistema de diseño "Obsidian Aurora": colores, tipografía,
+   * radios y sombras. El acento cambia con data-accent en <html>
+   * (aurora = turquesa, nebula = violeta). */
+
+:root {
+  /* Superficies */
+  --bg: #070b10;
+  --bg-elevated: #0b1117;
+  --panel: #0e151c;
+  --panel-2: #121b23;
+  --panel-hover: #16212b;
+  --border: #1b2630;
+  --border-strong: #273541;
+
+  /* Texto */
+  --text: #e6edf3;
+  --text-muted: #8b9aa8;
+  --text-dim: #5b6977;
+
+  /* Paleta */
+  --teal: #2dd4bf;
+  --teal-strong: #14b8a6;
+  --amber: #f59e0b;
+  --violet: #a78bfa;
+  --violet-strong: #8b5cf6;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+
+  /* Acento activo (Aurora por defecto) */
+  --accent: var(--teal);
+  --accent-strong: var(--teal-strong);
+  --accent-soft: rgba(45, 212, 191, 0.1);
+  --accent-border: rgba(45, 212, 191, 0.35);
+  --accent-glow: rgba(45, 212, 191, 0.25);
+  --accent-contrast: #04211d;
+
+  /* Tipografía */
+  --font: "Inter", "Inter Variable", "DejaVu Sans", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+
+  /* Forma */
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+
+  color-scheme: dark;
+}
+
+:root[data-accent="nebula"] {
+  --accent: var(--violet);
+  --accent-strong: var(--violet-strong);
+  --accent-soft: rgba(167, 139, 250, 0.1);
+  --accent-border: rgba(167, 139, 250, 0.38);
+  --accent-glow: rgba(139, 92, 246, 0.3);
+  --accent-contrast: #1a0b3a;
+}

@@ -1,0 +1,23 @@
+{
+  "control": [
+    { "VTOY_DEFAULT_MENU_MODE": "0" },
+    { "VTOY_MENU_TIMEOUT": "4" },
+    { "VTOY_SECONDARY_BOOT_MENU": "0" },
+    { "VTOY_DEFAULT_IMAGE": "/rebootera/rebootera-os.iso" },
+    { "VTOY_SECURE_BOOT_POLICY": "1" },
+    { "VTOY_WIN11_BYPASS_CHECK": "0" },
+    { "VTOY_WIN11_BYPASS_NRO": "0" },
+    { "VTOY_FILT_DOT_UNDERSCORE_FILE": "1" },
+    { "VTOY_SORT_CASE_SENSITIVE": "0" }
+  ],
+  "theme": {
+    "file": "/ventoy/theme/theme.txt",
+    "gfxmode": "1024x768",
+    "display_mode": "GUI",
+    "fonts": ["/ventoy/theme/jbmono-16.pf2", "/ventoy/theme/jbmono-bold-16.pf2", "/ventoy/theme/jbmono-12.pf2"]
+  },
+  "menu_alias": [
+    { "image": "/rebootera/rebootera-os.iso", "alias": "Rebootera OS" },
+    { "image": "/rebootera/rebootera-os.previous.iso", "alias": "Rebootera OS (previous version)" }
+  ]
+}

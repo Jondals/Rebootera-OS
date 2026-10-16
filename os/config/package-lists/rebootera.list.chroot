@@ -1,0 +1,52 @@
+# * Paquetes de Rebootera OS (además de los que añade live-build).
+
+# Arranque y sesión
+dbus
+libpam-systemd
+systemd-sysv
+systemd-timesyncd
+plymouth
+plymouth-themes
+
+# Interfaz: compositor kiosco y ventana WebKit
+cage
+python3
+python3-gi
+gir1.2-gtk-4.0
+gir1.2-webkit-6.0
+libgl1-mesa-dri
+fonts-inter
+fonts-jetbrains-mono
+fonts-dejavu-core
+xkb-data
+# Bus de accesibilidad (lectores de pantalla y tecnologías de apoyo)
+at-spi2-core
+# Compresión del initramfs
+zstd
+
+# Red
+network-manager
+wpasupplicant
+iw
+wireless-regdb
+ca-certificates
+
+# Hardware y almacenamiento (inventario, nombres de dispositivos y Vault)
+pciutils
+pci.ids
+usbutils
+usb.ids
+dmidecode
+exfatprogs
+dosfstools
+ntfs-3g
+e2fsprogs
+parted
+gdisk
+
+# Microcódigo de CPU
+amd64-microcode
+intel-microcode
+
+# Idioma
+locales

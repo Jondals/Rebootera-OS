@@ -1,0 +1,42 @@
+# * Rebootera UI: sesión kiosco en tty1. cage ejecuta una única aplicación a
+# * pantalla completa (rebootera-shell) como el usuario sin privilegios
+# * "rebootera". Si se cierra, systemd la vuelve a abrir.
+[Unit]
+Description=Rebootera UI (kiosco)
+Wants=rebootera-core.service
+After=rebootera-core.service systemd-user-sessions.service plymouth-quit-wait.service
+Conflicts=getty@tty1.service
+After=getty@tty1.service
+
+[Service]
+Type=simple
+User=rebootera
+PAMName=rebootera-kiosk
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+UtmpMode=user
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XKB_DEFAULT_LAYOUT=es
+Environment=GDK_BACKEND=wayland
+# Los buffers DMA-BUF fallan en muchas GPU virtuales y algunas reales; el
+# renderizado por memoria compartida es más compatible.
+Environment=WEBKIT_DISABLE_DMABUF_RENDERER=1
+# Sin aceleración por hardware (máquinas virtuales, GPU sin driver) wlroots se
+# niega a usar el renderizado por software salvo que se le permita.
+Environment=WLR_RENDERER_ALLOW_SOFTWARE=1
+ExecStartPre=-/usr/bin/plymouth quit --retain-splash
+# pam_systemd concede CAP_WAKE_ALARM como capacidad ambiental a las sesiones de
+# usuario, y bubblewrap (el sandbox de WebKitGTK) se niega a ejecutarse si el
+# proceso tiene cualquier capacidad. setpriv la retira antes de lanzar cage.
+ExecStart=/usr/bin/setpriv --ambient-caps=-all --inh-caps=-all -- /usr/bin/cage -d -- /usr/bin/rebootera-shell
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

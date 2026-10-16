@@ -1,0 +1,353 @@
+//go:build windows
+
+// * Creación de un USB de Rebootera desde Windows:
+// *   1. Descarga Ventoy para Windows de su release oficial y comprueba su SHA-256.
+// *   2. Ejecuta Ventoy2Disk en modo línea de órdenes (VTOYCLI) como
+// *      administrador sobre el disco USB elegido: GPT y Secure Boot.
+// *   3. Renombra la partición de datos a REBOOTERA (la CLI de Ventoy no tiene
+// *      opción de etiqueta).
+// *   4. Copia la estructura del USB, la configuración y Rebootera OS.
+// ! El paso 2 BORRA el disco. Solo se aceptan discos USB que no son de
+// ! sistema ni de arranque, y la interfaz exige confirmación explícita.
+package desktop
+
+import (
+	"archive/zip"
+	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+)
+
+// Versión de Ventoy que se usa (la misma que en las imágenes de Linux).
+const (
+	ventoyVersion = "1.1.18"
+	ventoyBase    = "https://github.com/ventoy/Ventoy/releases/download/v" + ventoyVersion + "/"
+	ventoyZip     = "ventoy-" + ventoyVersion + "-windows.zip"
+)
+
+// CreateStatus es el estado de una creación en curso.
+type CreateStatus struct {
+	Running  bool    `json:"running"`
+	Phase    string  `json:"phase"`
+	Progress float64 `json:"progress"`
+	Error    string  `json:"error,omitempty"`
+	Done     bool    `json:"done"`
+	Drive    string  `json:"drive,omitempty"`
+}
+
+var (
+	createMu     sync.Mutex
+	createStatus CreateStatus
+)
+
+// * Status devuelve el estado de la creación.
+func Status() CreateStatus {
+	createMu.Lock()
+	defer createMu.Unlock()
+	return createStatus
+}
+
+// * setPhase actualiza la fase y el progreso.
+func setPhase(phase string, progress float64) {
+	createMu.Lock()
+	createStatus.Phase = phase
+	createStatus.Progress = progress
+	createMu.Unlock()
+}
+
+// * Create empieza a crear un USB de Rebootera en segundo plano.
+func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string) error {
+	createMu.Lock()
+	if createStatus.Running {
+		createMu.Unlock()
+		return errors.New("ya se está creando un USB")
+	}
+	createStatus = CreateStatus{Running: true, Phase: "prepare"}
+	createMu.Unlock()
+
+	// ! Todo se comprueba ANTES de borrar el pendrive: si la ISO no sirve, el
+	// ! USB no debe quedar borrado y sin sistema.
+	if info, err := os.Stat(isoPath); err != nil || !info.Mode().IsRegular() || !strings.EqualFold(filepath.Ext(isoPath), ".iso") {
+		err := errors.New("elige una imagen .iso de Rebootera OS que exista")
+		finish("", err)
+		return err
+	}
+	if kit == nil {
+		err := errors.New("falta el contenido del USB dentro de la aplicación")
+		finish("", err)
+		return err
+	}
+
+	disks, err := USBDisks()
+	if err != nil {
+		finish("", err)
+		return err
+	}
+	allowed := false
+	for _, d := range disks {
+		if d.Number == diskNumber {
+			allowed = true
+		}
+	}
+	if !allowed {
+		err := fmt.Errorf("el disco %d no es un disco USB disponible", diskNumber)
+		finish("", err)
+		return err
+	}
+	job := &createJob{disk: diskNumber, iso: isoPath, kit: kit, desktopExe: desktopExe}
+	go job.run()
+	return nil
+}
+
+// createJob guarda los datos de una creación.
+type createJob struct {
+	disk       int
+	iso        string
+	kit        fs.FS
+	desktopExe string
+}
+
+// * run ejecuta todos los pasos e informa del resultado.
+func (j *createJob) run() {
+	drive, err := j.steps()
+	finish(drive, err)
+}
+
+// * finish deja el estado final de la creación.
+func finish(drive string, err error) {
+	createMu.Lock()
+	defer createMu.Unlock()
+	createStatus.Running = false
+	createStatus.Drive = drive
+	if err != nil {
+		createStatus.Error = err.Error()
+		return
+	}
+	createStatus.Done = true
+	createStatus.Progress = 1
+}
+
+// * steps realiza la creación paso a paso.
+func (j *createJob) steps() (string, error) {
+	setPhase("ventoy-download", 0)
+	ventoyDir, err := ensureVentoy()
+	if err != nil {
+		return "", err
+	}
+
+	setPhase("ventoy-install", 0)
+	done := filepath.Join(ventoyDir, "cli_done.txt")
+	os.Remove(done)
+	args := fmt.Sprintf("VTOYCLI /I /PhyDrive:%d /GPT", j.disk)
+	if _, err := RunElevated(filepath.Join(ventoyDir, "Ventoy2Disk.exe"), args, ventoyDir); err != nil {
+		return "", err
+	}
+	if err := waitVentoy(ventoyDir, done); err != nil {
+		return "", err
+	}
+
+	setPhase("label", 0)
+	letter, err := waitDriveLetter(j.disk)
+	if err != nil {
+		return "", err
+	}
+	if _, err := RunElevated("powershell.exe", "-NoProfile -Command Set-Volume -DriveLetter "+letter+" -NewFileSystemLabel REBOOTERA", ventoyDir); err != nil {
+		return "", err
+	}
+	root := letter + `:\`
+
+	setPhase("copy-kit", 0)
+	if err := WriteKit(root, j.kit); err != nil {
+		return "", err
+	}
+	if j.desktopExe != "" {
+		copyFile(j.desktopExe, filepath.Join(root, "Rebootera Desktop.exe"))
+	}
+
+	setPhase("copy-system", 0)
+	if err := InstallSystem(root, j.iso, systemProgress); err != nil {
+		return "", err
+	}
+	return root, nil
+}
+
+// * systemProgress informa del avance al copiar Rebootera OS.
+func systemProgress(fraction float64) {
+	setPhase("copy-system", fraction)
+}
+
+// * PrepareVentoy descarga, verifica y extrae Ventoy sin tocar ningún disco
+// * (lo usa la opción -prepare-ventoy para comprobarlo por separado).
+func PrepareVentoy() (string, error) {
+	return ensureVentoy()
+}
+
+// * ensureVentoy descarga, verifica y extrae Ventoy para Windows en la
+// * carpeta de datos del usuario. Devuelve la carpeta con Ventoy2Disk.exe.
+func ensureVentoy() (string, error) {
+	base, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(base, "Rebootera")
+	target := filepath.Join(dir, "ventoy-"+ventoyVersion)
+	if _, err := os.Stat(filepath.Join(target, "Ventoy2Disk.exe")); err == nil {
+		return target, nil
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+	sums, err := download(ventoyBase + "sha256.txt")
+	if err != nil {
+		return "", err
+	}
+	expected := ""
+	scanner := bufio.NewScanner(strings.NewReader(string(sums)))
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) == 2 && fields[1] == ventoyZip {
+			expected = strings.ToLower(fields[0])
+		}
+	}
+	if expected == "" {
+		return "", errors.New("el release de Ventoy no publica la suma de su zip para Windows")
+	}
+	data, err := download(ventoyBase + ventoyZip)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(data)
+	if hex.EncodeToString(sum[:]) != expected {
+		return "", errors.New("la suma SHA-256 de Ventoy no coincide con la publicada")
+	}
+	zipPath := filepath.Join(dir, ventoyZip)
+	if err := os.WriteFile(zipPath, data, 0o644); err != nil {
+		return "", err
+	}
+	if err := unzip(zipPath, dir); err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(filepath.Join(target, "Ventoy2Disk.exe")); err != nil {
+		return "", errors.New("el zip de Ventoy no tiene la estructura esperada")
+	}
+	return target, nil
+}
+
+// * download descarga un archivo por HTTPS en memoria (como mucho 64 MB).
+func download(url string) ([]byte, error) {
+	client := &http.Client{Timeout: 5 * time.Minute}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("no se pudo descargar %s: %w", url, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s respondió %d", url, resp.StatusCode)
+	}
+	return io.ReadAll(io.LimitReader(resp.Body, 64<<20))
+}
+
+// * unzip extrae un zip sin permitir rutas que salgan de la carpeta destino.
+func unzip(zipPath, dest string) error {
+	reader, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	for _, file := range reader.File {
+		target := filepath.Join(dest, filepath.FromSlash(file.Name))
+		// ! Protección frente a rutas con ".." dentro del zip (zip slip).
+		if !strings.HasPrefix(target, filepath.Clean(dest)+string(filepath.Separator)) {
+			return fmt.Errorf("ruta no válida en el zip: %s", file.Name)
+		}
+		if file.FileInfo().IsDir() {
+			os.MkdirAll(target, 0o755)
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+			return err
+		}
+		in, err := file.Open()
+		if err != nil {
+			return err
+		}
+		out, err := os.Create(target)
+		if err != nil {
+			in.Close()
+			return err
+		}
+		_, err = io.Copy(out, in)
+		in.Close()
+		out.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// * waitVentoy espera a cli_done.txt (0 = éxito, 1 = fallo) mostrando el
+// * porcentaje de cli_percent.txt.
+func waitVentoy(dir, done string) error {
+	deadline := time.Now().Add(20 * time.Minute)
+	for time.Now().Before(deadline) {
+		if data, err := os.ReadFile(done); err == nil {
+			if strings.TrimSpace(string(data)) == "0" {
+				return nil
+			}
+			log, _ := os.ReadFile(filepath.Join(dir, "cli_log.txt"))
+			return fmt.Errorf("Ventoy no pudo preparar el USB: %s", lastLines(string(log), 3))
+		}
+		if data, err := os.ReadFile(filepath.Join(dir, "cli_percent.txt")); err == nil {
+			if percent, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil {
+				setPhase("ventoy-install", float64(percent)/100)
+			}
+		}
+		time.Sleep(time.Second)
+	}
+	return errors.New("Ventoy no terminó en 20 minutos")
+}
+
+// * waitDriveLetter espera a que Windows asigne letra a la partición 1 del disco.
+func waitDriveLetter(disk int) (string, error) {
+	script := fmt.Sprintf("(Get-Partition -DiskNumber %d -PartitionNumber 1).DriveLetter", disk)
+	for i := 0; i < 30; i++ {
+		out, err := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script).Output()
+		letter := strings.TrimSpace(string(out))
+		if err == nil && len(letter) == 1 {
+			return letter, nil
+		}
+		time.Sleep(time.Second)
+	}
+	return "", errors.New("Windows no asignó una letra al nuevo USB")
+}
+
+// * lastLines devuelve las últimas n líneas de un texto.
+func lastLines(text string, n int) string {
+	lines := strings.Split(strings.TrimSpace(text), "\n")
+	if len(lines) > n {
+		lines = lines[len(lines)-n:]
+	}
+	return strings.Join(lines, " | ")
+}
+
+// * copyFile copia un archivo pequeño (la propia aplicación).
+func copyFile(src, dst string) error {
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(dst, data, 0o755)
+}

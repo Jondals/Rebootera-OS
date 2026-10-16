@@ -1,0 +1,224 @@
+[
+  {
+    "id": "ubuntu-26.04-desktop",
+    "name": "Ubuntu Desktop",
+    "vendor": "Canonical",
+    "version": "26.04 LTS",
+    "arch": "amd64",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/download/desktop",
+    "resolver": {
+      "type": "sums",
+      "index": "https://releases.ubuntu.com/26.04/SHA256SUMS",
+      "pattern": "^ubuntu-26\\.04(\\.\\d+)?-desktop-amd64\\.iso$"
+    },
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "notes": {
+      "en": "Long-term support release. Secure Boot works out of the box.",
+      "es": "Versión con soporte extendido. Funciona con Secure Boot sin cambios."
+    },
+    "boot": {
+      "status": "verified",
+      "tested": "2026-10-16",
+      "notes": {
+        "en": "Tested with 26.04.1: the live desktop and its installer start from the Rebootera USB (UEFI).",
+        "es": "Probado con 26.04.1: el escritorio en vivo y su instalador arrancan desde el USB de Rebootera (UEFI)."
+      }
+    }
+  },
+  {
+    "id": "ubuntu-24.04-desktop",
+    "name": "Ubuntu Desktop",
+    "vendor": "Canonical",
+    "version": "24.04 LTS",
+    "arch": "amd64",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/download/desktop",
+    "resolver": {
+      "type": "sums",
+      "index": "https://releases.ubuntu.com/24.04/SHA256SUMS",
+      "pattern": "^ubuntu-24\\.04(\\.\\d+)?-desktop-amd64\\.iso$"
+    },
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "notes": {
+      "en": "Previous long-term support release.",
+      "es": "Versión anterior con soporte extendido."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    }
+  },
+  {
+    "id": "debian-13-netinst",
+    "name": "Debian",
+    "vendor": "Debian Project",
+    "version": "13 (netinst)",
+    "arch": "amd64",
+    "category": "linux",
+    "homepage": "https://www.debian.org/distrib/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS",
+      "pattern": "^debian-13\\.\\d+\\.\\d+-amd64-netinst\\.iso$"
+    },
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "notes": {
+      "en": "Small installer that downloads packages during installation. Needs a network connection.",
+      "es": "Instalador pequeño que descarga los paquetes durante la instalación. Necesita conexión a internet."
+    },
+    "boot": {
+      "status": "verified",
+      "tested": "2026-10-16",
+      "notes": {
+        "en": "Tested: the graphical installer starts from the Rebootera USB (UEFI).",
+        "es": "Probado: el instalador gráfico arranca desde el USB de Rebootera (UEFI)."
+      }
+    }
+  },
+  {
+    "id": "fedora-44-workstation",
+    "name": "Fedora Workstation",
+    "vendor": "Fedora Project",
+    "version": "44",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://fedoraproject.org/workstation/download",
+    "resolver": {
+      "type": "fedora",
+      "index": "https://download.fedoraproject.org/pub/fedora/linux/releases/44/Workstation/x86_64/iso/",
+      "pattern": "^Fedora-Workstation-Live-44-\\d+\\.\\d+\\.x86_64\\.iso$"
+    },
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "notes": {
+      "en": "Recent kernel and desktop. Secure Boot works out of the box.",
+      "es": "Kernel y escritorio recientes. Funciona con Secure Boot sin cambios."
+    },
+    "boot": {
+      "status": "verified",
+      "tested": "2026-10-16",
+      "notes": {
+        "en": "Tested with 44-1.7: the live desktop and its installer start from the Rebootera USB (UEFI).",
+        "es": "Probado con 44-1.7: el escritorio en vivo y su instalador arrancan desde el USB de Rebootera (UEFI)."
+      }
+    }
+  },
+  {
+    "id": "archlinux",
+    "name": "Arch Linux",
+    "vendor": "Arch Linux",
+    "version": "latest",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://archlinux.org/download/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://geo.mirror.pkgbuild.com/iso/latest/sha256sums.txt",
+      "pattern": "^archlinux-\\d{4}\\.\\d{2}\\.\\d{2}-x86_64\\.iso$"
+    },
+    "secureBoot": "unsigned",
+    "signature": "gpg",
+    "notes": {
+      "en": "For experienced users. The installer does not support Secure Boot: disable it in the firmware first.",
+      "es": "Para usuarios con experiencia. El instalador no admite Secure Boot: desactívalo antes en el firmware."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    }
+  },
+  {
+    "id": "alpine-standard",
+    "name": "Alpine Linux",
+    "vendor": "Alpine Linux",
+    "version": "latest stable",
+    "arch": "x86_64",
+    "category": "tools",
+    "homepage": "https://alpinelinux.org/downloads/",
+    "resolver": {
+      "type": "alpine",
+      "index": "https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/latest-releases.yaml",
+      "pattern": "alpine-standard"
+    },
+    "secureBoot": "unsigned",
+    "signature": "gpg",
+    "notes": {
+      "en": "Very small system, useful as a rescue console.",
+      "es": "Sistema muy pequeño, útil como consola de rescate."
+    },
+    "boot": {
+      "status": "incompatible",
+      "tested": "2026-10-16",
+      "notes": {
+        "en": "Alpine 3.24 does not start from the Rebootera boot menu (Ventoy 1.1.18): in UEFI the boot loader cannot load its kernel and in BIOS the image cannot be mounted. Write this image alone to a separate USB drive instead.",
+        "es": "Alpine 3.24 no arranca desde el menú de Rebootera (Ventoy 1.1.18): en UEFI el cargador no puede cargar su kernel y en BIOS no se puede montar la imagen. Graba esta imagen sola en otro pendrive."
+      }
+    }
+  },
+  {
+    "id": "alpine-virt",
+    "name": "Alpine Linux (virtual)",
+    "vendor": "Alpine Linux",
+    "version": "latest stable",
+    "arch": "x86_64",
+    "category": "tools",
+    "homepage": "https://alpinelinux.org/downloads/",
+    "resolver": {
+      "type": "alpine",
+      "index": "https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/latest-releases.yaml",
+      "pattern": "alpine-virt"
+    },
+    "secureBoot": "unsigned",
+    "signature": "gpg",
+    "notes": {
+      "en": "Tiny image for virtual machines and quick tests.",
+      "es": "Imagen mínima para máquinas virtuales y pruebas rápidas."
+    },
+    "boot": {
+      "status": "incompatible",
+      "tested": "2026-10-16",
+      "notes": {
+        "en": "Alpine 3.24 does not start from the Rebootera boot menu (Ventoy 1.1.18): in UEFI the boot loader cannot load its kernel and in BIOS the image cannot be mounted. Write this image alone to a separate USB drive instead.",
+        "es": "Alpine 3.24 no arranca desde el menú de Rebootera (Ventoy 1.1.18): en UEFI el cargador no puede cargar su kernel y en BIOS no se puede montar la imagen. Graba esta imagen sola en otro pendrive."
+      }
+    }
+  },
+  {
+    "id": "windows-11",
+    "name": "Windows 11",
+    "vendor": "Microsoft",
+    "version": "latest",
+    "arch": "x64",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/software-download/windows11",
+    "resolver": {
+      "type": "manual"
+    },
+    "secureBoot": "signed",
+    "signature": "none",
+    "notes": {
+      "en": "Microsoft only offers temporary download links from its website. Download the ISO there and add it with \"Add images\" or copy it to the isos/windows folder of this USB.",
+      "es": "Microsoft solo ofrece enlaces de descarga temporales desde su web. Descarga allí la ISO y añádela con \"Añadir imágenes\" o cópiala a la carpeta isos/windows de este USB."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    }
+  }
+]

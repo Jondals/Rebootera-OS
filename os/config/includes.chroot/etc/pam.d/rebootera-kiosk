@@ -1,0 +1,10 @@
+# * Sesión PAM de la interfaz kiosco de Rebootera (rebootera-ui.service).
+# * Abre una sesión de logind en tty1 para el usuario sin privilegios
+# * "rebootera". No hay autenticación: systemd inicia la sesión directamente.
+# * Es una pila mínima: sin mensajes del día, correo ni otros módulos de login.
+account   required  pam_unix.so
+session   required  pam_loginuid.so
+session   required  pam_env.so readenv=1 envfile=/etc/default/locale
+session   required  pam_limits.so
+session   required  pam_unix.so
+session   optional  pam_systemd.so

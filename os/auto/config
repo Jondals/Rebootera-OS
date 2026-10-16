@@ -1,0 +1,37 @@
+#!/bin/sh
+# * Configuración de live-build para Rebootera OS. La llama scripts/build.sh con
+# * REBOOTERA_VERSION y REBOOTERA_DEBUG definidos.
+set -e
+
+APPEND="boot=live quiet splash loglevel=3 systemd.show_status=false rd.udev.log_level=3 vt.global_cursor_default=0 hostname=rebootera"
+if [ "${REBOOTERA_DEBUG:-0}" = "1" ]; then
+	# Imagen de pruebas: registros del kernel y una consola root en el puerto serie.
+	APPEND="boot=live loglevel=6 console=tty0 console=ttyS0,115200 hostname=rebootera"
+fi
+
+lb config noauto \
+	--mode debian \
+	--system live \
+	--distribution trixie \
+	--architectures amd64 \
+	--archive-areas "main contrib non-free-firmware" \
+	--security true \
+	--updates true \
+	--apt-recommends false \
+	--firmware-chroot true \
+	--firmware-binary false \
+	--linux-flavours amd64 \
+	--initramfs live-boot \
+	--binary-images iso-hybrid \
+	--bootloaders "grub-pc,grub-efi" \
+	--uefi-secure-boot enable \
+	--debian-installer none \
+	--memtest none \
+	--chroot-squashfs-compression-type zstd \
+	--iso-application "Rebootera OS" \
+	--iso-publisher "Rebootera OS" \
+	--iso-volume "REBOOTERA" \
+	--image-name "rebootera-os" \
+	--bootappend-live "${APPEND}" \
+	--cache true \
+	"${@}"

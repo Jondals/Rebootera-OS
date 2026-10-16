@@ -1,0 +1,22 @@
+# * Rebootera Agent: única pieza con privilegios de administrador. Solo acepta
+# * conexiones del usuario rebootera-core y una lista cerrada de operaciones.
+# ! Sin PrivateTmp, ProtectHome ni otras opciones que creen un espacio de
+# ! montaje propio: el agente monta discos (medios externos para importar) y
+# ! esos montajes tienen que verse en el sistema y en Core. Con un espacio de
+# ! montaje privado, el montaje se quedaría encerrado dentro del servicio.
+[Unit]
+Description=Rebootera Agent (operaciones privilegiadas)
+Before=rebootera-core.service
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/rebootera/rebootera-agent
+Group=rebootera-core
+RuntimeDirectory=rebootera-agent
+RuntimeDirectoryMode=0750
+Restart=on-failure
+RestartSec=1
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

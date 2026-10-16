@@ -1,0 +1,617 @@
+/* * Componentes comunes: chips, botones, insignias, paneles, barras de
+   * progreso, selectores, interruptores, estados vacíos, errores, diálogos y
+   * pantalla de espera. */
+
+/* Chips de la barra superior */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.chip .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.chip-boot {
+  color: var(--text);
+  border-color: rgba(52, 211, 153, 0.25);
+  background: rgba(52, 211, 153, 0.06);
+}
+
+.chip-ok .icon {
+  color: var(--ok);
+}
+.chip-ok {
+  color: var(--text);
+}
+.chip-warn .icon {
+  color: var(--warn);
+}
+.chip-muted .icon {
+  color: var(--text-dim);
+}
+.chip-clock .icon {
+  color: var(--amber);
+}
+.chip-clock {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Botones */
+
+.icon-button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-muted);
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
+}
+
+.icon-button:hover {
+  background: var(--panel-hover);
+  color: var(--text);
+}
+
+.icon-button-danger {
+  color: var(--danger);
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.icon-button-danger:hover {
+  color: #fff;
+  background: rgba(248, 113, 113, 0.25);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 11px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-2);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--panel-hover);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+}
+
+.btn-primary {
+  border: 0;
+  color: var(--accent-contrast);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 0 22px var(--accent-glow);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent), var(--accent));
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  color: #fff;
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.18);
+}
+
+.btn-small {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+.btn-link {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 12.5px;
+}
+
+.btn-link:hover:not(:disabled) {
+  background: none;
+  text-decoration: underline;
+}
+
+/* Insignias */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 7px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid;
+}
+
+.badge-accent {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+.badge-ok {
+  color: var(--ok);
+  border-color: rgba(52, 211, 153, 0.35);
+  background: rgba(52, 211, 153, 0.08);
+}
+.badge-warn {
+  color: var(--warn);
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.08);
+}
+.badge-amber {
+  color: var(--amber);
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+}
+.badge-danger {
+  color: var(--danger);
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+}
+.badge-violet {
+  color: var(--violet);
+  border-color: rgba(167, 139, 250, 0.35);
+  background: rgba(167, 139, 250, 0.08);
+}
+.badge-muted {
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+  background: transparent;
+}
+
+/* Paneles */
+
+.panel {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 40%), var(--panel);
+  padding: 20px 22px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel-icon {
+  color: var(--accent);
+  width: 20px;
+  height: 20px;
+}
+
+.panel-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.panel-subtitle {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.panel-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+}
+
+/* Progreso y distribución de particiones */
+
+.progress {
+  display: block;
+  height: 6px;
+  border-radius: 6px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 400ms ease;
+}
+
+.progress-accent {
+  background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+}
+.progress-amber {
+  background: linear-gradient(90deg, #d97706, var(--amber));
+}
+.progress-ok {
+  background: var(--ok);
+}
+.progress-warn {
+  background: var(--warn);
+}
+.progress-danger {
+  background: var(--danger);
+}
+.progress-violet {
+  background: var(--violet);
+}
+.progress-muted {
+  background: var(--text-dim);
+}
+
+.partition-bar {
+  display: flex;
+  gap: 3px;
+  height: 8px;
+  margin-top: 4px;
+}
+
+.partition-bar-large {
+  height: 12px;
+  margin: 4px 0 14px;
+}
+
+.segment {
+  border-radius: 3px;
+  min-width: 4px;
+}
+
+.segment-accent,
+.swatch-accent {
+  background: var(--accent);
+}
+.segment-amber,
+.swatch-amber {
+  background: var(--amber);
+}
+.segment-violet,
+.swatch-violet {
+  background: var(--violet);
+}
+.segment-ok,
+.swatch-ok {
+  background: var(--ok);
+}
+.segment-muted,
+.swatch-muted {
+  background: var(--text-dim);
+}
+
+/* Selector segmentado (filtros, idioma, acento) */
+
+.segmented {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  flex-wrap: wrap;
+}
+
+.segment-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.segment-button[aria-selected="true"],
+.segment-button[aria-checked="true"] {
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.segment-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+
+/* Interruptor */
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.setting-row:last-child {
+  border-bottom: 0;
+}
+
+.switch-input {
+  appearance: none;
+  width: 44px;
+  height: 24px;
+  border-radius: 24px;
+  background: var(--border-strong);
+  position: relative;
+  cursor: pointer;
+  transition: background 160ms ease;
+  flex: none;
+  margin: 0;
+}
+
+.switch-input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 160ms ease;
+}
+
+.switch-input:checked {
+  background: var(--accent-strong);
+}
+
+.switch-input:checked::after {
+  transform: translateX(20px);
+}
+
+/* Estados vacíos, errores y avisos */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 40px 24px;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--border-strong);
+  background: var(--bg-elevated);
+}
+
+.empty-state h3 {
+  font-size: 17px;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  max-width: 560px;
+}
+
+.empty-state .btn {
+  margin-top: 8px;
+}
+
+.empty-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.empty-icon .icon {
+  width: 26px;
+  height: 26px;
+}
+
+.error-box,
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+}
+
+.error-box {
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.08);
+  color: #fecaca;
+}
+
+.notice {
+  margin-top: 16px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+}
+
+.guard-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ok);
+}
+
+.guard-chip .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Diálogos */
+
+.modal {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  color: var(--text);
+  padding: 0;
+  width: min(640px, 92vw);
+  box-shadow: var(--shadow);
+}
+
+.modal-small {
+  width: min(520px, 92vw);
+}
+
+.modal-wide {
+  width: min(1000px, 94vw);
+}
+
+.modal::backdrop {
+  background: rgba(3, 6, 10, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  font-size: 18px;
+}
+
+.modal-body {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.power-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.power-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 26px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  font-weight: 650;
+  font-size: 15px;
+}
+
+.power-action .icon {
+  width: 30px;
+  height: 30px;
+  color: var(--accent);
+}
+
+.power-action:hover {
+  background: var(--panel-hover);
+}
+
+.power-danger .icon {
+  color: var(--danger);
+}
+
+.log-full {
+  margin: 0;
+  max-height: 62vh;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  user-select: text;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log-problem {
+  color: var(--warn);
+}
+
+/* Pantalla de espera al reiniciar o apagar */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: var(--bg);
+  font-size: 20px;
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+.overlay img {
+  animation: breathe 2.2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

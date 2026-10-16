@@ -1,0 +1,61 @@
+#!/bin/sh
+# * Hook de live-build: prepara el sistema Rebootera OS dentro del chroot.
+# * Cuentas, servicios, idioma, identidad, pantalla de arranque y, solo en las
+# * imágenes de depuración, una consola root en el puerto serie.
+set -e
+
+# ! live-config crearía un usuario con sudo y autologin en consola; Rebootera
+# ! usa sus propias cuentas sin privilegios, así que se elimina.
+if dpkg -s live-config >/dev/null 2>&1; then
+	apt-get purge -y live-config live-config-systemd || true
+fi
+
+# * Cuentas: Core sin privilegios, grupo de la interfaz y usuario del kiosco.
+getent group rebootera-ui >/dev/null || groupadd --system rebootera-ui
+getent passwd rebootera-core >/dev/null || useradd --system --user-group \
+	--home-dir /nonexistent --no-create-home --shell /usr/sbin/nologin rebootera-core
+getent passwd rebootera >/dev/null || useradd --user-group --create-home \
+	--shell /usr/sbin/nologin --groups rebootera-ui,video,render,input,audio rebootera
+
+# ! Nadie puede iniciar sesión como root con contraseña.
+passwd -l root
+
+# * Idiomas del sistema: inglés (por defecto) y español.
+sed -i 's/^# *\(es_ES.UTF-8 UTF-8\)/\1/; s/^# *\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen
+locale-gen
+
+# * Identidad del sistema.
+VERSION="$(cat /etc/rebootera/version 2>/dev/null || echo dev)"
+echo rebootera >/etc/hostname
+rm -f /etc/os-release
+cat >/etc/os-release <<EOF
+PRETTY_NAME="Rebootera OS ${VERSION}"
+NAME="Rebootera OS"
+VERSION="${VERSION}"
+VERSION_ID="${VERSION}"
+ID=rebootera
+ID_LIKE=debian
+EOF
+
+# * Pantalla de arranque propia (módulo script; gráficos de make-boot-art.sh).
+plymouth-set-default-theme rebootera
+# ! En el sistema live, el plymouthd que se lanza al apagar bloquea la fase
+# ! final de systemd-shutdown (unos 90 s). La interfaz ya muestra su propia
+# ! pantalla de "Apagando…", así que no se usa Plymouth al apagar ni al reiniciar.
+systemctl mask plymouth-poweroff.service plymouth-reboot.service plymouth-halt.service plymouth-kexec.service
+
+# * Servicios: arranque directo a la interfaz y hora sincronizada por NTP.
+systemctl enable rebootera-agent.service rebootera-vault.service rebootera-core.service rebootera-ui.service NetworkManager.service systemd-timesyncd.service
+systemctl set-default graphical.target
+
+# * Imagen de pruebas: consola root sin contraseña en el puerto serie, solo si
+# * scripts/build.sh dejó la marca de depuración.
+if [ -e /etc/rebootera/debug ]; then
+	mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
+	cat >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf <<'EOF'
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin root --noclear --keep-baud 115200,57600,38400,9600 %I $TERM
+EOF
+	systemctl enable serial-getty@ttyS0.service
+fi

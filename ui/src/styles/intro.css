@@ -1,0 +1,318 @@
+/* * Intro de Rebootera OS: auroras que se desplazan, rejilla tenue, halo que
+   * respira, logotipo dibujado trazo a trazo, nombre letra a letra, lema y
+   * barra de carga. Coordinado con los tiempos de intro.ts. */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #04070b;
+  transition:
+    opacity 900ms ease,
+    transform 900ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 900ms ease;
+}
+
+.intro-leave {
+  opacity: 0;
+  transform: scale(1.06);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+/* Auroras */
+
+.aurora {
+  position: absolute;
+  inset: -20%;
+  opacity: 0;
+  animation: fade-in 1600ms ease forwards;
+}
+
+.blob {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+}
+
+.blob-a {
+  left: 5%;
+  top: 0%;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.55), transparent 65%);
+  animation: drift-a 14s ease-in-out infinite alternate;
+}
+
+.blob-b {
+  right: 0%;
+  top: 20%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.5), transparent 65%);
+  animation: drift-b 17s ease-in-out infinite alternate;
+}
+
+.blob-c {
+  left: 30%;
+  bottom: -10%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.22), transparent 65%);
+  animation: drift-c 20s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a {
+  to {
+    transform: translate(12vmax, 8vmax) scale(1.15);
+  }
+}
+
+@keyframes drift-b {
+  to {
+    transform: translate(-14vmax, -6vmax) scale(0.9);
+  }
+}
+
+@keyframes drift-c {
+  to {
+    transform: translate(-6vmax, -12vmax) scale(1.2);
+  }
+}
+
+.intro-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at center, #000 0%, transparent 65%);
+  -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 65%);
+  opacity: 0;
+  animation: fade-in 2000ms ease 300ms forwards;
+}
+
+/* Centro */
+
+.intro-center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.intro-halo {
+  position: absolute;
+  top: -40px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(94, 234, 212, 0.35), transparent 65%);
+  filter: blur(20px);
+  opacity: 0;
+  animation:
+    fade-in 900ms ease 900ms forwards,
+    breathe-halo 3.6s ease-in-out 1800ms infinite;
+}
+
+@keyframes breathe-halo {
+  50% {
+    transform: scale(1.18);
+    opacity: 0.65;
+  }
+}
+
+.intro-logo {
+  width: 136px;
+  height: 136px;
+  overflow: visible;
+}
+
+.logo-tile {
+  fill: #0f1530;
+  stroke: rgba(129, 140, 248, 0.25);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  transform: scale(0.6) rotate(-8deg);
+  animation: tile-in 700ms cubic-bezier(0.2, 0.9, 0.3, 1.2) 150ms forwards;
+}
+
+@keyframes tile-in {
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.logo-arc {
+  fill: none;
+  stroke: url(#intro-g);
+  stroke-width: 22;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 950ms cubic-bezier(0.65, 0, 0.35, 1) 450ms forwards;
+}
+
+.logo-r {
+  fill: none;
+  stroke: #f8fafc;
+  stroke-width: 18;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 800ms cubic-bezier(0.65, 0, 0.35, 1) 800ms forwards;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.logo-arrow {
+  fill: #818cf8;
+  stroke: #818cf8;
+  stroke-width: 6;
+  stroke-linejoin: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  transform: scale(0);
+  animation: pop 420ms cubic-bezier(0.2, 0.9, 0.3, 1.5) 1300ms forwards;
+}
+
+@keyframes pop {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Nombre, lema y carga */
+
+.intro-wordmark {
+  margin-top: 8px;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f1f5f9;
+  display: flex;
+}
+
+.intro-letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(6px);
+  animation: letter-in 650ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* ! WebKitGTK no pinta texto con background-clip: text mientras se anima el
+   ! desenfoque, así que "OS" usa color sólido con resplandor. */
+.intro-os {
+  margin-left: 0.3em;
+  color: #5eead4;
+  text-shadow: 0 0 24px rgba(94, 234, 212, 0.55);
+}
+
+@keyframes letter-in {
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.intro-tagline {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  opacity: 0;
+  animation: fade-in 800ms ease 1900ms forwards;
+}
+
+.intro-progress {
+  width: 240px;
+  height: 3px;
+  margin-top: 18px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  opacity: 0;
+  animation: fade-in 600ms ease 1500ms forwards;
+}
+
+.intro-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #5eead4, #818cf8);
+  box-shadow: 0 0 12px rgba(94, 234, 212, 0.8);
+}
+
+.intro-progress-run {
+  width: 72%;
+  transition: width 3000ms cubic-bezier(0.3, 0.6, 0.3, 1);
+}
+
+.intro-progress-done {
+  width: 100%;
+  transition: width 350ms ease;
+}
+
+.intro-status {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #64748b;
+  opacity: 0;
+  animation: fade-in 600ms ease 1700ms forwards;
+}
+
+.intro-skip {
+  position: absolute;
+  bottom: 28px;
+  font-size: 12px;
+  color: #475569;
+  opacity: 0;
+  animation: fade-in 800ms ease 2600ms forwards;
+}
+
+@keyframes fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Movimiento reducido: todo aparece sin animación. */
+
+.intro-reduced *,
+.intro-reduced .aurora {
+  animation: none !important;
+}
+
+.intro-reduced .aurora,
+.intro-reduced .intro-grid,
+.intro-reduced .intro-halo,
+.intro-reduced .logo-tile,
+.intro-reduced .logo-arrow,
+.intro-reduced .intro-letter,
+.intro-reduced .intro-tagline,
+.intro-reduced .intro-progress,
+.intro-reduced .intro-status {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.intro-reduced .logo-arc,
+.intro-reduced .logo-r {
+  stroke-dashoffset: 0;
+}

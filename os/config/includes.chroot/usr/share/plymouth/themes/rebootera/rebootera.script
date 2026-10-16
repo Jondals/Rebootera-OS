@@ -1,0 +1,80 @@
+// * Pantalla de arranque de Rebootera OS (lenguaje de script de Plymouth).
+// * Fondo oscuro, halo turquesa que respira detrás del logotipo, logotipo que
+// * aparece con un fundido, nombre del sistema y barra con el progreso real
+// * del arranque. Enlaza visualmente con la intro de la interfaz.
+
+Window.SetBackgroundTopColor(0.016, 0.027, 0.043);
+Window.SetBackgroundBottomColor(0.016, 0.027, 0.043);
+
+screen_w = Window.GetWidth();
+screen_h = Window.GetHeight();
+center_x = Window.GetX() + screen_w / 2;
+center_y = Window.GetY() + screen_h / 2;
+
+// * Halo detrás del logotipo
+glow.image = Image("glow.png");
+glow.sprite = Sprite(glow.image);
+glow.sprite.SetPosition(center_x - glow.image.GetWidth() / 2, center_y - glow.image.GetHeight() / 2 - 60, 1);
+glow.sprite.SetOpacity(0);
+
+// * Logotipo
+logo.image = Image("logo.png");
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetPosition(center_x - logo.image.GetWidth() / 2, center_y - logo.image.GetHeight() / 2 - 60, 10);
+logo.sprite.SetOpacity(0);
+
+// * Nombre del sistema
+word.image = Image("wordmark.png");
+word.sprite = Sprite(word.image);
+word.sprite.SetPosition(center_x - word.image.GetWidth() / 2, center_y + 50, 10);
+word.sprite.SetOpacity(0);
+
+// * Barra de progreso: fondo y relleno que crece con el arranque
+track.image = Image("bar-track.png");
+track.sprite = Sprite(track.image);
+track_x = center_x - track.image.GetWidth() / 2;
+track_y = center_y + 120;
+track.sprite.SetPosition(track_x, track_y, 10);
+track.sprite.SetOpacity(0);
+
+fill.original = Image("bar-fill.png");
+fill.sprite = Sprite();
+fill.sprite.SetPosition(track_x, track_y, 11);
+fill.progress = 0;
+
+frame = 0;
+
+// * refresh se llama unas 50 veces por segundo: fundidos y halo que respira.
+fun refresh_callback() {
+    frame++;
+    appear = Math.Min(frame / 40, 1);
+    logo.sprite.SetOpacity(appear);
+    word.sprite.SetOpacity(Math.Min(Math.Max((frame - 20) / 40, 0), 1));
+    track.sprite.SetOpacity(Math.Min(Math.Max((frame - 30) / 30, 0), 1));
+    glow.sprite.SetOpacity(appear * (0.55 + 0.35 * Math.Sin(frame / 22)));
+}
+
+// * progress va de 0 a 1 según el avance real del arranque.
+fun progress_callback(duration, progress) {
+    width = Math.Int(fill.original.GetWidth() * progress);
+    if (width < 2) width = 2;
+    if (width != fill.progress) {
+        fill.progress = width;
+        fill.sprite.SetImage(fill.original.Scale(width, fill.original.GetHeight()));
+    }
+}
+
+// ! Mensajes del sistema (por ejemplo, comprobación de discos): se muestran
+// ! debajo de la barra para no ocultar avisos importantes.
+message.sprite = Sprite();
+message.sprite.SetPosition(center_x, track_y + 40, 10);
+
+fun message_callback(text) {
+    message.image = Image.Text(text, 0.6, 0.65, 0.72);
+    message.sprite.SetImage(message.image);
+    message.sprite.SetX(center_x - message.image.GetWidth() / 2);
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);
+Plymouth.SetBootProgressFunction(progress_callback);
+Plymouth.SetMessageFunction(message_callback);

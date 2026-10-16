@@ -1,0 +1,7 @@
+out/
+ui/node_modules/
+ui/dist/
+__pycache__/
+
+# Recursos de Windows generados por scripts/build-desktop.sh
+core/cmd/rebootera-desktop/*.syso

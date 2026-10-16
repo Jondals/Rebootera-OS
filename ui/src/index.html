@@ -1,0 +1,111 @@
+<!doctype html>
+<!-- * Marco de Rebootera UI: intro, menú lateral, barra superior y área principal. -->
+<html lang="en" data-accent="aurora">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rebootera OS</title>
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/layout.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+    <link rel="stylesheet" href="styles/pages.css" />
+    <link rel="stylesheet" href="styles/intro.css" />
+    <script type="module" src="js/main.js"></script>
+  </head>
+  <body>
+    <!-- * Intro: se elimina del documento al terminar (intro.ts). -->
+    <div id="intro" class="intro" aria-hidden="true">
+      <div class="aurora">
+        <span class="blob blob-a"></span>
+        <span class="blob blob-b"></span>
+        <span class="blob blob-c"></span>
+      </div>
+      <div class="intro-grid"></div>
+      <div class="intro-center">
+        <div class="intro-halo"></div>
+        <svg class="intro-logo" viewBox="0 0 256 256">
+          <defs>
+            <linearGradient id="intro-g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#5eead4" />
+              <stop offset="1" stop-color="#818cf8" />
+            </linearGradient>
+          </defs>
+          <rect class="logo-tile" x="8" y="8" width="240" height="240" rx="56" />
+          <path class="logo-arc" pathLength="1" d="M200 128a72 72 0 1 1-25.7-55.2" />
+          <path class="logo-arrow" d="m157 87 28.5-34L198 92.5Z" />
+          <path class="logo-r" pathLength="1" d="M104 172V86h30a24 24 0 0 1 0 48h-30m28 0 24 38" />
+        </svg>
+        <h1 class="intro-wordmark"></h1>
+        <p class="intro-tagline" data-i18n="intro.tagline"></p>
+        <div class="intro-progress"><span class="intro-progress-fill"></span></div>
+        <p class="intro-status" data-i18n="intro.loading"></p>
+      </div>
+      <p class="intro-skip" data-i18n="intro.skip"></p>
+    </div>
+
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="logo.svg" alt="" width="36" height="36" />
+          <div class="brand-text">
+            <span class="brand-name">Rebootera <span class="accent">OS</span></span>
+            <span class="brand-version" id="version"></span>
+          </div>
+        </div>
+        <span class="nav-section" data-i18n="nav.section"></span>
+        <nav id="nav" class="nav" data-i18n-label="nav.section"></nav>
+        <div class="drive-card" id="drive-card"></div>
+      </aside>
+
+      <div class="workspace">
+        <header class="topbar">
+          <span class="chip chip-boot" id="boot-chip"></span>
+          <div class="topbar-right">
+            <span id="net-chip"></span>
+            <span id="sb-chip"></span>
+            <span id="clock-chip" class="chip chip-clock"></span>
+            <button
+              class="icon-button"
+              id="lang-button"
+              type="button"
+              data-i18n-label="topbar.language"
+            >
+              <span class="lang-code" id="lang-code">EN</span>
+            </button>
+            <button
+              class="icon-button"
+              id="settings-button"
+              type="button"
+              data-i18n-label="topbar.settings"
+            >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"
+                />
+              </svg>
+            </button>
+            <button
+              class="icon-button icon-button-danger"
+              id="power-button"
+              type="button"
+              data-i18n-label="topbar.power"
+            >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v9" />
+                <path d="M6.3 7.2a8 8 0 1 0 11.4 0" />
+              </svg>
+            </button>
+          </div>
+        </header>
+        <main id="view" tabindex="-1"></main>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay" hidden>
+      <img src="logo.svg" alt="" width="96" height="96" />
+      <p id="overlay-text"></p>
+    </div>
+  </body>
+</html>

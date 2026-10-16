@@ -1,0 +1,17 @@
+# * Rebootera Vault: monta la partición REBOOTERA del USB de arranque en
+# * /run/rebootera/vault antes de que arranque Core. Si no hay Vault (DVD o
+# * ISO grabada directamente) termina sin error y la sesión es de solo lectura.
+[Unit]
+Description=Rebootera Vault (almacenamiento del USB)
+After=systemd-udev-settle.service local-fs.target
+Wants=systemd-udev-settle.service
+Before=rebootera-core.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=-/usr/bin/udevadm settle --timeout=15
+ExecStart=/usr/lib/rebootera/rebootera-agent --mount-vault
+
+[Install]
+WantedBy=multi-user.target
