@@ -23,6 +23,8 @@ xkb-data
 at-spi2-core
 # Compresión del initramfs
 zstd
+# Archivos 7z de drivers que se inyectan en el instalador de Windows
+p7zip-full
 
 # Red
 network-manager
@@ -35,6 +37,7 @@ ca-certificates
 pciutils
 pci.ids
 usbutils
+efibootmgr
 usb.ids
 dmidecode
 exfatprogs

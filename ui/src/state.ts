@@ -3,6 +3,7 @@
 // * gráficas y avisa a quien se haya suscrito cuando llegan datos nuevos.
 // ! Todo lo que se muestra sale de aquí: no hay datos inventados.
 
+import { isLite } from "./prefs.js";
 import {
   getJSON,
   type Device,
@@ -18,8 +19,8 @@ import {
 const HISTORY = 40;
 
 /** Intervalos de sondeo en milisegundos. */
-const FAST_MS = 3000;
-const SLOW_MS = 10000;
+const FAST_MS = isLite() ? 5000 : 3000;
+const SLOW_MS = isLite() ? 15000 : 10000;
 
 /** Datos actuales y su historial. */
 export interface Snapshot {

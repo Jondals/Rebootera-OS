@@ -15,6 +15,47 @@ export interface Prefs {
 
 const KEY = "rebootera.prefs";
 
+/** Renderizadores que dibujan por software o por una GPU virtual lenta. */
+const SLOW_RENDERERS =
+  /llvmpipe|softpipe|swiftshader|software|basic render|virtualbox|vmware|svga|virgl|bochs|cirrus/i;
+
+let lite: boolean | null = null;
+
+/**
+ * Indica si hay que usar el modo ligero: sin GPU real (renderizado por
+ * software, máquinas virtuales) o con muy pocas CPU, los desenfoques y las
+ * animaciones continuas hacen la interfaz lenta. Se decide una vez.
+ */
+export function isLite(): boolean {
+  if (lite !== null) {
+    return lite;
+  }
+  lite = false;
+  // * El kiosco sabe si dibuja por software (start-kiosk): es la señal más fiable.
+  if ((window as unknown as { REBOOTERA_LITE?: boolean }).REBOOTERA_LITE === true) {
+    lite = true;
+    return lite;
+  }
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = (canvas.getContext("webgl") ??
+      canvas.getContext("experimental-webgl")) as WebGLRenderingContext | null;
+    if (!gl) {
+      lite = true;
+    } else {
+      const info = gl.getExtension("WEBGL_debug_renderer_info");
+      const renderer = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+      lite = SLOW_RENDERERS.test(renderer);
+    }
+  } catch {
+    lite = true;
+  }
+  if (navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 2) {
+    lite = true;
+  }
+  return lite;
+}
+
 export const prefs: Prefs = {
   language: "en",
   accent: "aurora",
@@ -77,5 +118,6 @@ function ignore(): void {}
 export function applyPrefs(): void {
   setLanguage(prefs.language);
   document.documentElement.dataset.accent = prefs.accent;
-  document.documentElement.dataset.motion = prefs.reduceMotion ? "reduced" : "full";
+  document.documentElement.dataset.gfx = isLite() ? "lite" : "full";
+  document.documentElement.dataset.motion = prefs.reduceMotion || isLite() ? "reduced" : "full";
 }

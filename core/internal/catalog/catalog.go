@@ -4,7 +4,6 @@
 // * obtiene en ese momento el archivo más reciente y su SHA-256 por HTTPS.
 // ! Una entrada "manual" (Windows) no se descarga: el fabricante solo ofrece
 // ! enlaces temporales desde su web y Rebootera no los inventa ni los rasca.
-// TODO: verificar las firmas GPG de los índices (Debian, Ubuntu, Fedora, Arch, Alpine).
 package catalog
 
 import (
@@ -57,6 +56,11 @@ type Resolver struct {
 	Type    string `json:"type"`
 	Index   string `json:"index,omitempty"`
 	Pattern string `json:"pattern,omitempty"`
+	// Signature describe cómo está firmado el índice (nil = sin firma).
+	Signature *SigSpec `json:"signature,omitempty"`
+	// ISOSignature describe la firma de la propia imagen, para los proyectos que
+	// firman cada ISO y no su lista de sumas (Arch Linux, Alpine).
+	ISOSignature *SigSpec `json:"isoSignature,omitempty"`
 }
 
 // Resolved es el archivo concreto que se descargará.
@@ -65,6 +69,8 @@ type Resolved struct {
 	FileName  string `json:"fileName"`
 	SHA256    string `json:"sha256"`
 	SizeBytes int64  `json:"sizeBytes"`
+	// SignedBy es la clave oficial que firmó el índice, comprobada; vacío si no está firmado.
+	SignedBy string `json:"signedBy,omitempty"`
 }
 
 // ErrManual indica una entrada que no se puede descargar automáticamente.
@@ -171,7 +177,7 @@ func fetchOnce(rawURL string) (string, bool, error) {
 // * resolveSums lee un índice estilo GNU ("hash  archivo" o "hash *archivo")
 // * y elige el archivo más reciente que encaja con el patrón.
 func resolveSums(r Resolver) (Resolved, error) {
-	text, err := fetchText(r.Index)
+	text, signedBy, err := fetchIndex(r)
 	if err != nil {
 		return Resolved{}, err
 	}
@@ -195,7 +201,7 @@ func resolveSums(r Resolver) (Resolved, error) {
 	if err != nil {
 		return Resolved{}, fmt.Errorf("%s: %w", r.Index, err)
 	}
-	return Resolved{URL: sibling(r.Index, name), FileName: name, SHA256: hashes[name]}, nil
+	return Resolved{URL: sibling(r.Index, name), FileName: name, SHA256: hashes[name], SignedBy: signedBy}, nil
 }
 
 // fedoraSum es una línea "SHA256 (archivo) = hash" de los CHECKSUM de Fedora.
@@ -215,7 +221,9 @@ func resolveFedora(r Resolver) (Resolved, error) {
 	if match == nil {
 		return Resolved{}, fmt.Errorf("%s: no se encontró el archivo CHECKSUM", r.Index)
 	}
-	text, err := fetchText(sibling(r.Index, match[1]))
+	// * El CHECKSUM de Fedora va firmado en claro; se comprueba y solo se
+	// * lee lo que está dentro de la firma.
+	text, signedBy, err := fetchIndex(Resolver{Index: sibling(r.Index, match[1]), Signature: r.Signature})
 	if err != nil {
 		return Resolved{}, err
 	}
@@ -234,7 +242,7 @@ func resolveFedora(r Resolver) (Resolved, error) {
 	if err != nil {
 		return Resolved{}, fmt.Errorf("%s: %w", r.Index, err)
 	}
-	return Resolved{URL: sibling(r.Index, name), FileName: name, SHA256: hashes[name]}, nil
+	return Resolved{URL: sibling(r.Index, name), FileName: name, SHA256: hashes[name], SignedBy: signedBy}, nil
 }
 
 // * resolveAlpine lee latest-releases.yaml y busca la variante (flavor) indicada.

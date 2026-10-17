@@ -1,0 +1,84 @@
+#!/bin/bash
+# * start-kiosk: arranca cage con la interfaz probando, de más a menos
+# * aceleración, hasta que el compositor y la ventana arrancan de verdad.
+# *   1. Como llegue: GPU real o la que Mesa elija.
+# *   2. Mesa por software (llvmpipe): GPU virtuales sin 3D, como VMware SVGA
+# *      en VirtualBox sin aceleración ("No 3D enabled").
+# *   3. wlroots con pixman y GTK con cairo: sin EGL de ningún tipo.
+# * El nivel que funciona se recuerda mientras dure la sesión para no repetir
+# * los intentos fallidos si el servicio se reinicia.
+# ! cage no sale cuando falla al crear el renderizador (se queda esperando a
+# ! su sesión PAM), así que no basta con mirar su código de salida: se da por
+# ! arrancado cuando existe su proceso hijo rebootera-shell.
+set -u
+
+# * Distribución de teclado elegida en la interfaz (la escribe el agente).
+# * Solo se aceptan nombres de letras: el valor acaba en una variable de entorno.
+KEYBOARD="$(cat /run/rebootera/keyboard 2>/dev/null)"
+case "$KEYBOARD" in
+es | us | gb | de | fr | it | pt) export XKB_DEFAULT_LAYOUT="$KEYBOARD" ;;
+esac
+
+LEVEL_FILE="${XDG_RUNTIME_DIR:-/tmp}/rebootera-kiosk-level"
+START_TIMEOUT=25
+
+# * Sin nodo de renderizado de GPU (/dev/dri/renderD*) Mesa dibuja por software
+# * aunque se pida el nivel 1: la interfaz lo sabe por REBOOTERA_LITE y deja de
+# * animar y desenfocar, porque cada fotograma costaría casi un núcleo entero.
+LITE=0
+ls /dev/dri/renderD* >/dev/null 2>&1 || LITE=1
+
+# * level_env imprime las variables de entorno de cada nivel.
+level_env() {
+	case "$1" in
+	1) echo "REBOOTERA_KIOSK_LEVEL=1 REBOOTERA_LITE=$LITE" ;;
+	2) echo "REBOOTERA_KIOSK_LEVEL=2 REBOOTERA_LITE=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe" ;;
+	3) echo "REBOOTERA_KIOSK_LEVEL=3 REBOOTERA_LITE=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe WLR_RENDERER=pixman GSK_RENDERER=cairo WEBKIT_DISABLE_COMPOSITING_MODE=1" ;;
+	esac
+}
+
+# * try_level lanza cage con un nivel y devuelve 0 si la interfaz arrancó
+# * (en ese caso se queda esperando a cage), 1 si no.
+try_level() {
+	local level="$1" pid waited=0
+	echo "rebootera-kiosk: probando el nivel $level de renderizado" >&2
+	# shellcheck disable=SC2046
+	env $(level_env "$level") /usr/bin/cage -d -- /usr/bin/rebootera-shell &
+	pid=$!
+	while [ "$waited" -lt "$START_TIMEOUT" ]; do
+		if ! kill -0 "$pid" 2>/dev/null; then
+			echo "rebootera-kiosk: cage terminó con el nivel $level" >&2
+			return 1
+		fi
+		if pgrep -P "$pid" -f rebootera-shell >/dev/null; then
+			echo "rebootera-kiosk: interfaz arrancada con el nivel $level" >&2
+			echo "$level" >"$LEVEL_FILE" 2>/dev/null
+			wait "$pid"
+			return 0
+		fi
+		sleep 1
+		waited=$((waited + 1))
+	done
+	echo "rebootera-kiosk: cage no arrancó la interfaz con el nivel $level" >&2
+	pkill -KILL -P "$pid" 2>/dev/null
+	kill -KILL "$pid" 2>/dev/null
+	wait "$pid" 2>/dev/null
+	return 1
+}
+
+# * main prueba los niveles empezando por el último que funcionó.
+main() {
+	local first=1 level
+	if [ -r "$LEVEL_FILE" ]; then
+		first="$(cat "$LEVEL_FILE")"
+	fi
+	for level in $(seq "$first" 3) $(seq 1 $((first - 1))); do
+		if try_level "$level"; then
+			exit 0
+		fi
+	done
+	exit 1
+}
+
+main
+exit

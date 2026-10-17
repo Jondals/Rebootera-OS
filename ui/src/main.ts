@@ -15,7 +15,8 @@ import { bootSource, liveMedia, onlineInterface } from "./insights.js";
 import { playIntro } from "./intro.js";
 import { appMode, isDesktop, loadMode } from "./mode.js";
 import { createPage } from "./pages/create.js";
-import { usbPage } from "./pages/usb.js";
+import { desktopDriversPage } from "./pages/desktop-drivers.js";
+import { homePage } from "./pages/home.js";
 import { driversPage } from "./pages/drivers.js";
 import { overviewPage } from "./pages/overview.js";
 import { settingsPage } from "./pages/settings.js";
@@ -45,13 +46,12 @@ const NAV_ICONS: Record<string, string> = {
   drivers: icons.drivers,
   downloads: icons.download,
   storage: icons.usb,
-  usb: icons.usb,
   create: icons.sparkle,
 };
 
 /** Clave de traducción del nombre de una ruta del menú. */
 function navLabel(route: string): string {
-  return route === "usb" || route === "create" ? t("desktop.nav." + route) : t("nav." + route);
+  return route === "create" ? t("desktop.nav.create") : t("nav." + route);
 }
 
 /** Busca un elemento por id (todos existen en index.html). */
@@ -100,9 +100,11 @@ function renderDesktopShell(): void {
     el("span", {}, [t("desktop.boot", { platform })]),
   );
   byId("net-chip").replaceChildren(
-    snapshot.vault?.available
+    appMode.usb
       ? chip(icons.usb, appMode.usb, "ok")
-      : chip(icons.usb, t("desktop.noUsbChip"), "warn"),
+      : appMode.library
+        ? chip(icons.disk, t("desktop.localChip"), "accent")
+        : chip(icons.usb, t("desktop.noUsbChip"), "warn"),
   );
   byId("sb-chip").replaceChildren();
   renderDriveCard();
@@ -164,6 +166,17 @@ function renderDriveCard(): void {
   const card = byId("drive-card");
   const media = liveMedia(snapshot.disks);
   const store = snapshot.vault;
+  // * Rebootera Desktop sin USB: las imágenes viven en una carpeta del equipo.
+  if (isDesktop() && appMode.library) {
+    card.replaceChildren(
+      el("div", { class: "drive-head" }, [
+        icon(icons.disk),
+        el("strong", {}, [t("desktop.localChip")]),
+      ]),
+      el("p", { class: "drive-hint mono-small" }, [appMode.library]),
+    );
+    return;
+  }
   if (store === null || !store.available) {
     card.replaceChildren(
       el("div", { class: "drive-head" }, [
@@ -249,6 +262,7 @@ async function init(): Promise<void> {
   byId("lang-code").textContent = prefs.language.toUpperCase();
   byId("power-button").addEventListener("click", openPowerDialog);
   byId("settings-button").addEventListener("click", openSettings);
+  byId("net-chip").addEventListener("click", openSettings);
   byId("lang-button").addEventListener("click", toggleLanguage);
   document.addEventListener("rebootera:language", relabel);
   // * El kiosco no ofrece menú contextual: no hay nada útil que mostrar en él.
@@ -259,14 +273,14 @@ async function init(): Promise<void> {
     // * En el escritorio no hay agente: ni apagado ni secciones del equipo.
     setRoutes(desktopRoutes);
     byId("power-button").hidden = true;
-    register("usb", usbPage);
     register("create", createPage);
   }
 
-  register("overview", overviewPage);
+  // * Resumen y asistente de drivers son distintos en el escritorio: allí se ve y se gestiona el USB.
+  register("overview", isDesktop() ? homePage : overviewPage);
   register("library", libraryPage);
   register("install", wizardPage);
-  register("drivers", driversPage);
+  register("drivers", isDesktop() ? desktopDriversPage : driversPage);
   register("downloads", downloadsPage);
   register("storage", storagePage);
   register("settings", settingsPage);

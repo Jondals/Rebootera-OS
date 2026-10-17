@@ -9,9 +9,11 @@ interface ModeInfo {
   mode: "live" | "desktop";
   platform: string;
   usb: string;
+  /** Carpeta de la biblioteca local del equipo (escritorio sin USB), o "". */
+  library: string;
 }
 
-export const appMode: ModeInfo = { mode: "live", platform: "linux", usb: "" };
+export const appMode: ModeInfo = { mode: "live", platform: "linux", usb: "", library: "" };
 
 /** Lee el modo de Core (por defecto, sistema live). */
 export async function loadMode(): Promise<void> {

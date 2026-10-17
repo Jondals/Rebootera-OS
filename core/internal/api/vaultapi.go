@@ -81,6 +81,7 @@ func (s *Server) registerVault(mux *http.ServeMux) {
 		post["/api/media/mount"] = s.handleMediaMount
 		post["/api/media/unmount"] = s.handleMediaMount
 		post["/api/boot/install"] = s.handleBootInstall
+		get["/api/drivers/plan"] = s.handleDriverPlan
 	}
 	for path, handler := range get {
 		mux.Handle("GET "+path, s.requireSession(handler))
@@ -433,7 +434,7 @@ func mediaPath(device, rel string) (string, error) {
 
 // * handleBootInstall preselecciona una imagen en Ventoy y reinicia el equipo.
 func (s *Server) handleBootInstall(w http.ResponseWriter, r *http.Request) {
-	var req pathRequest
+	var req installRequest
 	if err := decode(r, &req); err != nil {
 		fail(w, err)
 		return
@@ -443,12 +444,14 @@ func (s *Server) handleBootInstall(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
+	var chosen library.Item
 	// ! Nunca se arranca una imagen dañada, a medio comprobar o que se sabe
 	// ! que no arranca desde el menú del USB.
 	for _, item := range items {
 		if item.Path != req.Path {
 			continue
 		}
+		chosen = item
 		if item.State == library.StateMismatch || item.State == library.StateHashing {
 			writeJSON(w, http.StatusConflict, map[string]string{"error": "image not verified", "code": "unsafe-image"})
 			return
@@ -462,12 +465,33 @@ func (s *Server) handleBootInstall(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": err.Error(), "code": codeAgent})
 		return
 	}
-	if err := boot.SetNext(req.Path); err != nil {
+	prep, code, message := prepareInstall(chosen, req)
+	if code != "" {
+		status := http.StatusBadRequest
+		if code == codeNoDrivers {
+			status = http.StatusConflict
+		}
+		writeJSON(w, status, map[string]string{"error": message, "code": code})
+		return
+	}
+	if err := boot.Prepare(req.Path, prep); err != nil {
 		fail(w, err)
 		return
 	}
-	log.Printf("arranque: %s preseleccionada en Ventoy; reiniciando", req.Path)
+	bootOrder := "unchanged"
+	if req.BootOnce {
+		lines, err := s.agent.Query(agentproto.OpBootOnce)
+		if err != nil {
+			// * Sin permiso para el firmware no se instala a medias: se avisa y no se reinicia.
+			writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error(), "code": codeBootOrder})
+			return
+		}
+		if len(lines) > 0 {
+			bootOrder = lines[0]
+		}
+	}
+	log.Printf("arranque: %s preseleccionada en Ventoy (orden de arranque: %s); reiniciando", req.Path, bootOrder)
 	task := &delayedOp{op: agentproto.OpReboot, agent: s.agent}
 	time.AfterFunc(powerDelay, task.run)
-	writeJSON(w, http.StatusAccepted, map[string]string{"status": "rebooting"})
+	writeJSON(w, http.StatusAccepted, map[string]string{"status": "rebooting", "bootOrder": bootOrder})
 }

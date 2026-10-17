@@ -52,6 +52,10 @@ def main():
         while time.time() - started < duration:
             time.sleep(0.5)
             elapsed = time.time() - started
+            # ! Vaciar la consola serie siempre: si nadie la lee, QEMU frena al
+            # ! invitado cuando escribe en ella (una ISO de depuración parece
+            # ! "lentísima" solo porque la consola está llena).
+            vm.pump()
             # * Teclas programadas que ya toca pulsar.
             while keys and keys[0][0] <= elapsed:
                 vm.key(keys.pop(0)[1])

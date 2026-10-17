@@ -4,7 +4,9 @@
 [Unit]
 Description=Rebootera UI (kiosco)
 Wants=rebootera-core.service
-After=rebootera-core.service systemd-user-sessions.service plymouth-quit-wait.service
+# * No se espera a plymouth-quit-wait (hasta el final del arranque): ExecStartPre cierra
+# * Plymouth justo antes de abrir la ventana, y así la interfaz sale mucho antes.
+After=rebootera-core.service systemd-user-sessions.service plymouth-start.service
 Conflicts=getty@tty1.service
 After=getty@tty1.service
 
@@ -34,7 +36,8 @@ ExecStartPre=-/usr/bin/plymouth quit --retain-splash
 # pam_systemd concede CAP_WAKE_ALARM como capacidad ambiental a las sesiones de
 # usuario, y bubblewrap (el sandbox de WebKitGTK) se niega a ejecutarse si el
 # proceso tiene cualquier capacidad. setpriv la retira antes de lanzar cage.
-ExecStart=/usr/bin/setpriv --ambient-caps=-all --inh-caps=-all -- /usr/bin/cage -d -- /usr/bin/rebootera-shell
+# start-kiosk lanza cage probando varios niveles de renderizado (ver el script).
+ExecStart=/usr/bin/setpriv --ambient-caps=-all --inh-caps=-all -- /usr/lib/rebootera/start-kiosk
 Restart=always
 RestartSec=2
 

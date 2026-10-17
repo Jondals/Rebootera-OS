@@ -7,7 +7,10 @@ import * as fmt from "../format.js";
 import { t, type Language } from "../i18n.js";
 import { prefs, savePrefs } from "../prefs.js";
 import { renderCurrent, type Page } from "../router.js";
+import { isDesktop } from "../mode.js";
 import { snapshot } from "../state.js";
+import { keyboardPanel } from "./keyboard.js";
+import { wifiPanel, wifiUpdate } from "./wifi.js";
 
 let about: HTMLElement | null = null;
 
@@ -120,6 +123,8 @@ function render(root: HTMLElement): void {
           toggle(t("settings.intro"), prefs.intro, setIntro),
           toggle(t("settings.motion"), prefs.reduceMotion, setMotion),
         ]),
+        isDesktop() ? null : keyboardPanel(),
+        isDesktop() ? null : wifiPanel(),
         panel(t("settings.about"), [about]),
       ]),
     ]),
@@ -131,6 +136,7 @@ function update(): void {
   if (about === null || !about.isConnected) {
     return;
   }
+  wifiUpdate();
   const system = snapshot.system;
   const rows: [string, string][] = [
     [t("settings.version"), document.getElementById("version")?.textContent ?? ""],

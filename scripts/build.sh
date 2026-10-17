@@ -94,6 +94,9 @@ main() {
 	echo "$VERSION" >"$INC/etc/rebootera/version"
 	if [ "$DEBUG" = "1" ]; then
 		touch "$INC/etc/rebootera/debug"
+		# * Solo en depuración: un punto de acceso virtual para probar Wi-Fi
+		# * con radios simuladas (mac80211_hwsim).
+		printf 'hostapd\ndnsmasq-base\nstrace\n' >"$LIVE/config/package-lists/debug.list.chroot"
 	fi
 
 	log "Generando los gráficos de arranque"
@@ -104,7 +107,7 @@ main() {
 	# ! dentro de la imagen se dejan los permisos normales de un sistema Debian.
 	find "$INC" -type d -exec chmod 0755 {} +
 	find "$INC" -type f -exec chmod 0644 {} +
-	chmod 0755 "$INC/usr/lib/rebootera/rebootera-core" "$INC/usr/lib/rebootera/rebootera-agent" "$INC/usr/bin/rebootera-shell"
+	chmod 0755 "$INC/usr/lib/rebootera/rebootera-core" "$INC/usr/lib/rebootera/rebootera-agent" "$INC/usr/bin/rebootera-shell" "$INC/usr/lib/rebootera/start-kiosk"
 	find "$LIVE/config/hooks" -type f -exec chmod 0755 {} +
 	chmod 0755 "$LIVE/auto/config"
 

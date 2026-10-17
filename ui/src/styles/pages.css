@@ -1156,3 +1156,140 @@
   color: var(--danger);
   font-size: 12.5px;
 }
+
+/* Wi-Fi (Ajustes) */
+
+.wifi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wifi-status,
+.wifi-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wifi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.wifi-row {
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wifi-row:hover:not(:disabled) {
+  background: var(--panel-hover);
+  border-color: var(--accent-border);
+}
+
+.wifi-row:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wifi-active {
+  border-color: var(--accent-border);
+}
+
+.wifi-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wifi-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 420px;
+}
+
+/* Respuestas del instalador (asistente) */
+
+.answers-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.field-hint {
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+select.text-input {
+  font-family: var(--font);
+}
+
+.option-block {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.option-block:first-child {
+  border-top: 0;
+}
+
+.option-block .confirm-row {
+  margin: 0 0 6px;
+}
+
+.driver-match {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.driver-match:last-child {
+  border-bottom: 0;
+}
+
+/* Títulos de grupo dentro de un panel (Crear USB: tu USB / USB nuevo). */
+.group-title {
+  margin: 18px 0 4px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.group-title:first-child {
+  margin-top: 0;
+}
+
+.group-title + .small-note {
+  margin: 0 0 10px;
+}

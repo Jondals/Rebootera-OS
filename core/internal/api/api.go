@@ -13,6 +13,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -98,6 +99,8 @@ func (s *Server) Handler() http.Handler {
 		// * Solo Rebootera OS tiene agente: energía y registro del kernel.
 		mux.Handle("GET /api/logs/kernel", s.requireSession(http.HandlerFunc(s.handleKernelLog)))
 		mux.Handle("POST /api/power", s.requireSession(s.requireCSRF(http.HandlerFunc(s.handlePower))))
+		s.registerWifi(mux)
+		s.registerKeyboard(mux)
 	} else {
 		s.registerDesktop(mux)
 	}
@@ -195,8 +198,16 @@ func (s *Server) handleAuth(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	})
+	// * "route" (solo pruebas) abre la interfaz en una sección; solo se admiten letras.
+	if route := r.URL.Query().Get("route"); routePattern.MatchString(route) {
+		http.Redirect(w, r, "/#/"+route, http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+// routePattern es lo único que se acepta como nombre de sección en /auth.
+var routePattern = regexp.MustCompile(`^[a-z]{1,12}$`)
 
 // * handleVersion devuelve la versión de Rebootera OS.
 func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {

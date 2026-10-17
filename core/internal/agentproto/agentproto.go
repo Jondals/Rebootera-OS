@@ -25,13 +25,46 @@ const (
 	// * Montan o desmontan en solo lectura una partición para importar imágenes.
 	OpMediaMount   = "media.mount"
 	OpMediaUnmount = "media.unmount"
+	// * Wi-Fi: estado del adaptador, búsqueda de redes, conexión y desconexión.
+	// * Arranque UEFI de una sola vez: USB el último del orden y BootNext; restauración.
+	OpBootOnce       = "boot.once"
+	OpBootRestore    = "boot.restore"
+	OpWifiStatus     = "wifi.status"
+	OpWifiScan       = "wifi.scan"
+	OpWifiConnect    = "wifi.connect"
+	OpWifiDisconnect = "wifi.disconnect"
+	// * Teclado del kiosco: consultar la distribución y cambiarla (reinicia la interfaz).
+	OpKeyboardGet = "keyboard.get"
+	OpKeyboardSet = "keyboard.set"
 )
+
+// DefaultKeyboard es la distribución con la que arranca la interfaz.
+const DefaultKeyboard = "es"
+
+// KeyboardLayouts es la lista cerrada de distribuciones que acepta el agente.
+var KeyboardLayouts = []string{"es", "us", "gb", "de", "fr", "it", "pt"}
+
+// * ValidKeyboard indica si una distribución está en la lista cerrada.
+func ValidKeyboard(layout string) bool {
+	for _, known := range KeyboardLayouts {
+		if known == layout {
+			return true
+		}
+	}
+	return false
+}
 
 // Request es una petición al agente. Device solo lo usan las operaciones de
 // medios y el agente lo valida antes de usarlo.
 type Request struct {
 	Op     string `json:"op"`
 	Device string `json:"device,omitempty"`
+	// SSID, Password y Hidden solo los usa wifi.connect. La contraseña nunca se registra.
+	SSID     string `json:"ssid,omitempty"`
+	Password string `json:"password,omitempty"`
+	Hidden   bool   `json:"hidden,omitempty"`
+	// Layout solo lo usa keyboard.set y el agente lo valida contra KeyboardLayouts.
+	Layout string `json:"layout,omitempty"`
 }
 
 // Response es la respuesta del agente. Lines solo se rellena en las
@@ -61,7 +94,7 @@ func Send(request Request) ([]string, error) {
 		return nil, fmt.Errorf("no se pudo contactar con el agente: %w", err)
 	}
 	defer conn.Close()
-	conn.SetDeadline(time.Now().Add(30 * time.Second))
+	conn.SetDeadline(time.Now().Add(Deadline(request.Op)))
 
 	if err := json.NewEncoder(conn).Encode(request); err != nil {
 		return nil, fmt.Errorf("no se pudo enviar la petición al agente: %w", err)
@@ -74,4 +107,16 @@ func Send(request Request) ([]string, error) {
 		return nil, errors.New(resp.Error)
 	}
 	return resp.Lines, nil
+}
+
+// * Deadline es el tiempo máximo de una operación: conectar a una red Wi-Fi
+// * puede tardar casi un minuto (autenticación, DHCP); el resto, segundos.
+func Deadline(op string) time.Duration {
+	switch op {
+	case OpWifiConnect:
+		return 90 * time.Second
+	case OpWifiScan:
+		return 45 * time.Second
+	}
+	return 30 * time.Second
 }

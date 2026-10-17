@@ -18,8 +18,12 @@ import (
 
 // fakeAgent simula el agente y registra las operaciones recibidas.
 type fakeAgent struct {
-	ops  []string
-	fail bool
+	ops []string
+	// replies fija la respuesta de una operación; sent guarda las peticiones; errs fuerza errores por operación.
+	replies map[string][]string
+	sent    []agentproto.Request
+	errs    map[string]error
+	fail    bool
 }
 
 // * Call simula una operación del agente.
@@ -36,11 +40,18 @@ func (f *fakeAgent) Query(op string) ([]string, error) {
 	if err := f.Call(op); err != nil {
 		return nil, err
 	}
+	if lines, ok := f.replies[op]; ok {
+		return lines, nil
+	}
 	return []string{"[    0.000000] Linux version de prueba"}, nil
 }
 
 // * Send simula una petición con dispositivo.
 func (f *fakeAgent) Send(request agentproto.Request) ([]string, error) {
+	f.sent = append(f.sent, request)
+	if err, ok := f.errs[request.Op]; ok {
+		return nil, err
+	}
 	return nil, f.Call(request.Op)
 }
 

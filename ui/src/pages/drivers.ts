@@ -1,10 +1,11 @@
 // * Página "Asistente de drivers": inventario real de dispositivos PCI y USB
 // * con el driver que usa Linux y sus Hardware ID de Windows. Filtra por
 // * dispositivos necesarios para instalar y por dispositivos sin driver.
-// TODO: casar los Hardware ID con paquetes INF del Vault (hito 5).
+// * También casa esos Hardware ID con los paquetes INF de la carpeta drivers/
+// * del USB de Rebootera (los que el asistente puede llevar al instalador de Windows).
 
-import type { Device } from "../api.js";
-import { badge, button, emptyState, pageHeader } from "../components.js";
+import { getJSON, type Device, type DriverMatch, type DriverPlan } from "../api.js";
+import { badge, button, emptyState, pageHeader, panel } from "../components.js";
 import { el, icon } from "../dom.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
@@ -31,10 +32,84 @@ const CATEGORY_ICONS: Record<string, string> = {
 let filter: Filter = "all";
 let list: HTMLElement | null = null;
 let tabs: HTMLElement | null = null;
+let usbBox: HTMLElement | null = null;
+let plan: DriverPlan | null = null;
+
+/** Pide el casado de drivers del USB con este equipo. */
+async function loadPlan(): Promise<void> {
+  try {
+    plan = await getJSON<DriverPlan>("/api/drivers/plan");
+  } catch {
+    plan = null;
+  }
+  drawUsb();
+}
+
+/** Fila de un dispositivo con su paquete de drivers. */
+function packageRow(match: DriverMatch): HTMLElement {
+  const pack = match.package;
+  return el("article", { class: "driver-match" }, [
+    el("div", {}, [
+      el("strong", {}, [match.name || match.vendor || match.address]),
+      el("div", { class: "mono-small muted" }, [
+        pack ? pack.inf + " · " + pack.provider + " " + pack.version + " · " + pack.date : "",
+      ]),
+      el("div", { class: "mono-small muted" }, [
+        t("drivers.usbMatchedBy", { id: match.hardwareId }),
+      ]),
+    ]),
+    pack
+      ? badge(
+          t("wizard.driversSig" + pack.signature.charAt(0).toUpperCase() + pack.signature.slice(1)),
+          pack.signature === "present" ? "ok" : pack.signature === "invalid" ? "danger" : "warn",
+        )
+      : null,
+  ]);
+}
+
+/** Fila de un dispositivo crítico sin paquete. */
+function missingPackageRow(match: DriverMatch): HTMLElement {
+  return el("article", { class: "driver-match" }, [
+    el("span", {}, [match.name || match.vendor || match.address]),
+    badge(t("drivers.noDriver"), "warn"),
+  ]);
+}
+
+/** Dibuja el panel de drivers de Windows del USB. */
+function drawUsb(): void {
+  if (usbBox === null || !usbBox.isConnected) {
+    return;
+  }
+  const body: (Node | null)[] = [];
+  if (plan === null) {
+    body.push(el("p", { class: "muted" }, [t("common.loading")]));
+  } else if (!plan.available) {
+    body.push(el("p", { class: "muted" }, [t("drivers.usbNoVault")]));
+  } else {
+    body.push(
+      el("p", { class: "muted small-note" }, [t("drivers.usbPackages", { n: plan.packages })]),
+    );
+    if (plan.matches.length > 0) {
+      body.push(...plan.matches.map(packageRow));
+    } else {
+      body.push(el("p", { class: "muted" }, [t("drivers.usbNone")]));
+    }
+    if (plan.missing.length > 0) {
+      body.push(
+        el("strong", {}, [t("drivers.usbMissing")]),
+        ...plan.missing.map(missingPackageRow),
+      );
+    }
+  }
+  usbBox.replaceChildren(
+    panel(t("drivers.usbTitle"), body, { subtitle: t("drivers.usbText"), iconPaths: icons.usb }),
+  );
+}
 
 /** Vuelve a analizar el hardware. */
 function rescan(): void {
   scanHardware();
+  loadPlan();
 }
 
 /** Cambia el filtro activo según el botón pulsado. */
@@ -58,11 +133,15 @@ function matches(device: Device): boolean {
 function render(root: HTMLElement): void {
   tabs = el("div", { class: "segmented", role: "tablist" });
   list = el("div", { class: "device-list" });
+  usbBox = el("div", {});
+  plan = null;
+  loadPlan();
   root.append(
     el("div", { class: "page" }, [
       pageHeader(t("drivers.title"), t("drivers.subtitle"), [
         button(t("common.rescan"), rescan, { iconPaths: icons.refresh }),
       ]),
+      usbBox,
       tabs,
       list,
     ]),

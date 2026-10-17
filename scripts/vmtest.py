@@ -52,8 +52,8 @@ class VM:
             "qemu-system-x86_64",
             "-enable-kvm",
             "-cpu", "host",
-            "-smp", "4",
-            "-m", "4096",
+            "-smp", os.environ.get("VMTEST_SMP", "4"),
+            "-m", os.environ.get("VMTEST_MEM", "4096"),
             "-vga", "std",
             "-display", "none",
             "-nic", "user,model=virtio-net-pci",
@@ -73,7 +73,15 @@ class VM:
                 "-device", "usb-storage,bus=xhci.0,drive=stick,bootindex=0",
             ]
         else:
-            cmd += ["-cdrom", iso, "-boot", "d"]
+            if os.environ.get("VMTEST_CD", "ide") == "scsi":
+                # * El CD virtual por virtio-scsi lee la ISO mucho más rápido que el IDE emulado.
+                cmd += [
+                    "-device", "virtio-scsi-pci,id=scsi0",
+                    "-drive", "if=none,id=cd0,media=cdrom,readonly=on,file=%s" % iso,
+                    "-device", "scsi-cd,drive=cd0,bootindex=0",
+                ]
+            else:
+                cmd += ["-cdrom", iso, "-boot", "d"]
         if os.environ.get("VMTEST_DISK"):
             # * Disco interno opcional para probar la detección de discos.
             # ! snapshot=on: la VM nunca escribe en el disco de prueba original.
@@ -389,7 +397,7 @@ def main():
             # Modo de diagnóstico: ejecuta las órdenes indicadas y muestra su salida.
             for command in sys.argv[sys.argv.index("--exec") + 1:]:
                 print("$ " + command)
-                print(vm.run(command, timeout=120))
+                print(vm.run(command, timeout=int(os.environ.get("VMTEST_EXEC_TIMEOUT", "120"))))
             vm.screenshot("diagnostico")
             return 0
         test_system(vm, checks)

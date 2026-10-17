@@ -15,12 +15,13 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 | **Boots anywhere** | BIOS and UEFI, with Secure Boot through Debian's signed shim. Own boot menu, boot splash and animated intro. |
 | **Overview** | Live hardware profile: computer, internal disks and their partitions, boot media, Secure Boot and TPM, temperatures, network throughput and kernel log. |
 | **OS Library** | Images stored on the USB, grouped by category, with SHA-256 integrity checks. A damaged image is never offered for installation. |
-| **Download Center** | Official images (Ubuntu, Debian, Fedora, Arch Linux, Alpine). The file and its checksum are resolved from the official checksum index over HTTPS; downloads resume after interruptions and only reach the library when the checksum matches. |
+| **Download Center** | Official images (Ubuntu, Debian, Fedora, Arch Linux, Alpine). The file and its checksum are resolved from the official checksum index over HTTPS; downloads resume after interruptions and only reach the library when the checksum matches. For Ubuntu, Debian and Fedora the checksum list is also verified with the project's official GPG key before anything is downloaded; for Arch Linux and Alpine, which sign each ISO, the image's own signature is verified once it is downloaded. |
 | **Add images** | From another USB or disk (opened read-only) or, from Windows, with Rebootera Desktop. Any `.iso` copied to the `isos` folder also appears. |
-| **Installation Wizard** | Requirement check (UEFI, Secure Boot, TPM 2.0, memory, disk), critical drivers and target disk, then starts the original installer through the boot menu. |
-| **Driver Assistant** | Every PCI and USB device, the Linux driver in use and the Windows hardware IDs, highlighting what the installer needs (storage and network). |
+| **Installation Wizard** | Requirement check (UEFI, Secure Boot, TPM 2.0, memory, disk), critical drivers and target disk, then starts the original installer through the boot menu. Optional: answer language, time zone and user account automatically (Windows and Debian; the disk is always chosen by you), take matching drivers to the Windows installer, skip the Windows 11 requirement check, and start the installer only once (UEFI). |
+| **Driver Assistant** | Every PCI and USB device, the Linux driver in use and the Windows hardware IDs, highlighting what the installer needs (storage and network). It also matches those hardware IDs against the Windows driver packages (`.inf`) in the `drivers/` folder of the USB. |
+| **Wi-Fi** | Connect the live session to a wireless network from Settings (WPA2/WPA3 and open networks, also hidden ones). |
 | **USB & Storage** | Disks and partitions with their role and usage. **Safe Disk Guard**: internal disks and the Rebootera USB are protected and only read. |
-| **Rebootera Desktop** | Windows app: detect the USB, add images, download, update Rebootera OS (keeping the previous version as a fallback) and create a new Rebootera USB. |
+| **Rebootera Desktop** | Windows app with a single **Create USB** option: it builds a new Rebootera USB or updates the one you have (without erasing it), downloading the latest Rebootera OS for you, and puts your images (for example a Windows 11 LTSC ISO) and driver folders on it in the same step, so nothing has to be moved by hand. Overview and Driver Assistant show and manage what the USB carries. It also downloads official images even without a USB: they are saved in the `Rebootera` folder of your user. |
 | **Languages** | English and Spanish. |
 
 | | |
@@ -30,12 +31,14 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 
 ## Getting a Rebootera USB
 
-**From Windows** — run `Rebootera Desktop.exe`, open **Create USB**, choose the Rebootera OS image (`rebootera-os-…-amd64.iso`) and the USB drive, and type the confirmation. Windows asks for administrator permission to prepare the drive. Everything on the chosen drive is erased; disks that contain data are clearly marked.
+**Download:** the website (GitHub Pages of this repository) always offers the latest build: `Rebootera-Desktop.exe` for Windows and `rebootera-os-amd64.iso`. Both are rebuilt on every push to `master` and published in the [`latest` release](https://github.com/Jondals/Rebootera-OS/releases/tag/latest).
+
+**From Windows** — run `Rebootera Desktop.exe` and open **Create USB** (it is the first option). Choose where Rebootera OS comes from — *download the latest version* (recommended, checked against its published SHA-256 before anything is erased) or *use a Rebootera ISO from this PC* — then the USB drive, and type the confirmation. Windows asks for administrator permission to prepare the drive. Everything on the chosen drive is erased; disks that contain data are clearly marked. Before confirming you can **add images and driver folders** (your Windows 11 LTSC, a Linux, your network drivers): they are copied in the same step. If you already have a Rebootera USB, choose it in the list instead: nothing is erased, Rebootera OS can be updated and what you add is copied.
 
 **From Linux** — as root:
 
 ```bash
-scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.2.0-amd64.iso
+scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.5.0-amd64.iso
 ```
 
 The script refuses non-removable disks and the system disk.
@@ -49,6 +52,8 @@ The script refuses non-removable disks and the system disk.
 3. Rebootera OS starts after a few seconds.
 
 With Secure Boot enabled, the first start on each computer shows a blue MokManager screen to enroll the boot menu key: choose **Enroll key from disk**, open the **VTOYEFI** drive, select `ENROLL_THIS_KEY_IN_MOKMANAGER.cer`, confirm and reboot. This happens once per computer.
+
+> **Security trade-off:** Ventoy's policy 1 (which refuses images without a verified signature) does not let Linux start with Secure Boot, so Rebootera uses policy 0. Once you enroll the key, that computer will also start images whose signature has not been checked. Enroll it only on computers you trust, and remove it from MokManager (**Delete MOK**) when you no longer need it.
 
 ### What is on the USB
 
@@ -69,10 +74,17 @@ REBOOTERA (exFAT)
 - The interface has no privileges. **Rebootera Core** runs as an unprivileged user and serves its API only on `127.0.0.1`, protected by a per-boot token, a Host check, an anti-CSRF header and a strict Content Security Policy.
 - Only **Rebootera Agent** runs as root, and it accepts a closed list of operations from Core's user only (checked through the socket credentials).
 - Other drives are always opened **read-only**, without replaying file system journals.
-- Downloads come only from official sources over HTTPS and are checked against the official SHA-256 before they reach the library.
-- The boot menu does not silently disable security: Ventoy's Secure Boot policy is enforced and the Windows 11 requirement bypasses are off.
+- Downloads come only from official sources over HTTPS and are checked against the official SHA-256 before they reach the library. Where the project signs its checksum list (Ubuntu, Debian, Fedora), the OpenPGP signature is verified against the project's pinned key first, and the download is refused if it does not match; where it signs each ISO (Arch Linux, Alpine), the image is verified after downloading and deleted if the signature does not match.
+- Wi-Fi passwords never appear on a command line: they go to a root-only (0600) NetworkManager profile that disappears when you disconnect or shut down.
+- The files that answer the installer (including an encoded password) live on the USB only until Rebootera starts again, and are then deleted.
+- The boot menu does not hide its security trade-off: with Secure Boot, enrolling Ventoy's key lets that computer start images without a verified signature (the interface and this README say so), and the Windows 11 requirement bypasses are off.
 
 Known limitations are listed in [docs/LIMITACIONES.md](docs/LIMITACIONES.md) (Spanish).
+
+## Website and automatic builds
+
+- `site/` is the landing page (plain HTML, English and Spanish). `.github/workflows/pages.yml` publishes it to GitHub Pages; in the repository settings, **Pages → Source** must be set to *GitHub Actions* once.
+- `.github/workflows/build.yml` builds the ISO and `Rebootera-Desktop.exe` inside a Debian 13 container on every push to `master` and replaces the `latest` release with them. The page reads the version, date and SHA-256 of that release, and Rebootera Desktop downloads the ISO from it. The first build only exists after the first push.
 
 ## Building
 
@@ -132,8 +144,13 @@ pnpm run build
 | --- | --- |
 | `go test ./...` (in `core/`) | API protections, storage and hardware inventory, catalog resolvers, downloads (resume, checksum mismatch), library, boot selection, desktop kit |
 | `go test -tags online ./internal/catalog/` | Every catalog entry against the real official sources |
+| `scripts/test-all.sh [--quick] [--no-build]` | **Everything at once**: builds both ISOs and runs every VM test in parallel (three 1.5 GB VMs at a time). About 8 minutes of tests; `--quick` boots the two ISOs in 1 minute |
+| `scripts/cpu-probe.py URL` | Idle CPU of each interface page with the same WebKitGTK as the image (catches endless animations) |
 | `scripts/vmtest.py MODE ISO OUT` | Boots the ISO in QEMU/KVM (`uefi`, `uefi-sb`, `bios`): services, isolation, permissions, Secure Boot, interface screenshots, power off from the interface |
 | `scripts/vmtest-usb.py MODE USB.img DISK.qcow2 OUT` | End-to-end Rebootera USB: Vault, real download, import from another disk, settings, boot of the chosen image and persistence after reboot |
+| `scripts/vmtest-v03.py USB.img OUT` | 0.3.0 features end to end: GPG-verified download, driver matching with real virtio-win INF files, Wi-Fi with simulated radios and a virtual access point, Debian preseed with boot-once, Windows preparation and cleanup |
+| `scripts/test-desktop-windows.ps1` | Windows only: runs the real `Rebootera Desktop.exe` against a **fake** USB (a temporary folder) and checks that the image and drivers are copied byte for byte, the system is untouched and bad requests are refused |
+| `scripts/vmtest-interactive.py MODE IMG OUT` | Drives a VM from outside (keys, clicks, screenshots), for example to walk through MokManager |
 | `scripts/ui-preview.py URL OUT` | Interface screenshots with the same WebKitGTK as the image |
 
 Results are recorded in [docs/PRUEBAS.md](docs/PRUEBAS.md) (Spanish).

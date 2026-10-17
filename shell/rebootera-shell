@@ -6,6 +6,7 @@
 # * interfaz local, desactiva el menú contextual y las herramientas de
 # * desarrollo, y recarga la interfaz si su proceso se cierra inesperadamente.
 
+import os
 import sys
 import urllib.request
 
@@ -65,6 +66,18 @@ class Shell:
         settings.set_javascript_can_open_windows_automatically(False)
         settings.set_enable_back_forward_navigation_gestures(False)
         self.view.set_background_color(_rgba(BACKGROUND))
+        # * Si start-kiosk dice que se dibuja por software, la página lo sabe desde el
+        # * principio (window.REBOOTERA_LITE) y entra en modo ligero.
+        if os.environ.get("REBOOTERA_LITE") == "1":
+            self.view.get_user_content_manager().add_script(
+                WebKit.UserScript.new(
+                    "window.REBOOTERA_LITE = true;",
+                    WebKit.UserContentInjectedFrames.TOP_FRAME,
+                    WebKit.UserScriptInjectionTime.START,
+                    None,
+                    None,
+                )
+            )
         self.view.connect("decide-policy", self.on_decide_policy)
         self.view.connect("context-menu", self.on_context_menu)
         self.view.connect("web-process-terminated", self.on_web_process_terminated)

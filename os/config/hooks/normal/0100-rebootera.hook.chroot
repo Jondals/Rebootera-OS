@@ -58,4 +58,19 @@ ExecStart=
 ExecStart=-/sbin/agetty --autologin root --noclear --keep-baud 115200,57600,38400,9600 %I $TERM
 EOF
 	systemctl enable serial-getty@ttyS0.service
+	# * Diagnóstico gráfico: a los 40 s vuelca por serie el estado de la
+	# * interfaz, del kernel y de la GPU (útil en hipervisores sin captura).
+	cat >/etc/systemd/system/rebootera-diag.service <<'EOF'
+[Unit]
+Description=Rebootera diagnóstico gráfico (solo depuración)
+After=rebootera-ui.service
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c 'sleep 40; { echo "=====DIAG"; systemctl --no-pager status rebootera-ui rebootera-core | cut -c1-160; journalctl -u rebootera-ui --no-pager | tail -50 | cut -c1-200; echo "--dri"; ls -l /dev/dri; echo "--gpu"; lspci -nn | grep -iE "vga|display"; dmesg | grep -iE "drm|svga|vbox|vmwgfx|simpledrm|efifb|framebuffer" | tail -20 | cut -c1-180; echo "=====FIN"; } >/dev/ttyS0 2>&1'
+
+[Install]
+WantedBy=multi-user.target
+EOF
+	systemctl enable rebootera-diag.service
 fi

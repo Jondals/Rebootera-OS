@@ -22,16 +22,19 @@
   min-width: 0;
 }
 
+/* Marca y versión: pie sencillo del menú lateral */
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 6px 18px;
+  margin-top: 6px;
+  padding: 14px 8px 2px;
+  border-top: 1px solid var(--border);
 }
 
 .brand img {
-  border-radius: 10px;
-  box-shadow: 0 0 18px var(--accent-glow);
+  border-radius: 8px;
+  box-shadow: 0 0 14px var(--accent-glow);
 }
 
 .brand-text {
@@ -43,7 +46,7 @@
 
 .brand-name {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .brand-version {
@@ -200,7 +203,7 @@ main:focus-visible {
   }
   .brand {
     justify-content: center;
-    padding: 4px 0 18px;
+    padding: 14px 0 2px;
   }
   .nav-item {
     justify-content: center;
@@ -221,4 +224,9 @@ main:focus-visible {
   .chip-boot span:not(.pulse-dot) {
     display: none;
   }
+}
+
+/* El indicador de red abre Ajustes (donde está el Wi-Fi) */
+html:not([data-mode="desktop"]) #net-chip {
+  cursor: pointer;
 }

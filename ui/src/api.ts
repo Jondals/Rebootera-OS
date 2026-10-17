@@ -199,7 +199,7 @@ export interface CatalogEntry {
   arch: string;
   category: "windows" | "linux" | "tools";
   homepage: string;
-  resolver: { type: string };
+  resolver: { type: string; signature?: { type: string }; isoSignature?: { type: string } };
   secureBoot: "signed" | "unsigned" | "unknown";
   notes: Record<string, string>;
   inLibrary: boolean;
@@ -232,4 +232,63 @@ export interface BrowseEntry {
   path: string;
   dir: boolean;
   sizeBytes: number;
+}
+
+/** Paquete de drivers de Windows de /api/drivers/plan. */
+export interface DriverPackage {
+  dir: string;
+  inf: string;
+  provider: string;
+  class: string;
+  version: string;
+  date: string;
+  catalog: string;
+  signature: "present" | "missing" | "invalid";
+}
+
+/** Dispositivo con su paquete de drivers (o sin él). */
+export interface DriverMatch {
+  address: string;
+  name: string;
+  vendor: string;
+  category: string;
+  critical: boolean;
+  hardwareId: string;
+  specific: boolean;
+  description: string;
+  package: DriverPackage | null;
+}
+
+/** Casado de los drivers del Vault con el hardware. */
+export interface DriverPlan {
+  available: boolean;
+  packages: number;
+  matches: DriverMatch[];
+  missing: DriverMatch[];
+}
+
+/** Estado del adaptador Wi-Fi de /api/wifi. */
+export interface WifiStatus {
+  adapter: boolean;
+  device: string;
+  state: string;
+  connection: string;
+  enabled: boolean;
+}
+
+/** Red Wi-Fi de /api/wifi/scan. */
+export interface WifiNetwork {
+  ssid: string;
+  signal: number;
+  security: "open" | "wpa" | "wpa3" | "enterprise" | "unsupported";
+  inUse: boolean;
+}
+
+/** Respuestas automáticas del instalador (idioma, zona horaria y cuenta). */
+export interface Unattended {
+  language: string;
+  timeZone: string;
+  userName: string;
+  fullName: string;
+  password: string;
 }

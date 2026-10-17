@@ -106,6 +106,7 @@ func (a *agent) serve(conn *net.UnixConn) {
 		json.NewEncoder(conn).Encode(agentproto.Response{Error: "petición no válida"})
 		return
 	}
+	conn.SetDeadline(time.Now().Add(agentproto.Deadline(req.Op)))
 	lines, err := a.handle(req)
 	if err != nil {
 		log.Printf("%s: %v", req.Op, err)
@@ -133,6 +134,22 @@ func (a *agent) handle(req agentproto.Request) ([]string, error) {
 		return nil, mountMedia(req.Device, a.clientUser)
 	case agentproto.OpMediaUnmount:
 		return nil, unmountMedia(req.Device)
+	case agentproto.OpBootOnce:
+		return bootOnce()
+	case agentproto.OpBootRestore:
+		return bootRestore()
+	case agentproto.OpWifiStatus:
+		return wifiStatus()
+	case agentproto.OpWifiScan:
+		return wifiScan()
+	case agentproto.OpWifiConnect:
+		return nil, wifiConnect(req.SSID, req.Password, req.Hidden)
+	case agentproto.OpWifiDisconnect:
+		return nil, wifiDisconnect()
+	case agentproto.OpKeyboardGet:
+		return keyboardGet()
+	case agentproto.OpKeyboardSet:
+		return nil, keyboardSet(req.Layout)
 	}
 	return nil, fmt.Errorf("operación no admitida: %q", req.Op)
 }
@@ -140,13 +157,13 @@ func (a *agent) handle(req agentproto.Request) ([]string, error) {
 // * isStateChanging indica si una operación cambia el sistema y debe quedar
 // * registrada. Las consultas periódicas no se registran para no llenar el diario.
 func isStateChanging(op string) bool {
-	return op != agentproto.OpPing && op != agentproto.OpKernelLog
+	return op != agentproto.OpPing && op != agentproto.OpKernelLog && op != agentproto.OpWifiStatus && op != agentproto.OpWifiScan && op != agentproto.OpKeyboardGet
 }
 
 // * kernelLog devuelve las últimas líneas del registro del kernel de este
 // * arranque, sin las que contienen números de serie.
 func kernelLog() ([]string, error) {
-	out, err := exec.Command("journalctl", "--kernel", "--boot", "--no-pager", "--quiet",
+	out, err := exec.Command("journalctl", "--dmesg", "--boot", "--no-pager", "--quiet",
 		"--output=short-monotonic", "--lines="+strconv.Itoa(kernelLogLines)).Output()
 	if err != nil {
 		return nil, fmt.Errorf("no se pudo leer el registro del kernel: %w", err)

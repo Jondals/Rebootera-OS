@@ -9,16 +9,6 @@ import (
 	"io/fs"
 )
 
-// CreateStatus es el estado de una creación en curso.
-type CreateStatus struct {
-	Running  bool    `json:"running"`
-	Phase    string  `json:"phase"`
-	Progress float64 `json:"progress"`
-	Error    string  `json:"error,omitempty"`
-	Done     bool    `json:"done"`
-	Drive    string  `json:"drive,omitempty"`
-}
-
 // USBDisk es un disco físico conectado por USB.
 type USBDisk struct {
 	Number       int    `json:"number"`
@@ -29,13 +19,8 @@ type USBDisk struct {
 // ErrUnsupported indica una función que solo existe en Windows.
 var ErrUnsupported = errors.New("solo disponible en Windows; en Linux usa scripts/make-usb.sh")
 
-// * Status devuelve un estado vacío.
-func Status() CreateStatus {
-	return CreateStatus{}
-}
-
 // * Create no está disponible fuera de Windows.
-func Create(int, string, fs.FS, string) error {
+func Create(int, string, fs.FS, string, Extras) error {
 	return ErrUnsupported
 }
 
@@ -51,5 +36,15 @@ func PickFile(string) (string, error) {
 
 // * PrepareVentoy no está disponible fuera de Windows.
 func PrepareVentoy() (string, error) {
+	return "", ErrUnsupported
+}
+
+// * PickFiles no está disponible fuera de Windows.
+func PickFiles(string) ([]string, error) {
+	return nil, ErrUnsupported
+}
+
+// * PickFolder no está disponible fuera de Windows.
+func PickFolder(string) (string, error) {
 	return "", ErrUnsupported
 }

@@ -44,6 +44,8 @@ func main() {
 	// ! -url-file solo sirve para pruebas automáticas: escribe la dirección
 	// ! (con su token) en un archivo que elige quien lanza la aplicación.
 	urlFile := flag.String("url-file", "", "archivo donde escribir la dirección local (pruebas)")
+	route := flag.String("route", "", "sección con la que se abre la interfaz (pruebas)")
+	usbRoot := flag.String("usb-root", "", "carpeta que se trata como USB de Rebootera (pruebas)")
 	prepare := flag.Bool("prepare-ventoy", false, "solo descarga y verifica Ventoy (no toca ningún disco)")
 	flag.Parse()
 	setupLog()
@@ -65,11 +67,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// * Sin USB elegido, el Vault apunta a una ruta que no existe.
-	vault.Root = filepath.Join(os.TempDir(), "rebootera-no-usb")
-	if drives := desktop.RebooteraDrives(); len(drives) == 1 {
+	// * Sin USB de Rebootera, las imágenes se guardan en la carpeta "Rebootera"
+	// * del usuario: descargar sistemas funciona aunque aún no haya USB.
+	if *usbRoot != "" && desktop.IsRebootera(*usbRoot) {
+		vault.Root = *usbRoot
+		log.Printf("USB de Rebootera de pruebas en %s", vault.Root)
+	} else if drives := desktop.RebooteraDrives(); len(drives) == 1 {
 		vault.Root = drives[0].Root
 		log.Printf("USB de Rebootera detectado en %s", vault.Root)
+	} else if local, err := desktop.LocalLibrary(); err == nil {
+		vault.Root, vault.Local = local, true
+		log.Printf("sin USB de Rebootera: biblioteca local en %s", local)
+	} else {
+		vault.Root = filepath.Join(os.TempDir(), "rebootera-no-usb")
+		log.Printf("no se pudo preparar la biblioteca local: %v", err)
 	}
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -96,6 +107,9 @@ func main() {
 	go server.Serve(listener)
 
 	url := "http://127.0.0.1:" + port + "/auth?token=" + token
+	if *route != "" {
+		url += "&route=" + *route
+	}
 	log.Printf("Rebootera Desktop %s en http://127.0.0.1:%s", version.Version, port)
 	if *urlFile != "" {
 		os.WriteFile(*urlFile, []byte(url), 0o600)

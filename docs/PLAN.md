@@ -82,7 +82,7 @@ Principios que guían la arquitectura:
 **Decisión: Ventoy como motor multiboot**, con estas condiciones obligatorias:
 
 1. Se descarga la versión publicada, se comprueba su SHA-256 contra el publicado por el proyecto y se guarda el código fuente correspondiente junto a la imagen (obligación GPLv3). Ha habido críticas públicas por los binarios precompilados del repositorio de Ventoy; queda como riesgo y se estudiará compilarlo desde el código fuente.
-2. `VTOY_SECURE_BOOT_POLICY` a `1`: por defecto Ventoy deja arrancar cualquier EFI sin comprobar la firma una vez inscrita su clave. Rebootera no puede desactivar Secure Boot en silencio.
+2. `VTOY_SECURE_BOOT_POLICY` a `0` (decisión revisada en la v0.2, 2026-10-16): la política `1` es la más estricta, pero con ella Ventoy no deja arrancar Linux con Secure Boot. Probada la `0` en VM con UEFI y Secure Boot: tras inscribir la clave arranca Rebootera OS entero. El coste es que, una vez inscrita la clave, ese equipo arranca también imágenes sin firma comprobada; por eso la interfaz y el README avisan y recomiendan inscribirla solo en equipos de confianza (y borrarla con "Delete MOK").
 3. `VTOY_WIN11_BYPASS_CHECK` y `VTOY_WIN11_BYPASS_NRO` a `0`: Ventoy los activa por defecto. Rebootera los ofrecerá solo como opción explícita con su advertencia.
 4. Tema visual propio y alias de menú para que el arranque tenga la identidad de Rebootera.
 
@@ -192,3 +192,27 @@ Rebootera OS/
 | 6 | Integración de drivers en Windows y Linux | Instalación en VM con controlador de almacenamiento que exige driver (por ejemplo virtio-scsi en Windows) |
 | 7 | Rebootera Desktop | Gestiona el USB virtual desde Windows |
 | 8 | Batería de pruebas de arranque, instalación y recuperación | Resultados en PRUEBAS.md |
+
+### Estado de los hitos (v0.4.0)
+
+- **Hitos 1 a 5 y 7: hechos y probados en VM.** El hito 5 se cerró en la v0.3.0: los INF reales de virtio-win (NetKVM, viostor, vioscsi) se casan con los Hardware ID de la VM y la tarjeta de red virtio resulta en `netkvm.inf` por el ID más específico.
+- **Hito 6 (drivers en Windows y Linux): hecho en lo que se puede comprobar sin un instalador de Windows.** Se genera el `.7z` de drivers que Ventoy extrae en `X:\rebootera-drivers`, el `autounattend.xml` con las rutas de drivers (`windowsPE` y `offlineServicing`) y las entradas `injection` y `auto_install` de `ventoy.json`, y todo se limpia al volver a Rebootera. **Falta el criterio final** (instalar Windows en una VM con un controlador de disco que exige driver): no se ha probado con un instalador de Windows real porque no hay una ISO de Windows en el entorno de pruebas y Microsoft no ofrece una descarga directa sin sesión. Los drivers de Linux (firmware de Debian/Ubuntu/Fedora) siguen sin integrarse: cada instalador de Linux ya trae casi todo.
+- **Hito 8:** la batería está en [PRUEBAS.md](PRUEBAS.md) y crece con cada versión.
+
+### Decisiones de la v0.5.0
+
+- **Una sola opción para escribir el USB:** "Mi USB" duplicaba "Crear USB". Crear USB elige entre borrar un disco (confirmación escrita) y actualizar un USB de Rebootera existente (sin borrar), y en los dos casos copia en el mismo paso las imágenes y carpetas de drivers que el usuario elija. El Resumen y el Asistente de drivers del escritorio solo leen y gestionan la carpeta de drivers; nunca escriben el sistema.
+- **Validar antes de tocar:** imágenes, categorías y carpetas de drivers se comprueban antes de borrar o cambiar nada (`desktop.Extras.Validate`). Las copias van a `.part` y se renombran al terminar.
+- **Instalación no destructiva en un USB ajeno (Rufus):** no se hace; queda como idea futura con la opción no destructiva de Ventoy (ver LIMITACIONES).
+
+### Decisiones de la v0.4.0
+
+- **Firma de la ISO (Arch y Alpine):** estos proyectos firman cada imagen con una firma separada (`.sig`/`.asc`). Tras comprobar el SHA-256, `transfers.finish` baja la firma por HTTPS, verifica el archivo en streaming con la clave fijada (Arch `3E80…9A5C`, Alpine `0482…495A`) y borra la descarga si falla. Comprobado con las imágenes reales.
+- **Teclado:** el agente solo acepta una lista cerrada de distribuciones y las escribe en `/run/rebootera/keyboard`; `start-kiosk` lo lee antes de lanzar cage. El cambio mata el kiosco con SIGKILL (cage ignora SIGTERM) y `Restart=always` lo reabre. Core guarda la elección en el Vault y la reaplica al arrancar.
+
+### Decisiones de la v0.3.0
+
+- **Firmas:** el índice de sumas se verifica con OpenPGP (`github.com/ProtonMail/go-crypto`) contra claves incluidas en el programa y fijadas por huella (Debian `DF9B…BE9B`, Ubuntu `8439…1092`, las cuatro claves de Fedora 43 a 46). Las huellas se comprobaron contra las páginas de verificación de cada proyecto. Arch Linux y Alpine solo firman cada ISO, no el índice: en la v0.3.0 no se verificaban; desde la v0.4.0 se verifica la firma de la ISO.
+- **Arranque de una sola vez:** `ventoy_grub.cfg` solo se carga con F6 (se comprobó en el `grub.cfg` de Ventoy 1.1.18), así que no hay forma de hacer "una vez" dentro de Ventoy. Se hace con el firmware: en UEFI el agente reordena `BootOrder` (USB el último) y fija `BootNext`; al volver a Rebootera restaura el orden. Es opcional porque cambia variables NVRAM del firmware.
+- **Respuestas automáticas:** nunca incluyen disco (`DiskConfiguration`, `partman`): el usuario elige siempre el disco. Soportado en Windows (`autounattend.xml`) y Debian (preseed). Ubuntu, Fedora, Arch y Alpine quedan fuera: no se han implementado ni probado (autoinstall y kickstart existen, pero para las ISO de escritorio/live del catálogo no hay un camino probado).
+- **Wi-Fi:** el perfil de NetworkManager se escribe como archivo 0600 (no por `nmcli ... password`), porque los argumentos de un proceso son visibles para el resto del sistema.

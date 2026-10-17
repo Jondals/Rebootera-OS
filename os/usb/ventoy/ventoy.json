@@ -4,7 +4,7 @@
     { "VTOY_MENU_TIMEOUT": "4" },
     { "VTOY_SECONDARY_BOOT_MENU": "0" },
     { "VTOY_DEFAULT_IMAGE": "/rebootera/rebootera-os.iso" },
-    { "VTOY_SECURE_BOOT_POLICY": "1" },
+    { "VTOY_SECURE_BOOT_POLICY": "0" },
     { "VTOY_WIN11_BYPASS_CHECK": "0" },
     { "VTOY_WIN11_BYPASS_NRO": "0" },
     { "VTOY_FILT_DOT_UNDERSCORE_FILE": "1" },

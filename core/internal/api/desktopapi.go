@@ -1,7 +1,7 @@
 // * Endpoints de Rebootera Desktop (la aplicación para Windows y Linux que
 // * gestiona un USB de Rebootera sin arrancar desde él). Solo se registran en
-// * modo escritorio: unidades, elección del USB, añadir imágenes con el
-// * diálogo nativo, actualizar Rebootera OS y crear un USB nuevo (Windows).
+// * modo escritorio: unidades, elección del USB, diálogos nativos, crear un USB
+// * nuevo (Windows) o actualizar uno existente, y los drivers del USB.
 package api
 
 import (
@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
-	"sync"
 
 	"rebootera/core/internal/desktop"
+	"rebootera/core/internal/drivers"
 	"rebootera/core/internal/vault"
 )
 
@@ -22,24 +22,17 @@ const (
 	ModeDesktop = "desktop"
 )
 
-// updateState es el estado de "Actualizar Rebootera OS".
-type updateState struct {
-	mu       sync.Mutex
-	Running  bool    `json:"running"`
-	Progress float64 `json:"progress"`
-	Error    string  `json:"error,omitempty"`
-	Done     bool    `json:"done"`
-}
-
-var update updateState
-
 // * handleMode indica a la interfaz en qué modo y sistema corre Core.
 func (s *Server) handleMode(w http.ResponseWriter, r *http.Request) {
-	selected := ""
+	selected, library := "", ""
 	if s.deps.Mode == ModeDesktop && vault.Available() {
-		selected = vault.Root
+		if vault.Local {
+			library = vault.Root
+		} else {
+			selected = vault.Root
+		}
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"mode": s.mode(), "platform": runtime.GOOS, "usb": selected})
+	writeJSON(w, http.StatusOK, map[string]string{"mode": s.mode(), "platform": runtime.GOOS, "usb": selected, "library": library})
 }
 
 // * mode devuelve el modo con "live" por defecto.
@@ -54,14 +47,18 @@ func (s *Server) mode() string {
 func (s *Server) registerDesktop(mux *http.ServeMux) {
 	mux.Handle("GET /api/desktop/drives", s.requireSession(http.HandlerFunc(s.handleDrives)))
 	mux.Handle("GET /api/desktop/disks", s.requireSession(http.HandlerFunc(s.handleUSBDisks)))
-	mux.Handle("GET /api/desktop/update", s.requireSession(http.HandlerFunc(s.handleUpdateStatus)))
 	mux.Handle("GET /api/desktop/create", s.requireSession(http.HandlerFunc(s.handleCreateStatus)))
+	mux.Handle("GET /api/desktop/drivers", s.requireSession(http.HandlerFunc(s.handleDesktopDrivers)))
 	post := map[string]http.HandlerFunc{
-		"/api/desktop/select": s.handleSelectDrive,
-		"/api/desktop/pick":   s.handlePick,
-		"/api/desktop/add":    s.handleAddImage,
-		"/api/desktop/update": s.handleUpdate,
-		"/api/desktop/create": s.handleCreate,
+		"/api/desktop/select":         s.handleSelectDrive,
+		"/api/desktop/pick":           s.handlePick,
+		"/api/desktop/pick-files":     s.handlePickFiles,
+		"/api/desktop/pick-folder":    s.handlePickFolder,
+		"/api/desktop/add":            s.handleAddImage,
+		"/api/desktop/apply":          s.handleApply,
+		"/api/desktop/create":         s.handleCreate,
+		"/api/desktop/drivers/add":    s.handleDriversAdd,
+		"/api/desktop/drivers/remove": s.handleDriversRemove,
 	}
 	for path, handler := range post {
 		mux.Handle("POST "+path, s.requireSession(s.requireCSRF(handler)))
@@ -97,7 +94,7 @@ func (s *Server) handleSelectDrive(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	vault.Root = req.Root
+	vault.Root, vault.Local = req.Root, false
 	log.Printf("escritorio: USB de Rebootera elegido en %s", req.Root)
 	writeJSON(w, http.StatusOK, map[string]string{"usb": req.Root})
 }
@@ -112,6 +109,30 @@ func (s *Server) handlePick(w http.ResponseWriter, r *http.Request) {
 	var req pickRequest
 	decode(r, &req)
 	path, err := desktop.PickFile(req.Title)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"path": path})
+}
+
+// * handlePickFiles abre el diálogo nativo para elegir varias imágenes.
+func (s *Server) handlePickFiles(w http.ResponseWriter, r *http.Request) {
+	var req pickRequest
+	decode(r, &req)
+	paths, err := desktop.PickFiles(req.Title)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string][]string{"paths": paths})
+}
+
+// * handlePickFolder abre el diálogo nativo para elegir una carpeta de drivers.
+func (s *Server) handlePickFolder(w http.ResponseWriter, r *http.Request) {
+	var req pickRequest
+	decode(r, &req)
+	path, err := desktop.PickFolder(req.Title)
 	if err != nil {
 		fail(w, err)
 		return
@@ -145,64 +166,19 @@ type pathOnlyRequest struct {
 	Path string `json:"path"`
 }
 
-// * handleUpdate instala una versión nueva de Rebootera OS en el USB elegido.
-func (s *Server) handleUpdate(w http.ResponseWriter, r *http.Request) {
-	var req pathOnlyRequest
+// * handleApply actualiza un USB de Rebootera que ya existe (sin borrarlo).
+func (s *Server) handleApply(w http.ResponseWriter, r *http.Request) {
+	var req desktop.ApplyRequest
 	if err := decode(r, &req); err != nil {
 		fail(w, err)
 		return
 	}
-	if !vault.Available() {
-		fail(w, vault.ErrUnavailable)
+	if err := desktop.Apply(req); err != nil {
+		fail(w, err)
 		return
 	}
-	update.mu.Lock()
-	if update.Running {
-		update.mu.Unlock()
-		fail(w, errors.New("ya se está actualizando"))
-		return
-	}
-	update.Running, update.Done, update.Error, update.Progress = true, false, "", 0
-	update.mu.Unlock()
-	job := &updateJob{root: vault.Root, iso: req.Path}
-	go job.run()
+	log.Printf("escritorio: actualizando el USB de Rebootera %s", req.Root)
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": "running"})
-}
-
-// updateJob copia la ISO nueva al USB en segundo plano.
-type updateJob struct {
-	root string
-	iso  string
-}
-
-// * run ejecuta la actualización y deja el estado final.
-func (j *updateJob) run() {
-	err := desktop.InstallSystem(j.root, j.iso, updateProgress)
-	update.mu.Lock()
-	defer update.mu.Unlock()
-	update.Running = false
-	if err != nil {
-		update.Error = err.Error()
-		log.Printf("escritorio: la actualización falló: %v", err)
-		return
-	}
-	update.Done = true
-	update.Progress = 1
-	log.Printf("escritorio: Rebootera OS actualizado en %s", j.root)
-}
-
-// * updateProgress guarda el avance de la copia.
-func updateProgress(fraction float64) {
-	update.mu.Lock()
-	update.Progress = fraction
-	update.mu.Unlock()
-}
-
-// * handleUpdateStatus devuelve el estado de la actualización.
-func (s *Server) handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
-	update.mu.Lock()
-	defer update.mu.Unlock()
-	writeJSON(w, http.StatusOK, map[string]any{"running": update.Running, "progress": update.Progress, "error": update.Error, "done": update.Done})
 }
 
 // * handleUSBDisks lista los discos USB donde se puede crear un USB de Rebootera.
@@ -220,6 +196,8 @@ type createRequest struct {
 	Disk    int    `json:"disk"`
 	ISO     string `json:"iso"`
 	Confirm string `json:"confirm"`
+	// Extras son las imágenes y carpetas de drivers que salen ya dentro del USB.
+	desktop.Extras
 }
 
 // * handleCreate crea un USB de Rebootera nuevo (borra el disco elegido).
@@ -234,7 +212,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		fail(w, errors.New("falta la confirmación explícita del disco que se va a borrar"))
 		return
 	}
-	if err := desktop.Create(req.Disk, req.ISO, s.deps.Kit, s.deps.Executable); err != nil {
+	if err := desktop.Create(req.Disk, req.ISO, s.deps.Kit, s.deps.Executable, req.Extras); err != nil {
 		fail(w, err)
 		return
 	}
@@ -245,4 +223,65 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 // * handleCreateStatus devuelve el estado de la creación.
 func (s *Server) handleCreateStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, desktop.Status())
+}
+
+// driversView es la respuesta de GET /api/desktop/drivers.
+type driversView struct {
+	// Available indica que hay un USB (o biblioteca local) con carpeta drivers/.
+	Available bool `json:"available"`
+	// Root es la unidad o carpeta donde están los drivers.
+	Root     string             `json:"root"`
+	Packages []*drivers.Package `json:"packages"`
+}
+
+// * handleDesktopDrivers lista los paquetes de drivers que hay en el USB elegido.
+func (s *Server) handleDesktopDrivers(w http.ResponseWriter, r *http.Request) {
+	view := driversView{Packages: []*drivers.Package{}}
+	if vault.Available() {
+		view.Available, view.Root = true, vault.Root
+		view.Packages = append(view.Packages, drivers.Scan(driversRoot())...)
+	}
+	writeJSON(w, http.StatusOK, view)
+}
+
+// * handleDriversAdd copia una carpeta de drivers del equipo al USB elegido.
+func (s *Server) handleDriversAdd(w http.ResponseWriter, r *http.Request) {
+	var req pathOnlyRequest
+	if err := decode(r, &req); err != nil {
+		fail(w, err)
+		return
+	}
+	if !vault.Available() {
+		fail(w, vault.ErrUnavailable)
+		return
+	}
+	if err := desktop.AddDrivers(vault.Root, req.Path); err != nil {
+		fail(w, err)
+		return
+	}
+	log.Printf("escritorio: drivers añadidos desde %s", req.Path)
+	s.handleDesktopDrivers(w, r)
+}
+
+// nameRequest es el cuerpo de POST /api/desktop/drivers/remove.
+type nameRequest struct {
+	Name string `json:"name"`
+}
+
+// * handleDriversRemove borra una carpeta de drivers del USB elegido.
+func (s *Server) handleDriversRemove(w http.ResponseWriter, r *http.Request) {
+	var req nameRequest
+	if err := decode(r, &req); err != nil {
+		fail(w, err)
+		return
+	}
+	if !vault.Available() {
+		fail(w, vault.ErrUnavailable)
+		return
+	}
+	if err := desktop.RemoveDrivers(vault.Root, req.Name); err != nil {
+		fail(w, err)
+		return
+	}
+	s.handleDesktopDrivers(w, r)
 }

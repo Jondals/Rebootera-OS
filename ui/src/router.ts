@@ -17,7 +17,7 @@ export interface Page {
 export const liveRoutes = ["overview", "library", "install", "drivers", "downloads", "storage"];
 
 /** Rutas del menú lateral en Rebootera Desktop. */
-export const desktopRoutes = ["usb", "library", "downloads", "create"];
+export const desktopRoutes = ["overview", "create", "drivers", "library", "downloads"];
 
 /** Rutas del menú lateral activas (cambian con el modo). */
 export let routes: string[] = liveRoutes;

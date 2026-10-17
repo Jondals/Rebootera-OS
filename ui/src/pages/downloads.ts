@@ -18,6 +18,7 @@ import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { getLanguage, t } from "../i18n.js";
 import { icons } from "../icons.js";
+import { appMode } from "../mode.js";
 import type { Page } from "../router.js";
 import { refreshVault, snapshot } from "../state.js";
 
@@ -251,7 +252,7 @@ function catalogCard(entry: CatalogEntry): HTMLElement {
         ])
       : null,
     el("span", { class: "mono-small muted catalog-version", title: versionLine }, [versionLine]),
-    el("div", { class: "catalog-badges" }, [bootBadge(entry)]),
+    el("div", { class: "catalog-badges" }, [bootBadge(entry), signedBadge(entry)]),
     el("footer", { class: "catalog-foot" }, [
       badge(
         entry.secureBoot === "signed" ? t("downloads.secureSigned") : t("downloads.secureUnsigned"),
@@ -271,6 +272,21 @@ function bootBadge(entry: CatalogEntry): HTMLElement {
         ? badge(t("downloads.bootIncompatible"), "danger")
         : badge(t("downloads.bootUntested"), "muted");
   node.title = entry.boot.notes[getLanguage()] ?? entry.boot.notes.en;
+  return node;
+}
+
+/** Insignia de índice firmado: solo si Core comprueba su firma GPG antes de descargar. */
+function signedBadge(entry: CatalogEntry): HTMLElement | null {
+  if (entry.resolver.isoSignature) {
+    const image = badge(t("downloads.signedImage"), "violet");
+    image.title = t("downloads.signedImageHint");
+    return image;
+  }
+  if (!entry.resolver.signature) {
+    return null;
+  }
+  const node = badge(t("downloads.signedIndex"), "violet");
+  node.title = t("downloads.signedIndexHint");
   return node;
 }
 
@@ -297,6 +313,10 @@ function update(): void {
     renderCatalog();
     return;
   }
+  // * Sin USB, Rebootera Desktop guarda en la carpeta del usuario: se dice dónde.
+  const where = appMode.library
+    ? el("p", { class: "muted small-note" }, [t("desktop.localNote", { path: appMode.library })])
+    : null;
   // * Cuando termina una transferencia se recarga el catálogo para marcar
   // * "En tu biblioteca" sin salir de la página.
   const done = snapshot.transfers.filter(isDone).length;
@@ -309,6 +329,7 @@ function update(): void {
     ...(jobs.length > 0
       ? jobs.map(jobRow)
       : [el("p", { class: "muted" }, [t("downloads.queueEmpty")])]),
+    ...(where ? [where] : []),
   );
 }
 

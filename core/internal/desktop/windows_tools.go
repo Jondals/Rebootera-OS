@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -133,6 +134,10 @@ ConvertTo-Json -InputObject $result -Compress -Depth 4`
 // * para que la interfaz pueda advertir antes de borrar un disco con datos.
 // ! Nunca se ofrecen discos de sistema o de arranque de Windows.
 func USBDisks() ([]USBDisk, error) {
+	// * Solo para capturas de pantalla de pruebas: no lista ningún disco del equipo.
+	if os.Getenv("REBOOTERA_TEST_NO_DISKS") != "" {
+		return []USBDisk{}, nil
+	}
 	out, err := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", usbDisksScript).Output()
 	if err != nil {
 		return nil, fmt.Errorf("no se pudieron listar los discos: %w", err)

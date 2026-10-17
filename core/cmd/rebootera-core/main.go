@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"rebootera/core/internal/agentproto"
 	"rebootera/core/internal/api"
 	"rebootera/core/internal/boot"
 	"rebootera/core/internal/library"
@@ -55,6 +56,21 @@ func main() {
 		log.Printf("arranque: no se pudo restaurar la imagen por defecto: %v", err)
 	} else if changed {
 		log.Printf("arranque: Rebootera OS vuelve a ser la imagen por defecto de Ventoy")
+	}
+
+	// * Si se pidió "arrancar el instalador una sola vez", el agente restaura el
+	// * orden de arranque original del firmware (UEFI) ahora que se ha vuelto.
+	if lines, err := (api.SocketAgent{}).Query(agentproto.OpBootRestore); err != nil {
+		log.Printf("arranque: no se pudo restaurar el orden de arranque: %v", err)
+	} else if len(lines) > 0 && lines[0] == "restored" {
+		log.Printf("arranque: orden de arranque del firmware restaurado")
+	}
+
+	// * La distribución de teclado elegida en otro arranque vuelve a aplicarse.
+	if layout := api.LoadKeyboard(); layout != "" && layout != agentproto.DefaultKeyboard {
+		if _, err := (api.SocketAgent{}).Send(agentproto.Request{Op: agentproto.OpKeyboardSet, Layout: layout}); err != nil {
+			log.Printf("teclado: no se pudo aplicar %q: %v", layout, err)
+		}
 	}
 
 	lib := library.New()

@@ -24,9 +24,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"rebootera/core/internal/release"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -37,52 +37,26 @@ const (
 	ventoyZip     = "ventoy-" + ventoyVersion + "-windows.zip"
 )
 
-// CreateStatus es el estado de una creación en curso.
-type CreateStatus struct {
-	Running  bool    `json:"running"`
-	Phase    string  `json:"phase"`
-	Progress float64 `json:"progress"`
-	Error    string  `json:"error,omitempty"`
-	Done     bool    `json:"done"`
-	Drive    string  `json:"drive,omitempty"`
-}
-
-var (
-	createMu     sync.Mutex
-	createStatus CreateStatus
-)
-
-// * Status devuelve el estado de la creación.
-func Status() CreateStatus {
-	createMu.Lock()
-	defer createMu.Unlock()
-	return createStatus
-}
-
-// * setPhase actualiza la fase y el progreso.
-func setPhase(phase string, progress float64) {
-	createMu.Lock()
-	createStatus.Phase = phase
-	createStatus.Progress = progress
-	createMu.Unlock()
-}
-
 // * Create empieza a crear un USB de Rebootera en segundo plano.
-func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string) error {
-	createMu.Lock()
-	if createStatus.Running {
-		createMu.Unlock()
-		return errors.New("ya se está creando un USB")
+func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string, extras Extras) error {
+	if err := begin(); err != nil {
+		return err
 	}
-	createStatus = CreateStatus{Running: true, Phase: "prepare"}
-	createMu.Unlock()
+	// ! Las imágenes y carpetas de drivers también se validan antes de borrar nada.
+	if err := extras.Validate(); err != nil {
+		finish("", err)
+		return err
+	}
 
 	// ! Todo se comprueba ANTES de borrar el pendrive: si la ISO no sirve, el
 	// ! USB no debe quedar borrado y sin sistema.
-	if info, err := os.Stat(isoPath); err != nil || !info.Mode().IsRegular() || !strings.EqualFold(filepath.Ext(isoPath), ".iso") {
-		err := errors.New("elige una imagen .iso de Rebootera OS que exista")
-		finish("", err)
-		return err
+	// * Sin ISO elegida, se descarga la última versión publicada (ver steps).
+	if isoPath != "" {
+		if info, err := os.Stat(isoPath); err != nil || !info.Mode().IsRegular() || !strings.EqualFold(filepath.Ext(isoPath), ".iso") {
+			err := errors.New("elige una imagen .iso de Rebootera OS que exista")
+			finish("", err)
+			return err
+		}
 	}
 	if kit == nil {
 		err := errors.New("falta el contenido del USB dentro de la aplicación")
@@ -106,7 +80,7 @@ func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string) error 
 		finish("", err)
 		return err
 	}
-	job := &createJob{disk: diskNumber, iso: isoPath, kit: kit, desktopExe: desktopExe}
+	job := &createJob{disk: diskNumber, iso: isoPath, kit: kit, desktopExe: desktopExe, extras: extras}
 	go job.run()
 	return nil
 }
@@ -117,6 +91,7 @@ type createJob struct {
 	iso        string
 	kit        fs.FS
 	desktopExe string
+	extras     Extras
 }
 
 // * run ejecuta todos los pasos e informa del resultado.
@@ -125,22 +100,17 @@ func (j *createJob) run() {
 	finish(drive, err)
 }
 
-// * finish deja el estado final de la creación.
-func finish(drive string, err error) {
-	createMu.Lock()
-	defer createMu.Unlock()
-	createStatus.Running = false
-	createStatus.Drive = drive
-	if err != nil {
-		createStatus.Error = err.Error()
-		return
-	}
-	createStatus.Done = true
-	createStatus.Progress = 1
-}
-
 // * steps realiza la creación paso a paso.
 func (j *createJob) steps() (string, error) {
+	// ! La descarga va antes de tocar el disco: si falla, el USB no se borra.
+	if j.iso == "" {
+		setPhase("download", 0)
+		path, err := release.Fetch(release.CacheDir(), downloadProgress)
+		if err != nil {
+			return "", err
+		}
+		j.iso = path
+	}
 	setPhase("ventoy-download", 0)
 	ventoyDir, err := ensureVentoy()
 	if err != nil {
@@ -180,12 +150,12 @@ func (j *createJob) steps() (string, error) {
 	if err := InstallSystem(root, j.iso, systemProgress); err != nil {
 		return "", err
 	}
-	return root, nil
-}
 
-// * systemProgress informa del avance al copiar Rebootera OS.
-func systemProgress(fraction float64) {
-	setPhase("copy-system", fraction)
+	// * Imágenes y drivers elegidos antes de crear el USB: salen ya dentro, sin mover nada a mano.
+	if err := ApplyExtras(root, j.extras); err != nil {
+		return root, err
+	}
+	return root, nil
 }
 
 // * PrepareVentoy descarga, verifica y extrae Ventoy sin tocar ningún disco

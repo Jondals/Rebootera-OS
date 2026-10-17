@@ -1,0 +1,52 @@
+# Comprobaciones rápidas en cada push y pull request: vet y pruebas de Go (con
+# las firmas oficiales reales de testdata/), tipos y formato de la interfaz.
+# No arranca máquinas virtuales: esas pruebas (scripts/test-all.sh) son locales.
+name: Test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: core/go.mod
+          cache-dependency-path: core/go.sum
+      - name: Format
+        working-directory: core
+        run: test -z "$(gofmt -l .)"
+      - name: Vet
+        working-directory: core
+        run: go vet ./...
+      - name: Test
+        working-directory: core
+        run: go test ./...
+
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: ui/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: ui
+      - run: pnpm check-types
+        working-directory: ui
+      - run: pnpm format:check
+        working-directory: ui

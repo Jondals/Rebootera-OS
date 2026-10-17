@@ -44,14 +44,18 @@ fill.progress = 0;
 
 frame = 0;
 
-// * refresh se llama unas 50 veces por segundo: fundidos y halo que respira.
+// * refresh se llama unas 50 veces por segundo; se redibuja solo 1 de cada 3 veces
+// * (el halo es lento y mezclarlo por software cuesta CPU en pleno arranque).
 fun refresh_callback() {
     frame++;
-    appear = Math.Min(frame / 40, 1);
-    logo.sprite.SetOpacity(appear);
-    word.sprite.SetOpacity(Math.Min(Math.Max((frame - 20) / 40, 0), 1));
-    track.sprite.SetOpacity(Math.Min(Math.Max((frame - 30) / 30, 0), 1));
-    glow.sprite.SetOpacity(appear * (0.55 + 0.35 * Math.Sin(frame / 22)));
+    // * Sin operador de resto: cada tercer fotograma, frame - 3 * Int(frame / 3) vale 0.
+    if (frame - 3 * Math.Int(frame / 3) == 0) {
+        appear = Math.Min(frame / 40, 1);
+        logo.sprite.SetOpacity(appear);
+        word.sprite.SetOpacity(Math.Min(Math.Max((frame - 20) / 40, 0), 1));
+        track.sprite.SetOpacity(Math.Min(Math.Max((frame - 30) / 30, 0), 1));
+        glow.sprite.SetOpacity(appear * (0.55 + 0.35 * Math.Sin(frame / 22)));
+    }
 }
 
 // * progress va de 0 a 1 según el avance real del arranque.

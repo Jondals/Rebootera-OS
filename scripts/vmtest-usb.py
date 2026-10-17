@@ -167,16 +167,20 @@ def scenario(vm, checks):
     vm.screenshot("2-descargas")
 
     # 5. Instalar: preselección en Ventoy y reinicio.
-    status, _ = api(vm, "POST", "/api/boot/install", {"path": "isos/tools/alpine-virt-3.24.2-x86_64.iso"})
+    # * Alpine está marcada como incompatible con el menú: la descarga del
+    # * catálogo se rechaza; la copia importada (sin origen de catálogo) no.
+    status, body = api(vm, "POST", "/api/boot/install", {"path": "isos/tools/alpine-virt-3.24.2-x86_64.iso"})
+    checks.check("instalar: una imagen incompatible del catálogo se rechaza", status == 409 and "incompatible-image" in str(body), "%s %s" % (status, body))
+    status, _ = api(vm, "POST", "/api/boot/install", {"path": "isos/linux/alpine-virt-3.24.2-x86_64.iso"})
     checks.check("instalar: preselección y reinicio aceptados", status == 202, str(status))
-    next_boot = vm.run("grep -o '/isos/tools/alpine[^\"]*' /run/rebootera/vault/ventoy/ventoy.json")
+    next_boot = vm.run("grep -o '/isos/linux/alpine[^\"]*' /run/rebootera/vault/ventoy/ventoy.json")
     checks.check("ventoy.json apunta a la imagen elegida", "alpine-virt" in next_boot, next_boot)
     # * El apagado del sistema live tarda: se espera a que el firmware vuelva a arrancar.
     rebooted = wait_firmware(vm, 400)
     checks.check("el equipo se reinicia", rebooted, "")
     time.sleep(5)
     vm.screenshot("3-ventoy-preseleccion")
-    time.sleep(45)
+    time.sleep(15)
     vm.screenshot("4-instalador-arrancado")
 
     # 6. Volver a Rebootera desde el menú de Ventoy (última entrada).
@@ -184,6 +188,8 @@ def scenario(vm, checks):
     wait_firmware(vm, 60)
     time.sleep(5)
     vm.screenshot("5-ventoy-menu")
+    # * El menú tiene la imagen descargada, la importada y Rebootera, en ese orden.
+    vm.key("down")
     vm.key("down")
     vm.key("ret")
     if not boot_rebootera(vm, checks, "segundo arranque"):

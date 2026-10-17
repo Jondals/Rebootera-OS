@@ -18,6 +18,11 @@ import (
 // Root es donde el agente monta el Vault. Se puede cambiar en las pruebas.
 var Root = "/run/rebootera/vault"
 
+// Local indica que el "Vault" es una carpeta del propio equipo (Rebootera Desktop
+// sin un USB de Rebootera elegido) y no un USB: sirve para descargar y guardar
+// imágenes, pero no para instalar ni actualizar Rebootera OS.
+var Local bool
+
 // ErrUnavailable indica que esta sesión no tiene Vault (medio de solo lectura).
 var ErrUnavailable = errors.New("no hay Vault de Rebootera en esta sesión")
 
@@ -28,6 +33,22 @@ var ErrOutside = errors.New("ruta fuera del Vault")
 func Available() bool {
 	info, err := os.Stat(filepath.Join(Root, "rebootera"))
 	return err == nil && info.IsDir()
+}
+
+// * EnsureLayout crea las carpetas mínimas de un Vault (estado e imágenes por
+// * categoría) en root. Se usa para la biblioteca local del equipo.
+func EnsureLayout(root string) error {
+	for _, dir := range []string{
+		filepath.Join("rebootera", "state"),
+		filepath.Join("isos", "windows"),
+		filepath.Join("isos", "linux"),
+		filepath.Join("isos", "tools"),
+	} {
+		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // * Path devuelve la ruta absoluta de una ruta relativa al Vault.

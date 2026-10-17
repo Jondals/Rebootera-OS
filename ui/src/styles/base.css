@@ -147,3 +147,27 @@ pre {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Modo ligero (renderizado por software o pocas CPU): sin desenfoques, sin
+   sombras de brillo y sin animaciones continuas. Lo activa prefs.ts. */
+:root[data-gfx="lite"] {
+  --accent-glow: transparent;
+}
+
+:root[data-gfx="lite"] .overlay {
+  backdrop-filter: none;
+}
+
+:root[data-gfx="lite"] .aurora,
+:root[data-gfx="lite"] .intro-halo,
+:root[data-gfx="lite"] .intro-letter,
+:root[data-gfx="lite"] .logo-arrow,
+:root[data-gfx="lite"] [class*="glow"],
+:root[data-gfx="lite"] svg {
+  filter: none !important;
+}
+
+:root[data-gfx="lite"] .pulse-dot,
+:root[data-gfx="lite"] .skeleton {
+  animation: none !important;
+}

@@ -1,0 +1,78 @@
+# Compila Rebootera OS (ISO) y Rebootera Desktop (.exe) en cada push a master y
+# los publica en la release "latest", de donde los descarga la landing page y
+# Rebootera Desktop ("Crear USB" y "Actualizar").
+#
+# La compilación se hace dentro de un contenedor Debian 13, igual que el entorno
+# de desarrollo (WSL "RebooteraBuild"), con las dependencias del README.
+name: Build and publish
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# * Un push nuevo cancela la compilación anterior: "latest" siempre es la última.
+concurrency:
+  group: latest-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Build the ISO and the Windows app (Debian 13)
+        run: |
+          docker run --rm --privileged -v "$PWD":/src -w /src debian:trixie bash -euo pipefail -c '
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y live-build debootstrap rsync curl git ca-certificates golang nodejs node-corepack \
+              imagemagick librsvg2-bin grub-common fonts-inter fonts-jetbrains-mono xorriso mtools squashfs-tools \
+              dosfstools exfatprogs
+            git config --global --add safe.directory /src
+            bash scripts/build-desktop.sh
+            bash scripts/build.sh
+          '
+
+      - name: Collect the files with their fixed names
+        run: |
+          sudo chown -R "$USER" out
+          VERSION="$(sed -n 's/^var Version = "\(.*\)"/\1/p' core/internal/version/version.go)"
+          mkdir dist
+          cp "out/rebootera-os-${VERSION}-amd64.iso" dist/rebootera-os-amd64.iso
+          cp "out/Rebootera Desktop.exe" dist/Rebootera-Desktop.exe
+          (cd dist && sha256sum rebootera-os-amd64.iso > rebootera-os-amd64.iso.sha256)
+          (cd dist && sha256sum Rebootera-Desktop.exe > Rebootera-Desktop.exe.sha256)
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "ISO_SHA=$(cut -d' ' -f1 dist/rebootera-os-amd64.iso.sha256)" >> "$GITHUB_ENV"
+          ls -lh dist
+
+      - name: Publish the "latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest dist/* \
+            --target "$GITHUB_SHA" \
+            --latest \
+            --title "Rebootera OS ${VERSION} (latest build)" \
+            --notes "Automatic build of the last push to master.
+
+          version: ${VERSION}
+          commit: ${GITHUB_SHA}
+          sha256: ${ISO_SHA}
+
+          Files: \`Rebootera-Desktop.exe\` (Windows app that creates the USB) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."

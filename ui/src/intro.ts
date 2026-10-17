@@ -4,7 +4,7 @@
 // * datos (con un mínimo para que se vea y un máximo para no hacer esperar).
 // * Se salta con cualquier tecla o clic y respeta "reducir movimiento".
 
-import { prefs } from "./prefs.js";
+import { isLite, prefs } from "./prefs.js";
 
 /** Duraciones en milisegundos. */
 const MIN_MS = 3200;
@@ -20,7 +20,9 @@ let finish: (() => void) | null = null;
 
 /** Indica si hay que reducir el movimiento. */
 function reducedMotion(): boolean {
-  return prefs.reduceMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return (
+    prefs.reduceMotion || isLite() || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 }
 
 /** Escribe el nombre letra a letra con un retraso escalonado. */

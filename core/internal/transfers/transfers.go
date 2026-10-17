@@ -59,6 +59,7 @@ const (
 	CodeNetwork    = "network"
 	CodeSpace      = "space"
 	CodeChecksum   = "checksum"
+	CodeSignature  = "signature"
 	CodeSource     = "source"
 	CodeWrite      = "write"
 	CodeIncomplete = "incomplete"
@@ -100,6 +101,7 @@ type Job struct {
 	FileName   string    `json:"fileName"`
 	Category   string    `json:"category"`
 	SHA256     string    `json:"sha256,omitempty"`
+	SignedBy   string    `json:"signedBy,omitempty"`
 	TotalBytes int64     `json:"totalBytes"`
 	DoneBytes  int64     `json:"doneBytes"`
 	SpeedBps   int64     `json:"speedBps"`
@@ -195,6 +197,7 @@ func (m *Manager) Download(entryID string) (Job, error) {
 		FileName:   resolved.FileName,
 		Category:   entry.Category,
 		SHA256:     resolved.SHA256,
+		SignedBy:   resolved.SignedBy,
 		TotalBytes: resolved.SizeBytes,
 	}
 	return m.enqueue(job)
@@ -435,6 +438,18 @@ func (m *Manager) finish(job *Job, sha string) error {
 	if job.Kind == KindDownload && !strings.EqualFold(sha, job.SHA256) {
 		os.Remove(partial)
 		return coded(CodeChecksum, fmt.Errorf("el SHA-256 no coincide con el oficial (descargado %s…, oficial %s…): la imagen se ha borrado", sha[:12], job.SHA256[:12]))
+	}
+	// * Si el proyecto firma cada ISO (Arch, Alpine), la firma OpenPGP se comprueba
+	// * con la clave fijada; una ISO con firma incorrecta se borra como una con SHA-256 malo.
+	if job.Kind == KindDownload {
+		if entry, err := catalog.Find(job.CatalogID); err == nil && entry.Resolver.ISOSignature != nil {
+			signer, err := catalog.VerifyISO(partial, job.URL, *entry.Resolver.ISOSignature)
+			if err != nil {
+				os.Remove(partial)
+				return coded(CodeSignature, fmt.Errorf("la firma GPG de la imagen no es válida: %v: la imagen se ha borrado", err))
+			}
+			job.SignedBy = signer
+		}
 	}
 	final := finalPath(job)
 	if err := os.MkdirAll(filepath.Dir(final), 0o750); err != nil {
