@@ -1,6 +1,10 @@
 # Compila Rebootera OS (ISO) y Rebootera Desktop (.exe) en cada push y los
 # publica en una release, de donde los descarga la landing page y Rebootera
-# Desktop ("Crear USB" y "Actualizar"). Hay dos canales:
+# Desktop ("Crear USB" y "Actualizar"). El código es privado: las releases se
+# publican en el repositorio público Jondals/Rebootera-OS-downloads con el secreto
+# RELEASES_TOKEN (token de acceso fino con "Contents: read and write" solo sobre ese
+# repositorio). Sin el secreto, las releases se publican en este mismo repositorio.
+# Hay dos canales:
 #
 #   master -> release "latest" (estable). Al publicarla, si la rama "beta" no
 #             existe se crea desde este commit; si existe y no tiene commits
@@ -18,7 +22,8 @@ on:
     branches: [master, beta]
     paths-ignore:
       - "site/**"
-      - ".github/workflows/pages.yml"
+      - "docs/images/**"
+      - ".github/workflows/site-sync.yml"
   workflow_dispatch:
 
 permissions:
@@ -71,9 +76,12 @@ jobs:
 
       - name: Publish the release of this channel
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN || github.token }}
+          REL_REPO: ${{ secrets.RELEASES_TOKEN && 'Jondals/Rebootera-OS-downloads' || github.repository }}
           BRANCH: ${{ github.ref_name }}
         run: |
+          TARGET=()
+          [ "$REL_REPO" = "$GITHUB_REPOSITORY" ] && TARGET=(--target "$GITHUB_SHA")
           if [ "$BRANCH" = "master" ]; then
             TAG=latest
             FLAGS=--latest
@@ -85,9 +93,9 @@ jobs:
             TITLE="Rebootera OS ${VERSION} (beta build)"
             WHAT="Automatic build of the last push to the beta branch. Use it to try changes before they reach master."
           fi
-          gh release delete "$TAG" --cleanup-tag --yes || true
-          gh release create "$TAG" dist/* \
-            --target "$GITHUB_SHA" \
+          gh release delete "$TAG" -R "$REL_REPO" --cleanup-tag --yes || true
+          gh release create "$TAG" dist/* -R "$REL_REPO" \
+            "${TARGET[@]}" \
             $FLAGS \
             --title "$TITLE" \
             --notes "$WHAT
@@ -101,8 +109,11 @@ jobs:
       - name: Create or advance the beta branch and publish the beta release
         if: github.ref_name == 'master'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN || github.token }}
+          REL_REPO: ${{ secrets.RELEASES_TOKEN && 'Jondals/Rebootera-OS-downloads' || github.repository }}
         run: |
+          TARGET=()
+          [ "$REL_REPO" = "$GITHUB_REPOSITORY" ] && TARGET=(--target "$GITHUB_SHA")
           git fetch origin beta 2>/dev/null || true
           if ! git rev-parse --verify --quiet origin/beta >/dev/null; then
             echo "The beta branch does not exist: creating it from $GITHUB_SHA"
@@ -114,9 +125,9 @@ jobs:
           fi
           # * Con GITHUB_TOKEN este push no lanza otra compilación: la release "beta" se publica aquí mismo.
           git push origin "$GITHUB_SHA:refs/heads/beta"
-          gh release delete beta --cleanup-tag --yes || true
-          gh release create beta dist/* \
-            --target "$GITHUB_SHA" \
+          gh release delete beta -R "$REL_REPO" --cleanup-tag --yes || true
+          gh release create beta dist/* -R "$REL_REPO" \
+            "${TARGET[@]}" \
             --prerelease \
             --title "Rebootera OS ${VERSION} (beta build)" \
             --notes "Same build as the latest release, published when the beta branch was created or moved to it.

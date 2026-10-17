@@ -31,7 +31,7 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 
 ## Getting a Rebootera USB
 
-**Download:** the website (GitHub Pages of this repository) always offers the latest build: `Rebootera-Desktop.exe` for Windows and `rebootera-os-amd64.iso`. Both are rebuilt on every push to `master` and published in the [`latest` release](https://github.com/Jondals/Rebootera-OS/releases/tag/latest).
+**Download:** the public website and releases (repository `Jondals/Rebootera-OS-downloads`; the source code is private) always offer the latest build: `Rebootera-Desktop.exe` for Windows and `rebootera-os-amd64.iso`. Both are rebuilt on every push to `master` and published in the [`latest` release](https://github.com/Jondals/Rebootera-OS-downloads/releases/tag/latest).
 
 **Channels:** `master` is the stable channel (release `latest`). The `beta` branch is created automatically from the first stable release and publishes the `beta` prerelease on every push to it: that is where changes are tried before merging them into `master`.
 
@@ -86,7 +86,7 @@ Known limitations are listed in [docs/LIMITACIONES.md](docs/LIMITACIONES.md) (Sp
 ## Website and automatic builds
 
 - `site/` is the landing page (plain HTML, English and Spanish). `.github/workflows/pages.yml` publishes it to GitHub Pages; in the repository settings, **Pages → Source** must be set to *GitHub Actions* once.
-- `.github/workflows/build.yml` builds the ISO and `Rebootera-Desktop.exe` inside a Debian 13 container on every push to `master` and replaces the `latest` release with them. The page reads the version, date and SHA-256 of that release, and Rebootera Desktop downloads the ISO from it. The first build only exists after the first push.
+- `.github/workflows/build.yml` builds the ISO and `Rebootera-Desktop.exe` inside a Debian 13 container on every push to `master` and replaces the `latest` release with them in the public downloads repository (secret `RELEASES_TOKEN`). `.github/workflows/site-sync.yml` copies the website there too. The page reads the version, date and SHA-256 of that release, and Rebootera Desktop downloads the ISO from it. The first build only exists after the first push.
 
 ## Building
 
