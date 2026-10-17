@@ -74,7 +74,15 @@ type Library struct {
 	db       map[string]meta
 	progress map[string]float64
 	loaded   bool
+	// cache guarda el último recorrido de isos/ unos segundos: la interfaz pregunta cada pocos
+	// segundos y en un USB lento cada recorrido cuesta (stat de cada imagen).
+	cache     []Item
+	cacheAt   time.Time
+	cacheRoot string
 }
+
+// cacheTTL es cuánto vale un recorrido de isos/ antes de repetirlo (variable para poder ajustarlo en las pruebas).
+var cacheTTL = 3 * time.Second
 
 // * New crea una biblioteca vacía; los metadatos se cargan al primer uso.
 func New() *Library {
@@ -85,6 +93,7 @@ func New() *Library {
 func (l *Library) Reset() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.invalidate()
 	for _, m := range l.db {
 		if m.State == StateHashing {
 			return errors.New("espera a que termine la comprobación en curso")
@@ -126,6 +135,9 @@ func (l *Library) List() ([]Item, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.load()
+	if l.cacheRoot == vault.Root && time.Since(l.cacheAt) < cacheTTL {
+		return l.refreshed(), nil
+	}
 
 	root := vault.IsosDir()
 	items := []Item{}
@@ -146,7 +158,35 @@ func (l *Library) List() ([]Item, error) {
 		l.save()
 	}
 	slices.SortFunc(items, compareItems)
-	return items, nil
+	l.cache, l.cacheAt, l.cacheRoot = items, time.Now(), vault.Root
+	return l.refreshed(), nil
+}
+
+// * ListFresh recorre isos/ otra vez ignorando la caché: para cuando hay que actuar sobre una imagen
+// * (instalarla) y no basta con lo que se enseñó hace unos segundos.
+func (l *Library) ListFresh() ([]Item, error) {
+	l.mu.Lock()
+	l.invalidate()
+	l.mu.Unlock()
+	return l.List()
+}
+
+// * refreshed devuelve una copia del recorrido guardado con el estado y el progreso al día.
+func (l *Library) refreshed() []Item {
+	items := make([]Item, len(l.cache))
+	for i, item := range l.cache {
+		if m, ok := l.db[item.Path]; ok {
+			item.SHA256, item.Expected, item.State, item.Source = m.SHA256, m.Expected, m.State, m.Source
+		}
+		item.Progress = l.progress[item.Path]
+		items[i] = item
+	}
+	return items
+}
+
+// * invalidate descarta el recorrido guardado (hay que tener l.mu).
+func (l *Library) invalidate() {
+	l.cacheAt = time.Time{}
 }
 
 // scan acumula imágenes mientras se recorre la carpeta.
@@ -240,6 +280,7 @@ func (l *Library) Register(rel, sha, expected, source string) error {
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.invalidate()
 	l.load()
 	l.db[rel] = meta{
 		SizeBytes: info.Size(),
@@ -273,6 +314,7 @@ func (l *Library) Verify(rel string) error {
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.invalidate()
 	l.load()
 	m, ok := l.db[rel]
 	if !ok {
@@ -332,6 +374,7 @@ func (l *Library) Delete(rel string) error {
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.invalidate()
 	l.load()
 	if l.db[rel].State == StateHashing {
 		return errors.New("espera a que termine la comprobación de esta imagen")

@@ -9,18 +9,11 @@ import (
 	"io/fs"
 )
 
-// USBDisk es un disco físico conectado por USB.
-type USBDisk struct {
-	Number       int    `json:"number"`
-	FriendlyName string `json:"friendlyName"`
-	SizeBytes    uint64 `json:"sizeBytes"`
-}
-
 // ErrUnsupported indica una función que solo existe en Windows.
 var ErrUnsupported = errors.New("solo disponible en Windows; en Linux usa scripts/make-usb.sh")
 
 // * Create no está disponible fuera de Windows.
-func Create(int, string, fs.FS, string, Extras) error {
+func Create(int, string, fs.FS, string, Extras, bool) error {
 	return ErrUnsupported
 }
 

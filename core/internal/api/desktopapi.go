@@ -196,6 +196,8 @@ type createRequest struct {
 	Disk    int    `json:"disk"`
 	ISO     string `json:"iso"`
 	Confirm string `json:"confirm"`
+	// Mode es "erase" (borra el disco, por defecto) o "keep" (añade Rebootera sin borrar).
+	Mode string `json:"mode"`
 	// Extras son las imágenes y carpetas de drivers que salen ya dentro del USB.
 	desktop.Extras
 }
@@ -208,11 +210,16 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	if req.Confirm != "ERASE DISK "+strconv.Itoa(req.Disk) {
-		fail(w, errors.New("falta la confirmación explícita del disco que se va a borrar"))
+	keep := req.Mode == "keep"
+	want := "ERASE DISK " + strconv.Itoa(req.Disk)
+	if keep {
+		want = "ADD TO DISK " + strconv.Itoa(req.Disk)
+	}
+	if req.Confirm != want {
+		fail(w, errors.New("falta la confirmación explícita del disco que se va a modificar"))
 		return
 	}
-	if err := desktop.Create(req.Disk, req.ISO, s.deps.Kit, s.deps.Executable, req.Extras); err != nil {
+	if err := desktop.Create(req.Disk, req.ISO, s.deps.Kit, s.deps.Executable, req.Extras, keep); err != nil {
 		fail(w, err)
 		return
 	}

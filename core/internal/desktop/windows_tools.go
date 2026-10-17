@@ -97,26 +97,6 @@ func utf16Filter(name, pattern string) []uint16 {
 	return result
 }
 
-// USBDisk es un disco físico conectado por USB.
-type USBDisk struct {
-	Number       int         `json:"number"`
-	FriendlyName string      `json:"friendlyName"`
-	SizeBytes    uint64      `json:"sizeBytes"`
-	IsSystem     bool        `json:"isSystem"`
-	IsBoot       bool        `json:"isBoot"`
-	Volumes      []USBVolume `json:"volumes"`
-	UsedBytes    uint64      `json:"usedBytes"`
-	Rebootera    bool        `json:"rebootera"`
-}
-
-// USBVolume es un volumen con letra dentro de un disco USB.
-type USBVolume struct {
-	Letter    string `json:"letter"`
-	Label     string `json:"label"`
-	SizeBytes uint64 `json:"sizeBytes"`
-	FreeBytes uint64 `json:"freeBytes"`
-}
-
 // * usbDisksScript lista los discos USB con sus volúmenes en JSON. Get-Disk,
 // * Get-Partition y Get-Volume no necesitan permisos de administrador para leer.
 const usbDisksScript = `$ErrorActionPreference = 'SilentlyContinue'
@@ -124,7 +104,7 @@ $result = @(Get-Disk | Where-Object BusType -eq 'USB' | ForEach-Object {
   $disk = $_
   $volumes = @(Get-Partition -DiskNumber $disk.Number | Where-Object DriveLetter | ForEach-Object {
     $v = Get-Volume -DriveLetter $_.DriveLetter
-    [pscustomobject]@{ Letter = [string]$_.DriveLetter; Label = [string]$v.FileSystemLabel; Size = [uint64]$v.Size; Free = [uint64]$v.SizeRemaining }
+    [pscustomobject]@{ Letter = [string]$_.DriveLetter; Label = [string]$v.FileSystemLabel; FS = [string]$v.FileSystemType; Size = [uint64]$v.Size; Free = [uint64]$v.SizeRemaining }
   })
   [pscustomobject]@{ Number = $disk.Number; FriendlyName = $disk.FriendlyName; Size = [uint64]$disk.Size; IsSystem = $disk.IsSystem; IsBoot = $disk.IsBoot; Volumes = $volumes }
 })
@@ -138,7 +118,7 @@ func USBDisks() ([]USBDisk, error) {
 	if os.Getenv("REBOOTERA_TEST_NO_DISKS") != "" {
 		return []USBDisk{}, nil
 	}
-	out, err := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", usbDisksScript).Output()
+	out, err := quiet(exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", usbDisksScript)).Output()
 	if err != nil {
 		return nil, fmt.Errorf("no se pudieron listar los discos: %w", err)
 	}
@@ -155,6 +135,7 @@ func USBDisks() ([]USBDisk, error) {
 		Volumes      []struct {
 			Letter string
 			Label  string
+			FS     string
 			Size   uint64
 			Free   uint64
 		}
@@ -169,7 +150,7 @@ func USBDisks() ([]USBDisk, error) {
 		}
 		disk := USBDisk{Number: d.Number, FriendlyName: d.FriendlyName, SizeBytes: d.Size, Volumes: []USBVolume{}}
 		for _, v := range d.Volumes {
-			disk.Volumes = append(disk.Volumes, USBVolume{Letter: v.Letter, Label: v.Label, SizeBytes: v.Size, FreeBytes: v.Free})
+			disk.Volumes = append(disk.Volumes, USBVolume{Letter: v.Letter, Label: v.Label, FileSystem: v.FS, SizeBytes: v.Size, FreeBytes: v.Free})
 			if v.Size > v.Free {
 				disk.UsedBytes += v.Size - v.Free
 			}
@@ -177,6 +158,7 @@ func USBDisks() ([]USBDisk, error) {
 				disk.Rebootera = true
 			}
 		}
+		disk.Adoptable = adoptable(disk)
 		disks = append(disks, disk)
 	}
 	return disks, nil

@@ -68,6 +68,16 @@ prepare_usb() {
 	fi
 }
 
+# * prepare_adopt crea el USB tipo Rufus al que se añade Rebootera sin borrar nada.
+prepare_adopt() {
+	bash "$SRC/scripts/make-usb.sh" --image "$WORK/usb/adopt.img" --size 2G --adopt --iso "$DBG" >"$OUT/make-adopt.img.log" 2>&1
+}
+
+# * prepare_partdisk crea el disco con ext4 y NTFS con datos para el gestor de particiones.
+prepare_partdisk() {
+	bash "$SRC/scripts/make-partman-disk.sh" "$WORK/usb/partdisk.qcow2" >"$OUT/make-partdisk.log" 2>&1
+}
+
 # * user_disk crea el disco "del usuario" con una ISO de Alpine para la prueba del USB.
 user_disk() {
 	local alp="$WORK/fixtures/alpine-virt-3.24.2-x86_64.iso" raw="$WORK/usb/user.raw" loop mnt
@@ -117,11 +127,16 @@ boots() {
 	echo "arranques terminados"
 }
 
-# * v03 ejecuta, una detrás de otra, escenarios de la 0.3.0 (cada uno en su VM).
+# * v03 ejecuta, una detrás de otra, escenarios de la 0.3.0 en adelante (cada uno en su VM).
+# * El escenario "adopt" arranca el USB tipo Rufus (adopt.img); los demás, v03.img.
 v03() {
-	local scenario
+	local scenario image
 	for scenario in "$@"; do
-		python3 "$SRC/scripts/vmtest-v03.py" "$WORK/usb/v03.img" "$OUT/v03" "$scenario" >"$OUT/v03-$scenario.log" 2>&1
+		image="$WORK/usb/v03.img"
+		[ "$scenario" = "adopt" ] && image="$WORK/usb/adopt.img"
+		# * El escenario de particiones lleva un segundo disco virtual (en una capa temporal de QEMU).
+		if [ "$scenario" = "partitions" ]; then export VMTEST_DISK="$WORK/usb/partdisk.qcow2"; else unset VMTEST_DISK; fi
+		python3 "$SRC/scripts/vmtest-v03.py" "$image" "$OUT/v03" "$scenario" >"$OUT/v03-$scenario.log" 2>&1
 	done
 	echo "escenarios 0.3.0 terminados"
 }
@@ -136,7 +151,7 @@ usb_y_windows() {
 arranques() {
 	boots "$DBG" "$OUT/dbg" "" uefi-sb bios
 	[ -n "$FINAL" ] && boots "$FINAL" "$OUT/rel" --release uefi-sb bios
-	v03 wifi
+	v03 wifi adopt
 }
 
 # * Tres máquinas virtuales a la vez como máximo (unos 5 GB en total): el
@@ -160,11 +175,15 @@ else
 	p2=$!
 	user_disk &
 	p3=$!
-	wait $p1 $p2 $p3
+	prepare_adopt &
+	p4=$!
+	prepare_partdisk &
+	p5=$!
+	wait $p1 $p2 $p3 $p4 $p5
 	log "lanzando las pruebas (3 VM a la vez)"
 	lane usb usb_y_windows &
 	pids+=($!)
-	lane debian v03 debian &
+	lane debian v03 debian partitions &
 	pids+=($!)
 	lane arranques arranques &
 	pids+=($!)

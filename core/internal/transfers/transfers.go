@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"rebootera/core/internal/catalog"
+	"rebootera/core/internal/fastcopy"
 	"rebootera/core/internal/library"
 	"rebootera/core/internal/storage"
 	"rebootera/core/internal/vault"
@@ -576,51 +577,64 @@ func (m *Manager) copyImport(ctx context.Context, job *Job, file *os.File, hashe
 	return m.pump(ctx, job, source, file, hasher, offset, info.Size())
 }
 
-// * pump copia datos actualizando el progreso, la velocidad y el hash.
+// * pump copia datos en tubería (lee y escribe a la vez) actualizando el
+// * progreso, la velocidad y el hash.
 func (m *Manager) pump(ctx context.Context, job *Job, src io.Reader, dst *os.File, hasher hash.Hash, offset, total int64) (string, error) {
-	buf := make([]byte, 1<<20)
-	done := offset
-	lastTick := time.Now()
-	lastBytes := done
-	lastSave := time.Now()
-	for {
-		if ctx.Err() != nil {
-			dst.Sync()
+	now := time.Now()
+	visitor := &pumpVisitor{m: m, job: job, dst: dst, hasher: hasher, done: offset, lastBytes: offset, lastTick: now, lastSave: now}
+	_, err := fastcopy.Copy(ctx, dst, src, visitor)
+	if err != nil {
+		dst.Sync()
+		var write *fastcopy.WriteError
+		var read *fastcopy.ReadError
+		switch {
+		case ctx.Err() != nil:
 			return "", ctx.Err()
+		case errors.As(err, &write):
+			return "", coded(CodeWrite, fmt.Errorf("no se pudo escribir en el USB: %w", write.Err))
+		case errors.As(err, &read):
+			return "", coded(CodeNetwork, fmt.Errorf("la transferencia se cortó: %w", read.Err))
 		}
-		n, readErr := src.Read(buf)
-		if n > 0 {
-			if _, err := dst.Write(buf[:n]); err != nil {
-				return "", coded(CodeWrite, fmt.Errorf("no se pudo escribir en el USB: %w", err))
-			}
-			hasher.Write(buf[:n])
-			done += int64(n)
-		}
-		if now := time.Now(); now.Sub(lastTick) >= time.Second || readErr != nil {
-			speed := int64(float64(done-lastBytes) / now.Sub(lastTick).Seconds())
-			m.setProgress(job, done, speed, now.Sub(lastSave) >= 5*time.Second)
-			if now.Sub(lastSave) >= 5*time.Second {
-				dst.Sync()
-				lastSave = now
-			}
-			lastTick, lastBytes = now, done
-		}
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			dst.Sync()
-			return "", coded(CodeNetwork, fmt.Errorf("la transferencia se cortó: %w", readErr))
-		}
+		return "", err
 	}
 	if err := dst.Sync(); err != nil {
 		return "", err
 	}
-	if total > 0 && done != total {
-		return "", coded(CodeIncomplete, fmt.Errorf("transferencia incompleta: %d de %d bytes", done, total))
+	if total > 0 && visitor.done != total {
+		return "", coded(CodeIncomplete, fmt.Errorf("transferencia incompleta: %d de %d bytes", visitor.done, total))
 	}
-	m.setProgress(job, done, 0, true)
+	m.setProgress(job, visitor.done, 0, true)
 	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+// pumpVisitor calcula el hash y anota el avance de cada trozo ya escrito.
+type pumpVisitor struct {
+	m         *Manager
+	job       *Job
+	dst       *os.File
+	hasher    hash.Hash
+	done      int64
+	lastBytes int64
+	lastTick  time.Time
+	lastSave  time.Time
+}
+
+// * Visit suma el trozo al hash y, cada segundo, publica el progreso; cada 5 s también guarda la cola.
+func (v *pumpVisitor) Visit(chunk []byte) {
+	v.hasher.Write(chunk)
+	v.done += int64(len(chunk))
+	now := time.Now()
+	if now.Sub(v.lastTick) < time.Second {
+		return
+	}
+	speed := int64(float64(v.done-v.lastBytes) / now.Sub(v.lastTick).Seconds())
+	save := now.Sub(v.lastSave) >= 5*time.Second
+	v.m.setProgress(v.job, v.done, speed, save)
+	if save {
+		v.dst.Sync()
+		v.lastSave = now
+	}
+	v.lastTick, v.lastBytes = now, v.done
 }
 
 // * setTotal anota el tamaño total conocido.

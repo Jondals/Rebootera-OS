@@ -56,6 +56,15 @@ export function isLite(): boolean {
   return lite;
 }
 
+/**
+ * Fuerza el modo ligero. Rebootera Desktop lo usa siempre: en reposo, el fondo
+ * animado y los desenfoques mantenían ocupado a WebView2 (más de un tercio de un núcleo).
+ */
+export function forceLite(): void {
+  lite = true;
+  applyPrefs();
+}
+
 export const prefs: Prefs = {
   language: "en",
   accent: "aurora",

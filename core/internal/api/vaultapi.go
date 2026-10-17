@@ -185,6 +185,9 @@ type idRequest struct {
 	ID string `json:"id"`
 }
 
+// resolutions guarda las últimas consultas de versión del catálogo.
+var resolutions resolveCache
+
 // * handleResolve averigua la versión y el tamaño actuales de una entrada.
 func (s *Server) handleResolve(w http.ResponseWriter, r *http.Request) {
 	var req idRequest
@@ -197,11 +200,16 @@ func (s *Server) handleResolve(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
+	if cached, ok := resolutions.lookup(entry.ID); ok {
+		writeJSON(w, http.StatusOK, cached)
+		return
+	}
 	resolved, err := catalog.Resolve(entry)
 	if err != nil {
 		fail(w, err)
 		return
 	}
+	resolutions.store(entry.ID, resolved)
 	writeJSON(w, http.StatusOK, resolved)
 }
 
@@ -439,7 +447,7 @@ func (s *Server) handleBootInstall(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	items, err := s.deps.Library.List()
+	items, err := s.deps.Library.ListFresh()
 	if err != nil {
 		fail(w, err)
 		return

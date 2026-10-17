@@ -52,7 +52,10 @@ func (f *fakeAgent) Send(request agentproto.Request) ([]string, error) {
 	if err, ok := f.errs[request.Op]; ok {
 		return nil, err
 	}
-	return nil, f.Call(request.Op)
+	if err := f.Call(request.Op); err != nil {
+		return nil, err
+	}
+	return f.replies[request.Op], nil
 }
 
 // * newTestServer crea un servidor con una interfaz mínima.

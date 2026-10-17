@@ -14,7 +14,7 @@ export interface Page {
 }
 
 /** Rutas del menú lateral en Rebootera OS. */
-export const liveRoutes = ["overview", "library", "install", "drivers", "downloads", "storage"];
+export const liveRoutes = ["overview", "install", "library", "drivers", "downloads", "storage"];
 
 /** Rutas del menú lateral en Rebootera Desktop. */
 export const desktopRoutes = ["overview", "create", "drivers", "library", "downloads"];

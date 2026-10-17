@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"net"
 	"time"
+
+	"rebootera/core/internal/partman"
 )
 
 // SocketPath es la ruta del socket del agente.
@@ -36,13 +38,17 @@ const (
 	// * Teclado del kiosco: consultar la distribución y cambiarla (reinicia la interfaz).
 	OpKeyboardGet = "keyboard.get"
 	OpKeyboardSet = "keyboard.set"
+	// * Gestor de particiones: mínimos de un sistema de archivos, empezar una operación y ver su estado.
+	OpPartInfo   = "part.info"
+	OpPartApply  = "part.apply"
+	OpPartStatus = "part.status"
 )
 
 // DefaultKeyboard es la distribución con la que arranca la interfaz.
 const DefaultKeyboard = "es"
 
 // KeyboardLayouts es la lista cerrada de distribuciones que acepta el agente.
-var KeyboardLayouts = []string{"es", "us", "gb", "de", "fr", "it", "pt"}
+var KeyboardLayouts = []string{"es", "us"}
 
 // * ValidKeyboard indica si una distribución está en la lista cerrada.
 func ValidKeyboard(layout string) bool {
@@ -63,6 +69,12 @@ type Request struct {
 	SSID     string `json:"ssid,omitempty"`
 	Password string `json:"password,omitempty"`
 	Hidden   bool   `json:"hidden,omitempty"`
+	// Disk y Part (nombre de disco, número de partición) los usa part.info.
+	Disk string `json:"disk,omitempty"`
+	Part int    `json:"part,omitempty"`
+	// Partition y Confirm los usa part.apply: la operación y el texto que escribió el usuario.
+	Partition *partman.Op `json:"partition,omitempty"`
+	Confirm   string      `json:"confirm,omitempty"`
 	// Layout solo lo usa keyboard.set y el agente lo valida contra KeyboardLayouts.
 	Layout string `json:"layout,omitempty"`
 }
@@ -117,6 +129,9 @@ func Deadline(op string) time.Duration {
 		return 90 * time.Second
 	case OpWifiScan:
 		return 45 * time.Second
+	// * Calcular los mínimos de un sistema de archivos grande y validar una operación llevan unos segundos.
+	case OpPartInfo, OpPartApply:
+		return 3 * time.Minute
 	}
 	return 30 * time.Second
 }

@@ -21,6 +21,7 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 | **Driver Assistant** | Every PCI and USB device, the Linux driver in use and the Windows hardware IDs, highlighting what the installer needs (storage and network). It also matches those hardware IDs against the Windows driver packages (`.inf`) in the `drivers/` folder of the USB. |
 | **Wi-Fi** | Connect the live session to a wireless network from Settings (WPA2/WPA3 and open networks, also hidden ones). |
 | **USB & Storage** | Disks and partitions with their role and usage. **Safe Disk Guard**: internal disks and the Rebootera USB are protected and only read. |
+| **Disks and partitions** | Every disk as a visual bar. Resize a partition, move the limit between two neighbors with a slider, merge, delete or create partitions (ext4 and NTFS can be resized without losing files). Each change shows the exact steps first and asks you to type the disk name; the USB Rebootera runs from is never touched. |
 | **Rebootera Desktop** | Windows app with a single **Create USB** option: it builds a new Rebootera USB or updates the one you have (without erasing it), downloading the latest Rebootera OS for you, and puts your images (for example a Windows 11 LTSC ISO) and driver folders on it in the same step, so nothing has to be moved by hand. Overview and Driver Assistant show and manage what the USB carries. It also downloads official images even without a USB: they are saved in the `Rebootera` folder of your user. |
 | **Languages** | English and Spanish. |
 
@@ -35,12 +36,12 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 
 **Channels:** `master` is the stable channel (release `latest`). The `beta` branch is created automatically from the first stable release and publishes the `beta` prerelease on every push to it: that is where changes are tried before merging them into `master`.
 
-**From Windows** — run `Rebootera Desktop.exe` and open **Create USB** (it is the first option). Choose where Rebootera OS comes from — *download the latest version* (recommended, checked against its published SHA-256 before anything is erased) or *use a Rebootera ISO from this PC* — then the USB drive, and type the confirmation. Windows asks for administrator permission to prepare the drive. Everything on the chosen drive is erased; disks that contain data are clearly marked. Before confirming you can **add images and driver folders** (your Windows 11 LTSC, a Linux, your network drivers): they are copied in the same step. If you already have a Rebootera USB, choose it in the list instead: nothing is erased, Rebootera OS can be updated and what you add is copied.
+**From Windows** — run `Rebootera Desktop.exe` and open **Create USB** (it is the first option). Choose where Rebootera OS comes from — *download the latest version* (recommended, checked against its published SHA-256 before anything is erased) or *use a Rebootera ISO from this PC* — then the USB drive, and type the confirmation. Windows asks for administrator permission to prepare the drive. Everything on the chosen drive is erased; disks that contain data are clearly marked. If your USB already has things (for example it was made with Rufus), choose **"keep the files"**: Rebootera is added next to them and nothing is erased. Before confirming you can **add images and driver folders** (your Windows 11 LTSC, a Linux, your network drivers): they are copied in the same step. If you already have a Rebootera USB, choose it in the list instead: nothing is erased, Rebootera OS can be updated and what you add is copied.
 
 **From Linux** — as root:
 
 ```bash
-scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.5.0-amd64.iso
+scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.6.0-amd64.iso
 ```
 
 The script refuses non-removable disks and the system disk.
@@ -152,6 +153,8 @@ pnpm run build
 | `scripts/vmtest-usb.py MODE USB.img DISK.qcow2 OUT` | End-to-end Rebootera USB: Vault, real download, import from another disk, settings, boot of the chosen image and persistence after reboot |
 | `scripts/vmtest-v03.py USB.img OUT` | 0.3.0 features end to end: GPG-verified download, driver matching with real virtio-win INF files, Wi-Fi with simulated radios and a virtual access point, Debian preseed with boot-once, Windows preparation and cleanup |
 | `scripts/test-desktop-windows.ps1` | Windows only: runs the real `Rebootera Desktop.exe` against a **fake** USB (a temporary folder) and checks that the image and drivers are copied byte for byte, the system is untouched and bad requests are refused |
+| `scripts/make-partman-disk.sh OUT.qcow2` | Test disk for the partition manager: ext4 + NTFS with data and checksums (only image files and a loop device) |
+| `REBOOTERA_LOOP_TESTS=1 go test ./cmd/rebootera-agent -run TestLoop` | As root in WSL: runs the partition manager on real loop disks (resize, move a limit in both directions, merge, create, delete) and checks files by hash and file system health |
 | `scripts/vmtest-interactive.py MODE IMG OUT` | Drives a VM from outside (keys, clicks, screenshots), for example to walk through MokManager |
 | `scripts/ui-preview.py URL OUT` | Interface screenshots with the same WebKitGTK as the image |
 

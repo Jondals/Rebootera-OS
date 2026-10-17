@@ -214,3 +214,32 @@ Crear USB / actualizar (Rebootera Desktop, Windows 11), sin tocar ningún disco 
 ### No probado en la v0.5.0
 
 Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el ratón; solo se probó el análisis de su resultado), "Crear USB" borrando un pendrive real, instalar dentro de un USB ajeno (Rufus), un instalador real de Windows y la ejecución de los workflows de GitHub.
+
+## v0.6.0 (2026-10-18)
+
+Batería completa (`scripts/test-all.sh`, unos 15 a 20 minutos con la compilación de las dos ISO): dbg UEFI+SB 17 OK, dbg BIOS 16, definitiva UEFI+SB 2 y BIOS 2, USB de extremo a extremo 20, Wi-Fi/drivers/teclado 20, Windows 8, Debian 12 y los dos escenarios nuevos:
+
+| Prueba | Resultado |
+| --- | --- |
+| **Gestor de particiones, plan** (`internal/partman`, Go) | Tablas de números de cada operación y una simulación que ejecuta los pasos sobre un disco modelado y falla si algún paso pisa datos vivos, deja una partición más pequeña que su sistema de archivos o escribe en la tabla un inicio distinto de donde están los datos |
+| **Gestor de particiones, ejecución real** (`REBOOTERA_LOOP_TESTS=1 go test ./cmd/rebootera-agent -run TestLoop`, como root en WSL) | Sobre discos loop reales con ext4 y NTFS con datos: mover el límite en las dos direcciones, encoger y agrandar un NTFS, fusionar conservando la derecha y la izquierda, crear exFAT y borrar. Todos los archivos intactos por hash, `e2fsck` y `ntfsresize --check` limpios y tablas exactas |
+| **Gestor de particiones en la VM** (escenario `partitions`: Core, agente y API sobre un disco virtual) | 23 OK: el USB de arranque sale bloqueado y no se puede planificar nada sobre él, la vista previa da los pasos, sin la confirmación escrita no se aplica, mover el límite en las dos direcciones, encoger el NTFS por el final, crear una exFAT y borrarla, con los datos y los sistemas de archivos intactos tras cada paso |
+| **Añadir Rebootera sin borrar** (escenario `adopt`: imagen tipo Rufus con NTFS lleno + partición UEFI:NTFS, Ventoy `-n`) | 6 OK: arranca en UEFI, el Vault es el NTFS (`ntfs3`, noexec, nosuid, nodev), la API lo ve, los archivos del usuario siguen intactos por hash, Rebootera crea sus carpetas al lado y Core puede escribir |
+| Rebootera Desktop en Windows 11: **ventanas de PowerShell** (`scripts/test-no-popups.ps1`, sondeo cada 10 ms) | 0.5.0: **2 ventanas** nuevas; 0.6.0: **0** |
+| Rebootera Desktop en Windows 11: **rendimiento en reposo** (app + WebView2 propios, 20 s) | 0.5.0: 39 % de un núcleo; 0.6.0: **1,5 %**; memoria unos 380 MB en 7 procesos |
+| Copias en tubería (`internal/fastcopy`, con `-race`) | Integridad de varios tamaños, errores de lectura y escritura distinguidos y cancelación aunque el origen no responda |
+
+### Errores encontrados y corregidos
+
+| Error | Causa | Arreglo |
+| --- | --- | --- |
+| Escenario de Windows: "windows 11 bypass only applies to Windows images" | La caché del listado de la biblioteca (3 s) servía una lista vieja a la acción de instalar | `Library.ListFresh()` para las acciones; la caché solo para el listado de la interfaz |
+| `ntfsresize` se negaba a tocar un NTFS que acababa de redimensionar | Deja el volumen marcado para que Windows lo revise | El agente fuerza solo en volúmenes que él mismo redimensionó en esta sesión; uno sucio por Windows se sigue rechazando |
+| La imagen tipo Rufus no se creaba | `parted -s resizepart` se cancela solo al encoger | `sfdisk` |
+| Un disco sin tabla (la ISO) se dibujaba como "espacio libre" | `partman.Build` creaba un hueco | Sin tabla conocida no hay segmentos |
+| La prueba de la ISO definitiva en BIOS fallaba al apagar | Medía la pantalla (800x600) antes de que la interfaz cambiara de modo y el clic caía en otro botón | Espera a que la pantalla pase a más de 1024 px de ancho |
+
+### No probado en la v0.6.0
+
+El camino de Windows de "añadir Rebootera sin borrar" (`VTOYCLI /I /NonDest`) con una unidad real (se probó el de Linux con la misma herramienta sobre una imagen), "Crear USB" borrando un pendrive real, el gestor de particiones sobre un disco físico real (solo discos virtuales), los diálogos nativos de elegir imágenes y carpetas con el ratón, un instalador real de Windows y la ejecución de los workflows de GitHub.
+

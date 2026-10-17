@@ -101,6 +101,7 @@ func (s *Server) Handler() http.Handler {
 		mux.Handle("POST /api/power", s.requireSession(s.requireCSRF(http.HandlerFunc(s.handlePower))))
 		s.registerWifi(mux)
 		s.registerKeyboard(mux)
+		s.registerPartitions(mux)
 	} else {
 		s.registerDesktop(mux)
 	}

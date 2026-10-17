@@ -24,7 +24,7 @@ import { storagePage } from "./pages/storage.js";
 import { downloadsPage } from "./pages/downloads.js";
 import { libraryPage } from "./pages/library.js";
 import { wizardPage } from "./pages/wizard.js";
-import { loadPrefs, loadVaultPrefs, prefs, savePrefs } from "./prefs.js";
+import { forceLite, loadPrefs, loadVaultPrefs, prefs, savePrefs } from "./prefs.js";
 import {
   activeRoute,
   desktopRoutes,
@@ -273,6 +273,7 @@ async function init(): Promise<void> {
     // * En el escritorio no hay agente: ni apagado ni secciones del equipo.
     setRoutes(desktopRoutes);
     byId("power-button").hidden = true;
+    forceLite();
     register("create", createPage);
   }
 
@@ -288,7 +289,7 @@ async function init(): Promise<void> {
   subscribe(renderShell);
   tickClock();
   window.setInterval(tickClock, 1000);
-  const ready = Promise.all([loadVersion(), start(), applyVaultPrefs()]);
+  const ready = Promise.all([loadVersion(), start(isDesktop()), applyVaultPrefs()]);
   startRouter(byId("view"), renderNav);
   playIntro(ready);
 }

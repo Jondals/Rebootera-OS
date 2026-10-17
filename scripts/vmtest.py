@@ -310,7 +310,20 @@ def test_system(vm, checks):
 # * Posiciones del menú lateral en pantallas de más de 1180 px de ancho
 # * (coinciden con layout.css): x del texto e y de cada entrada.
 NAV_X = 110
-NAV_Y = {"overview": 138, "library": 181, "install": 224, "drivers": 267, "downloads": 310, "storage": 353}
+NAV_Y = {"overview": 138, "install": 181, "library": 224, "drivers": 267, "downloads": 310, "storage": 353}
+
+
+def stable_screen_size(vm):
+    """Tamaño de pantalla una vez estable: el kiosco puede cambiar de modo de vídeo al arrancar (sobre todo con la
+    máquina cargada) y un clic calculado con el tamaño viejo caería en otro botón."""
+    previous = vm.screen_size()
+    for _ in range(8):
+        time.sleep(2)
+        current = vm.screen_size()
+        if current == previous:
+            return current
+        previous = current
+    return previous
 
 
 def test_ui(vm, checks, poweroff):
@@ -319,7 +332,7 @@ def test_ui(vm, checks, poweroff):
     time.sleep(1.5)
     vm.screenshot("1-intro")
     time.sleep(UI_SETTLE)
-    width, height = vm.screen_size()
+    width, height = stable_screen_size(vm)
     checks.check("resolución de pantalla (informativo)", True, "%dx%d" % (width, height))
     vm.screenshot("2-resumen")
     for index, route in enumerate(("drivers", "storage", "install"), start=3):
@@ -382,7 +395,12 @@ def main():
         if "--release" in sys.argv:
             # Imagen definitiva: no hay consola serie. Solo se comprueba lo que
             # ve el usuario y que la interfaz apaga el equipo de verdad.
+            # * No se sabe cuánto tarda el arranque (sobre todo en BIOS y con la máquina cargada): se espera a
+            # * que la pantalla cambie al modo de la interfaz (más de 1024 px de ancho), hasta 90 s.
             time.sleep(RELEASE_BOOT_WAIT)
+            deadline = time.time() + 90
+            while time.time() < deadline and vm.screen_size()[0] < 1024:
+                time.sleep(2)
             test_ui(vm, checks, True)
             return finish(outdir, mode, checks)
         booted = vm.wait_for("root@rebootera", BOOT_TIMEOUT)

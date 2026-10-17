@@ -1,6 +1,7 @@
 // * Página "Crear USB" de Rebootera Desktop: la única forma de escribir un USB.
 // * Un pendrive nuevo se borra y se convierte en un USB de Rebootera (Windows);
-// * un USB de Rebootera que ya tienes se actualiza sin borrar nada. En los dos
+// * a un USB que ya tiene cosas (por ejemplo uno hecho con Rufus) se le añade
+// * Rebootera sin borrar nada; un USB de Rebootera que ya tienes se actualiza. En los dos
 // * casos puedes meter ya, en el mismo paso, imágenes (por ejemplo tu ISO de
 // * Windows 11 LTSC) y carpetas de drivers: salen dentro del USB sin mover nada a mano.
 // ! Borrar un disco exige elegirlo entre los USB que no son de sistema y escribir
@@ -21,6 +22,7 @@ import { refreshVault } from "../state.js";
 interface USBVolume {
   letter: string;
   label: string;
+  fileSystem: string;
   sizeBytes: number;
   freeBytes: number;
 }
@@ -33,6 +35,8 @@ interface USBDisk {
   volumes: USBVolume[];
   usedBytes: number;
   rebootera: boolean;
+  /** Se puede añadir Rebootera sin borrar lo que tiene (NTFS o exFAT con datos). */
+  adoptable: boolean;
 }
 
 /** Unidad de /api/desktop/drives. */
@@ -68,8 +72,12 @@ interface CreateStatus {
   drive?: string;
 }
 
-/** Qué se va a hacer: borrar un disco o actualizar un USB de Rebootera. */
-type Target = { kind: "erase"; disk: number } | { kind: "keep"; root: string } | null;
+/** Qué se va a hacer: borrar un disco, añadirle Rebootera sin borrar, o actualizar un USB de Rebootera. */
+type Target =
+  | { kind: "erase"; disk: number }
+  | { kind: "adopt"; disk: number }
+  | { kind: "keep"; root: string }
+  | null;
 
 /** De dónde sale Rebootera OS. */
 type Source = "download" | "file" | "keep";
@@ -88,9 +96,12 @@ let acknowledged = false;
 let selectedAfter = false;
 let timer = 0;
 
-/** Texto que hay que escribir para confirmar el borrado del disco. */
+/** Texto que hay que escribir para confirmar el borrado o el cambio del disco. */
 function confirmText(): string {
-  return target?.kind === "erase" ? "ERASE DISK " + target.disk : "";
+  if (target?.kind === "erase") {
+    return "ERASE DISK " + target.disk;
+  }
+  return target?.kind === "adopt" ? "ADD TO DISK " + target.disk : "";
 }
 
 /** Indica si ya está claro de dónde sale Rebootera OS. */
@@ -276,11 +287,15 @@ function chooseSource(event: Event): void {
 function chooseTarget(event: Event): void {
   const value = (event.currentTarget as HTMLInputElement).value;
   const [kind, rest] = [value.slice(0, value.indexOf(":")), value.slice(value.indexOf(":") + 1)];
-  target = kind === "erase" ? { kind: "erase", disk: Number(rest) } : { kind: "keep", root: rest };
-  if (target.kind === "erase" && source === "keep") {
+  const next: Exclude<Target, null> =
+    kind === "erase" || kind === "adopt"
+      ? { kind, disk: Number(rest) }
+      : { kind: "keep", root: rest };
+  target = next;
+  if (next.kind !== "keep" && source === "keep") {
     source = "download";
   }
-  if (target.kind === "keep" && source === "download" && iso === "") {
+  if (next.kind === "keep" && source === "download" && iso === "") {
     source = "keep";
   }
   typed = "";
@@ -305,11 +320,12 @@ async function start(): Promise<void> {
   selectedAfter = false;
   const extras = { images, driverDirs };
   try {
-    if (target.kind === "erase") {
+    if (target.kind === "erase" || target.kind === "adopt") {
       // * ISO vacía: Core descarga y verifica la última versión publicada.
       await postJSON("/api/desktop/create", {
         disk: target.disk,
         iso: source === "file" ? iso : "",
+        mode: target.kind === "adopt" ? "keep" : "erase",
         confirm: typed,
         ...extras,
       });
@@ -437,6 +453,21 @@ function eraseCard(item: USBDisk): HTMLElement {
   });
 }
 
+/** Tarjeta para añadir Rebootera a un disco que ya tiene cosas, sin borrarlas. */
+function adoptCard(item: USBDisk): HTMLElement {
+  const first = item.volumes[0];
+  return choiceCard({
+    name: "target",
+    value: "adopt:" + item.number,
+    selected: target?.kind === "adopt" && target.disk === item.number,
+    iconPaths: icons.usb,
+    title: t("desktop.adoptTitle", { name: item.friendlyName }),
+    hint: t("desktop.adoptHint", { fs: first.fileSystem, used: fmt.bytes(item.usedBytes) }),
+    lines: [warning(t("desktop.adoptNote"), true)],
+    onChange: chooseTarget,
+  });
+}
+
 /** Panel 1: qué USB. */
 function usbPanel(): HTMLElement {
   const refresh = button(t("common.refresh"), loadTargets, { iconPaths: icons.refresh });
@@ -450,6 +481,16 @@ function usbPanel(): HTMLElement {
     );
   }
   if (appMode.platform === "windows") {
+    const adoptable = disks.filter(function canAdopt(item) {
+      return item.adoptable;
+    });
+    if (adoptable.length > 0) {
+      parts.push(
+        el("p", { class: "group-title" }, [t("desktop.groupAdopt")]),
+        el("p", { class: "muted small-note" }, [t("desktop.groupAdoptHint")]),
+        ...adoptable.map(adoptCard),
+      );
+    }
     parts.push(
       el("p", { class: "group-title" }, [t("desktop.groupErase")]),
       ...(disks.length > 0
@@ -575,14 +616,20 @@ function extrasPanel(): HTMLElement {
 /** Panel 4: confirmación y botón final. */
 function goPanel(): HTMLElement {
   const erasing = target?.kind === "erase";
-  const go = button(erasing ? t("desktop.createButton") : t("desktop.updateButton"), start, {
+  const adopting = target?.kind === "adopt";
+  const goLabel = erasing
+    ? t("desktop.createButton")
+    : adopting
+      ? t("desktop.adoptButton")
+      : t("desktop.updateButton");
+  const go = button(goLabel, start, {
     variant: erasing ? "danger" : "primary",
     iconPaths: erasing ? icons.alert : icons.refresh,
   });
   go.classList.add("create-go");
   go.disabled = !canGo();
   const parts: (Node | null)[] = [];
-  if (erasing) {
+  if (erasing || adopting) {
     const confirmInput = el("input", {
       class: "text-input",
       type: "text",
@@ -591,10 +638,15 @@ function goPanel(): HTMLElement {
     confirmInput.value = typed;
     confirmInput.addEventListener("input", typeConfirm);
     parts.push(
-      el("div", { class: "error-box" }, [
-        icon(icons.alert),
-        el("span", {}, [t("desktop.createWarn")]),
-      ]),
+      adopting
+        ? el("div", { class: "notice" }, [
+            icon(icons.shield),
+            el("span", {}, [t("desktop.adoptWarn")]),
+          ])
+        : el("div", { class: "error-box" }, [
+            icon(icons.alert),
+            el("span", {}, [t("desktop.createWarn")]),
+          ]),
       el("label", { class: "confirm-field" }, [
         el("span", {}, [t("desktop.confirmHint", { text: confirmText() })]),
         confirmInput,

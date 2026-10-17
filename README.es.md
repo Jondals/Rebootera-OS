@@ -21,6 +21,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 | **Asistente de drivers** | Todos los dispositivos PCI y USB, el driver de Linux en uso y los Hardware ID de Windows, destacando lo que necesita el instalador (disco y red). También casa esos Hardware ID con los paquetes de drivers de Windows (`.inf`) de la carpeta `drivers/` del USB. |
 | **Wi-Fi** | Conecta la sesión a una red inalámbrica desde Ajustes (WPA2/WPA3 y redes abiertas, también ocultas). |
 | **USB y discos** | Discos y particiones con su función y su uso. **Safe Disk Guard**: los discos internos y el USB de Rebootera están protegidos y solo se leen. |
+| **Discos y particiones** | Cada disco como una barra visual. Cambia el tamaño de una partición, mueve el límite entre dos vecinas con un deslizador, fusiona, borra o crea particiones (ext4 y NTFS se pueden redimensionar sin perder archivos). Cada cambio enseña antes los pasos exactos y pide escribir el nombre del disco; el USB desde el que arranca Rebootera nunca se toca. |
 | **Rebootera Desktop** | Aplicación para Windows con una sola opción, **Crear USB**: crea un USB de Rebootera nuevo o actualiza el que ya tienes (sin borrarlo), descargando por ti la última versión de Rebootera OS, y mete en el mismo paso tus imágenes (por ejemplo una ISO de Windows 11 LTSC) y carpetas de drivers, sin mover nada a mano. El Resumen y el Asistente de drivers muestran y gestionan lo que lleva el USB. También descarga imágenes oficiales aunque no haya USB: se guardan en la carpeta `Rebootera` de tu usuario. |
 | **Idiomas** | Inglés y español. |
 
@@ -35,12 +36,12 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 
 **Canales:** `master` es el canal estable (release `latest`). La rama `beta` se crea sola a partir de la primera release estable y publica la prerelease `beta` en cada push: ahí se prueban los cambios antes de pasarlos a `master`.
 
-**Desde Windows**: ejecuta `Rebootera Desktop.exe` y abre **Crear USB** (es la primera opción). Elige de dónde sale Rebootera OS (*descargar la última versión*, lo recomendado, comprobada con su SHA-256 publicado antes de borrar nada, o *usar una ISO de Rebootera de este PC*), después el pendrive, y escribe la confirmación. Windows pedirá permiso de administrador para preparar el pendrive. Se borra todo el contenido del pendrive elegido; los discos que contienen datos aparecen claramente marcados. Antes de confirmar puedes **añadir imágenes y carpetas de drivers** (tu Windows 11 LTSC, un Linux, tus drivers de red): se copian en el mismo paso. Si ya tienes un USB de Rebootera, elígelo en la lista: no se borra nada, se puede actualizar Rebootera OS y se copia lo que añadas.
+**Desde Windows**: ejecuta `Rebootera Desktop.exe` y abre **Crear USB** (es la primera opción). Elige de dónde sale Rebootera OS (*descargar la última versión*, lo recomendado, comprobada con su SHA-256 publicado antes de borrar nada, o *usar una ISO de Rebootera de este PC*), después el pendrive, y escribe la confirmación. Windows pedirá permiso de administrador para preparar el pendrive. Se borra todo el contenido del pendrive elegido; los discos que contienen datos aparecen claramente marcados. Si tu USB ya tiene cosas (por ejemplo, hecho con Rufus), elige **"conservar los archivos"**: Rebootera se añade junto a ellas y no se borra nada. Antes de confirmar puedes **añadir imágenes y carpetas de drivers** (tu Windows 11 LTSC, un Linux, tus drivers de red): se copian en el mismo paso. Si ya tienes un USB de Rebootera, elígelo en la lista: no se borra nada, se puede actualizar Rebootera OS y se copia lo que añadas.
 
 **Desde Linux**, como root:
 
 ```bash
-scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.5.0-amd64.iso
+scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.6.0-amd64.iso
 ```
 
 El script rechaza los discos no extraíbles y el disco del sistema.
@@ -151,6 +152,8 @@ pnpm run build
 | `scripts/vmtest.py MODO ISO SALIDA` | Arranca la ISO en QEMU/KVM (`uefi`, `uefi-sb`, `bios`): servicios, aislamiento, permisos, Secure Boot, capturas de la interfaz y apagado desde ella |
 | `scripts/vmtest-v03.py USB.img SALIDA` | Funciones de la 0.3.0 de extremo a extremo: descarga con firma GPG verificada, casado de drivers con INF reales de virtio-win, Wi-Fi con radios simuladas y un punto de acceso virtual, preseed de Debian con arranque único, preparación y limpieza de Windows |
 | `scripts/test-desktop-windows.ps1` | Solo Windows: ejecuta el `Rebootera Desktop.exe` real contra un USB **falso** (una carpeta temporal) y comprueba que la imagen y los drivers se copian byte a byte, que el sistema no se toca y que las peticiones malas se rechazan |
+| `scripts/make-partman-disk.sh SALIDA.qcow2` | Disco de pruebas del gestor de particiones: ext4 + NTFS con datos y sumas (solo archivos de imagen y un dispositivo loop) |
+| `REBOOTERA_LOOP_TESTS=1 go test ./cmd/rebootera-agent -run TestLoop` | Como root en WSL: ejecuta el gestor de particiones sobre discos loop reales (cambiar tamaño, mover un límite en las dos direcciones, fusionar, crear, borrar) y comprueba los archivos por hash y la salud de los sistemas de archivos |
 | `scripts/vmtest-interactive.py MODO IMG SALIDA` | Controla una VM desde fuera (teclas, clics, capturas), por ejemplo para recorrer MokManager |
 | `scripts/vmtest-usb.py MODO USB.img DISCO.qcow2 SALIDA` | USB de Rebootera de extremo a extremo: Vault, descarga real, importación desde otro disco, ajustes, arranque de la imagen elegida y persistencia tras reiniciar |
 | `scripts/ui-preview.py URL SALIDA` | Capturas de la interfaz con el mismo WebKitGTK de la imagen |

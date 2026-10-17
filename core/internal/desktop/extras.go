@@ -7,9 +7,9 @@
 package desktop
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"rebootera/core/internal/drivers"
+	"rebootera/core/internal/fastcopy"
 )
 
 // errBusy se devuelve si ya hay una creación o actualización en marcha.
@@ -182,7 +183,7 @@ func (c *extrasCopier) file(source, target string) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(out, io.TeeReader(in, c))
+	_, err = fastcopy.Copy(context.Background(), out, in, c)
 	if err == nil {
 		err = out.Sync()
 	}
@@ -233,11 +234,10 @@ func (w *treeCopy) visit(path string, entry fs.DirEntry, err error) error {
 	return w.copier.file(path, filepath.Join(w.target, rel))
 }
 
-// * Write cuenta los bytes copiados e informa del avance (io.Writer del TeeReader).
-func (c *extrasCopier) Write(b []byte) (int, error) {
-	c.done += int64(len(b))
+// * Visit cuenta los bytes copiados e informa del avance (fastcopy.Visitor).
+func (c *extrasCopier) Visit(chunk []byte) {
+	c.done += int64(len(chunk))
 	setItem(c.phase, c.item, min(float64(c.done)/float64(c.total), 1))
-	return len(b), nil
 }
 
 // * AddDrivers copia una carpeta de drivers al USB elegido (Asistente de drivers).

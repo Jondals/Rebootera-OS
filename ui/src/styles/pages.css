@@ -882,12 +882,6 @@
 
 /* Centro de descargas */
 
-.transfer-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .transfer-main {
   display: flex;
   flex-direction: column;
@@ -904,62 +898,6 @@
 .transfer-error {
   color: var(--danger);
   font-size: 13px;
-}
-
-.catalog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 12px;
-}
-
-.catalog-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 16px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-}
-
-.catalog-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.catalog-head .feature-icon {
-  margin: 0;
-}
-
-.catalog-head div {
-  display: flex;
-  flex-direction: column;
-}
-
-.catalog-head .muted {
-  font-size: 12.5px;
-}
-
-.catalog-notes {
-  color: var(--text-muted);
-  font-size: 13px;
-  flex: 1;
-}
-
-.catalog-version {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.catalog-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
 }
 
 /* Importador */
@@ -1144,19 +1082,6 @@
   color: var(--warn);
 }
 
-/* Compatibilidad de arranque en el catálogo */
-
-.catalog-badges {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.catalog-warning {
-  color: var(--danger);
-  font-size: 12.5px;
-}
-
 /* Wi-Fi (Ajustes) */
 
 .wifi-body {
@@ -1292,4 +1217,306 @@ select.text-input {
 
 .group-title + .small-note {
   margin: 0 0 10px;
+}
+
+/* Descargar sistemas: lista simple */
+
+.transfers-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transfers-box:empty {
+  display: none;
+}
+
+.transfers-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 18px 0 12px;
+}
+
+.chip-button {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.chip-button:hover {
+  color: var(--text);
+}
+
+.chip-active {
+  background: var(--accent-soft, rgba(45, 212, 191, 0.14));
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.os-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.os-row {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.os-line {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 84px auto 32px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+}
+
+.os-line .feature-icon {
+  margin: 0;
+}
+
+.os-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.os-note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.os-warning {
+  color: var(--danger);
+  font-size: 12.5px;
+}
+
+.os-size {
+  text-align: right;
+}
+
+.os-toggle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.os-toggle:hover,
+.os-open .os-toggle {
+  color: var(--accent);
+}
+
+.os-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 16px 16px 68px;
+  font-size: 13.5px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.os-details p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.detail-line {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .os-line {
+    grid-template-columns: 40px minmax(0, 1fr) auto 32px;
+  }
+
+  .os-size {
+    display: none;
+  }
+
+  .os-details {
+    padding-left: 16px;
+  }
+
+  .detail-line {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* Gestor de particiones */
+
+.pm-bar,
+.pm-preview {
+  display: flex;
+  gap: 3px;
+  min-height: 74px;
+  margin: 14px 0;
+}
+
+.pm-seg,
+.pm-piece {
+  flex-basis: 0;
+  min-width: 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  overflow: hidden;
+}
+
+.pm-seg {
+  cursor: pointer;
+}
+
+.pm-seg strong,
+.pm-piece strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.pm-seg .mono-small,
+.pm-piece .mono-small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.pm-fs-ntfs,
+.pm-tone-accent {
+  background: rgba(45, 212, 191, 0.22);
+}
+
+.pm-fs-ext,
+.pm-tone-ok {
+  background: rgba(52, 211, 153, 0.22);
+}
+
+.pm-fs-fat,
+.pm-tone-amber {
+  background: rgba(245, 158, 11, 0.24);
+}
+
+.pm-fs-swap,
+.pm-fs-other,
+.pm-tone-muted {
+  background: rgba(139, 154, 168, 0.2);
+}
+
+.pm-free,
+.pm-tone-free {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 6px,
+    rgba(139, 154, 168, 0.18) 6px 12px
+  );
+  border: 2px dashed var(--border);
+}
+
+.pm-seg:hover {
+  border-color: var(--border-strong, var(--border));
+}
+
+.pm-selected {
+  border-color: var(--accent);
+}
+
+.pm-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.pm-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pm-busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.pm-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pm-size {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pm-range {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.pm-number-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pm-number {
+  width: 110px;
+}
+
+.pm-steps {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pm-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
 }

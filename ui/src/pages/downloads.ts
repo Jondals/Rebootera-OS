@@ -1,7 +1,9 @@
-// * Página "Centro de descargas": cola de transferencias (descargas e
-// * importaciones con progreso, velocidad y tiempo restante) y catálogo
-// * oficial. Cada tarjeta consulta en la fuente oficial la última versión y su
-// * tamaño. Windows se descarga desde la web de Microsoft (enlace manual).
+// * Página "Descargar sistemas": una lista corta y clara de imágenes oficiales
+// * con un botón por fila. Las transferencias solo aparecen cuando las hay; los
+// * detalles (compatibilidad de arranque, firma, Secure Boot) quedan plegados.
+// * La última versión y su tamaño se consultan en segundo plano (Core las
+// * guarda unos minutos) para que la página salga al instante.
+// * Windows se descarga desde la web de Microsoft (no hay enlace directo).
 
 import { getJSON, postJSON, type CatalogEntry, type Job } from "../api.js";
 import {
@@ -10,7 +12,6 @@ import {
   emptyState,
   errorBox,
   pageHeader,
-  panel,
   progress,
   type Tone,
 } from "../components.js";
@@ -33,48 +34,57 @@ const STATUS_TONES: Record<Job["status"], Tone> = {
   cancelled: "muted",
 };
 
+/** Filtros de categoría de la lista. */
+const FILTERS = ["all", "linux", "windows", "tools"] as const;
+type Filter = (typeof FILTERS)[number];
+
 /** Resultado de consultar la última versión de una entrada. */
 interface Resolved {
   fileName: string;
   sizeBytes: number;
 }
 
-let queueBody: HTMLElement | null = null;
-let catalogBody: HTMLElement | null = null;
+let transfersBody: HTMLElement | null = null;
+let listBody: HTMLElement | null = null;
+let filterBody: HTMLElement | null = null;
 let message: HTMLElement | null = null;
 let catalog: CatalogEntry[] | null = null;
+let filter: Filter = "all";
+const open = new Set<string>();
 let lastQueue = "";
 let doneCount = -1;
 const resolved = new Map<string, Resolved | "error">();
 
 /** Dibuja la estructura y carga el catálogo. */
 function render(root: HTMLElement): void {
-  queueBody = el("div", { class: "transfer-list" });
-  catalogBody = el("div", { class: "catalog-grid" });
+  transfersBody = el("div", { class: "transfers-box" });
+  filterBody = el("div", { class: "filter-row", role: "tablist" });
+  listBody = el("div", { class: "os-list" });
   message = el("div", { class: "page-message", "aria-live": "polite" });
   lastQueue = "";
-  const clear = button(t("downloads.clear"), clearFinished, { iconPaths: icons.check });
-  clear.classList.add("btn-small");
   root.append(
     el("div", { class: "page" }, [
       pageHeader(t("downloads.title"), t("downloads.subtitle")),
       message,
-      panel(t("downloads.queue"), [queueBody], { iconPaths: icons.download, action: clear }),
-      panel(t("downloads.catalog"), [catalogBody], { iconPaths: icons.globe }),
+      transfersBody,
+      filterBody,
+      listBody,
     ]),
   );
+  drawFilters();
   loadCatalog();
+  update();
 }
 
-/** Lee el catálogo y consulta la última versión de cada entrada. */
+/** Lee el catálogo y consulta en segundo plano la última versión de cada entrada. */
 async function loadCatalog(): Promise<void> {
   try {
     catalog = await getJSON<CatalogEntry[]>("/api/catalog");
   } catch (error) {
-    catalogBody?.replaceChildren(errorBox(error));
+    listBody?.replaceChildren(errorBox(error));
     return;
   }
-  renderCatalog();
+  renderList();
   for (const entry of catalog) {
     if (entry.resolver.type !== "manual" && !resolved.has(entry.id)) {
       resolveEntry(entry.id);
@@ -85,12 +95,29 @@ async function loadCatalog(): Promise<void> {
 /** Consulta en la fuente oficial el archivo y tamaño actuales de una entrada. */
 async function resolveEntry(id: string): Promise<void> {
   try {
-    const result = await postJSON<Resolved>("/api/catalog/resolve", { id });
-    resolved.set(id, result);
+    resolved.set(id, await postJSON<Resolved>("/api/catalog/resolve", { id }));
   } catch {
     resolved.set(id, "error");
   }
-  renderCatalog();
+  renderList();
+}
+
+/** Cambia el filtro de categoría. */
+function chooseFilter(event: MouseEvent): void {
+  filter = (event.currentTarget as HTMLElement).dataset.filter as Filter;
+  drawFilters();
+  renderList();
+}
+
+/** Despliega o pliega los detalles de una fila. */
+function toggleDetails(event: MouseEvent): void {
+  const id = (event.currentTarget as HTMLElement).dataset.id ?? "";
+  if (open.has(id)) {
+    open.delete(id);
+  } else {
+    open.add(id);
+  }
+  renderList();
 }
 
 /** Añade una descarga a la cola. */
@@ -201,36 +228,110 @@ function jobRow(job: Job): HTMLElement {
   ]);
 }
 
-/** Tarjeta de una entrada del catálogo. */
-function catalogCard(entry: CatalogEntry): HTMLElement {
-  const info = resolved.get(entry.id);
-  let versionLine: string;
+/** Primera frase de una nota: lo justo para la fila. */
+function firstSentence(text: string): string {
+  const end = text.indexOf(". ");
+  return end > 0 ? text.slice(0, end + 1) : text;
+}
+
+/** Tamaño o estado de la consulta de una entrada, para el lado derecho de la fila. */
+function sizeText(entry: CatalogEntry): string {
   if (entry.resolver.type === "manual") {
-    versionLine = entry.homepage;
-  } else if (info === undefined) {
-    versionLine = t("downloads.resolving");
-  } else if (info === "error") {
-    versionLine = t("errors.codes.source");
-  } else {
-    versionLine = info.fileName + (info.sizeBytes > 0 ? " · " + fmt.bytes(info.sizeBytes) : "");
+    return "";
   }
-  let action: HTMLElement;
+  const info = resolved.get(entry.id);
+  if (info === undefined) {
+    return "…";
+  }
+  if (info === "error") {
+    return "—";
+  }
+  return info.sizeBytes > 0 ? fmt.bytes(info.sizeBytes) : "";
+}
+
+/** Botón o insignia de la derecha de una fila. */
+function rowAction(entry: CatalogEntry): HTMLElement {
   if (entry.inLibrary) {
-    action = badge(t("downloads.inLibrary"), "ok");
-  } else if (entry.resolver.type === "manual") {
-    action = badge(t("downloads.manual"), "amber");
-  } else {
-    const node = button(t("downloads.download"), startDownload, {
-      variant: "primary",
-      iconPaths: icons.download,
-    });
-    node.classList.add("btn-small");
-    node.dataset.id = entry.id;
-    node.disabled = !snapshot.vault?.available;
-    action = node;
+    return badge(t("downloads.inLibrary"), "ok");
   }
-  return el("article", { class: "catalog-card" }, [
-    el("header", { class: "catalog-head" }, [
+  if (entry.resolver.type === "manual") {
+    return badge(t("downloads.manual"), "amber");
+  }
+  const node = button(t("downloads.download"), startDownload, {
+    variant: "primary",
+    iconPaths: icons.download,
+  });
+  node.dataset.id = entry.id;
+  node.disabled = !snapshot.vault?.available;
+  return node;
+}
+
+/** Línea de un dato en los detalles plegables. */
+function detailLine(label: string, value: string): HTMLElement {
+  return el("div", { class: "detail-line" }, [
+    el("span", { class: "muted" }, [label]),
+    el("span", {}, [value]),
+  ]);
+}
+
+/** Detalles de una entrada: todo lo que antes eran insignias, en texto. */
+function details(entry: CatalogEntry): HTMLElement {
+  const lang = getLanguage();
+  const info = resolved.get(entry.id);
+  const signature = entry.resolver.isoSignature
+    ? t("downloads.signedImage")
+    : entry.resolver.signature
+      ? t("downloads.signedIndex")
+      : t("downloads.unsigned");
+  const boot =
+    entry.boot.status === "verified"
+      ? t("downloads.bootVerified")
+      : entry.boot.status === "incompatible"
+        ? t("downloads.bootIncompatible")
+        : t("downloads.bootUntested");
+  return el("div", { class: "os-details" }, [
+    el("p", {}, [entry.notes[lang] ?? entry.notes.en]),
+    detailLine(
+      t("downloads.detailBoot"),
+      boot + ". " + (entry.boot.notes[lang] ?? entry.boot.notes.en),
+    ),
+    detailLine(
+      t("downloads.detailSecure"),
+      entry.secureBoot === "signed" ? t("downloads.secureSigned") : t("downloads.secureUnsigned"),
+    ),
+    detailLine(t("downloads.detailSignature"), signature),
+    detailLine(
+      t("downloads.detailFile"),
+      entry.resolver.type === "manual"
+        ? entry.homepage
+        : info === undefined
+          ? t("downloads.resolving")
+          : info === "error"
+            ? t("errors.codes.source")
+            : info.fileName,
+    ),
+  ]);
+}
+
+/** Fila de una entrada del catálogo. */
+function osRow(entry: CatalogEntry): HTMLElement {
+  const lang = getLanguage();
+  const expanded = open.has(entry.id);
+  const toggle = el(
+    "button",
+    {
+      class: "os-toggle",
+      type: "button",
+      "data-id": entry.id,
+      "aria-expanded": String(expanded),
+      title: t("downloads.details"),
+    },
+    [icon(icons.info)],
+  );
+  toggle.addEventListener("click", toggleDetails);
+  const incompatible = entry.boot.status === "incompatible";
+  return el("article", { class: "os-row" + (expanded ? " os-open" : "") }, [
+    el("div", { class: "os-line" }, [
       el("span", { class: "feature-icon" }, [
         icon(
           entry.category === "windows"
@@ -240,67 +341,61 @@ function catalogCard(entry: CatalogEntry): HTMLElement {
               : icons.library,
         ),
       ]),
-      el("div", {}, [
+      el("div", { class: "os-main" }, [
         el("strong", {}, [entry.name + " " + entry.version]),
-        el("span", { class: "muted" }, [entry.vendor + " · " + entry.arch]),
+        el("span", { class: "muted os-note" }, [
+          firstSentence(entry.notes[lang] ?? entry.notes.en),
+        ]),
+        incompatible
+          ? el("span", { class: "os-warning" }, [t("downloads.bootIncompatible")])
+          : null,
       ]),
+      el("span", { class: "mono-small muted os-size" }, [sizeText(entry)]),
+      rowAction(entry),
+      toggle,
     ]),
-    el("p", { class: "catalog-notes" }, [entry.notes[getLanguage()] ?? entry.notes.en]),
-    entry.boot.status === "incompatible"
-      ? el("p", { class: "catalog-warning" }, [
-          entry.boot.notes[getLanguage()] ?? entry.boot.notes.en,
-        ])
-      : null,
-    el("span", { class: "mono-small muted catalog-version", title: versionLine }, [versionLine]),
-    el("div", { class: "catalog-badges" }, [bootBadge(entry), signedBadge(entry)]),
-    el("footer", { class: "catalog-foot" }, [
-      badge(
-        entry.secureBoot === "signed" ? t("downloads.secureSigned") : t("downloads.secureUnsigned"),
-        entry.secureBoot === "signed" ? "ok" : "warn",
-      ),
-      action,
-    ]),
+    expanded ? details(entry) : null,
   ]);
 }
 
-/** Insignia con la compatibilidad de arranque comprobada de una entrada. */
-function bootBadge(entry: CatalogEntry): HTMLElement {
-  const node =
-    entry.boot.status === "verified"
-      ? badge(t("downloads.bootVerified"), "ok")
-      : entry.boot.status === "incompatible"
-        ? badge(t("downloads.bootIncompatible"), "danger")
-        : badge(t("downloads.bootUntested"), "muted");
-  node.title = entry.boot.notes[getLanguage()] ?? entry.boot.notes.en;
-  return node;
-}
-
-/** Insignia de índice firmado: solo si Core comprueba su firma GPG antes de descargar. */
-function signedBadge(entry: CatalogEntry): HTMLElement | null {
-  if (entry.resolver.isoSignature) {
-    const image = badge(t("downloads.signedImage"), "violet");
-    image.title = t("downloads.signedImageHint");
-    return image;
-  }
-  if (!entry.resolver.signature) {
-    return null;
-  }
-  const node = badge(t("downloads.signedIndex"), "violet");
-  node.title = t("downloads.signedIndexHint");
-  return node;
-}
-
-/** Dibuja el catálogo. */
-function renderCatalog(): void {
-  if (catalogBody === null || catalog === null || !catalogBody.isConnected) {
+/** Dibuja los botones de filtro. */
+function drawFilters(): void {
+  if (filterBody === null) {
     return;
   }
-  catalogBody.replaceChildren(...catalog.map(catalogCard));
+  filterBody.replaceChildren(
+    ...FILTERS.map(function filterButton(name) {
+      const node = el(
+        "button",
+        {
+          class: "chip-button" + (filter === name ? " chip-active" : ""),
+          type: "button",
+          role: "tab",
+          "aria-selected": String(filter === name),
+          "data-filter": name,
+        },
+        [t(name === "all" ? "downloads.all" : "downloads.categories." + name)],
+      );
+      node.addEventListener("click", chooseFilter);
+      return node;
+    }),
+  );
 }
 
-/** Refresca la cola de transferencias. */
+/** Dibuja la lista según el filtro. */
+function renderList(): void {
+  if (listBody === null || catalog === null || !listBody.isConnected) {
+    return;
+  }
+  const rows = catalog.filter(function visible(entry) {
+    return filter === "all" || entry.category === filter;
+  });
+  listBody.replaceChildren(...rows.map(osRow));
+}
+
+/** Refresca las transferencias (solo se ven si hay alguna). */
 function update(): void {
-  if (queueBody === null || !queueBody.isConnected || snapshot.vault === null) {
+  if (transfersBody === null || !transfersBody.isConnected || snapshot.vault === null) {
     return;
   }
   const signature = JSON.stringify([snapshot.vault.available, snapshot.transfers]);
@@ -309,14 +404,12 @@ function update(): void {
   }
   lastQueue = signature;
   if (!snapshot.vault.available) {
-    queueBody.replaceChildren(emptyState(icons.lock, t("needsVault.title"), t("needsVault.text")));
-    renderCatalog();
+    transfersBody.replaceChildren(
+      emptyState(icons.lock, t("needsVault.title"), t("needsVault.text")),
+    );
+    renderList();
     return;
   }
-  // * Sin USB, Rebootera Desktop guarda en la carpeta del usuario: se dice dónde.
-  const where = appMode.library
-    ? el("p", { class: "muted small-note" }, [t("desktop.localNote", { path: appMode.library })])
-    : null;
   // * Cuando termina una transferencia se recarga el catálogo para marcar
   // * "En tu biblioteca" sin salir de la página.
   const done = snapshot.transfers.filter(isDone).length;
@@ -324,12 +417,23 @@ function update(): void {
     loadCatalog();
   }
   doneCount = done;
-  const jobs = [...snapshot.transfers].reverse();
-  queueBody.replaceChildren(
-    ...(jobs.length > 0
-      ? jobs.map(jobRow)
-      : [el("p", { class: "muted" }, [t("downloads.queueEmpty")])]),
-    ...(where ? [where] : []),
+  if (snapshot.transfers.length === 0) {
+    transfersBody.replaceChildren(
+      ...(appMode.library
+        ? [
+            el("p", { class: "muted small-note" }, [
+              t("desktop.localNote", { path: appMode.library }),
+            ]),
+          ]
+        : []),
+    );
+    return;
+  }
+  const clear = button(t("downloads.clear"), clearFinished, { iconPaths: icons.check });
+  clear.classList.add("btn-small");
+  transfersBody.replaceChildren(
+    el("div", { class: "transfers-head" }, [el("strong", {}, [t("downloads.queue")]), clear]),
+    ...[...snapshot.transfers].reverse().map(jobRow),
   );
 }
 

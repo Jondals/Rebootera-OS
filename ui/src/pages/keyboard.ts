@@ -17,12 +17,7 @@ interface KeyboardState {
 /** Nombre con el que se muestra cada distribución (en su propio idioma). */
 const LAYOUT_NAMES: Record<string, string> = {
   es: "Español",
-  us: "English (US)",
-  gb: "English (UK)",
-  de: "Deutsch",
-  fr: "Français",
-  it: "Italiano",
-  pt: "Português",
+  us: "English",
 };
 
 let body: HTMLElement | null = null;

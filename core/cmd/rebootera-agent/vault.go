@@ -46,7 +46,7 @@ func mountVault(clientUser string) error {
 		log.Printf("vault: no se pudo identificar el disco de arranque (%v); sesión de solo lectura", err)
 		return nil
 	}
-	part, err := vaultPartition(bootDisk)
+	part, fsType, err := vaultPartition(bootDisk)
 	if err != nil {
 		log.Printf("vault: %v; sesión de solo lectura", err)
 		return nil
@@ -57,18 +57,24 @@ func mountVault(clientUser string) error {
 		return fmt.Errorf("no existe el usuario %q: %w", clientUser, err)
 	}
 	options := fmt.Sprintf("uid=%s,gid=%s,fmask=0137,dmask=0027,iocharset=utf8", account.Uid, account.Gid)
+	// * exFAT (USB creado por Rebootera) o NTFS (un USB que ya tenía datos, por ejemplo hecho con
+	// * Rufus, al que se añadió Rebootera sin borrarlo: Linux lo monta con el controlador ntfs3).
+	kernelFS := "exfat"
+	if fsType == "ntfs" {
+		kernelFS = "ntfs3"
+	}
 	flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_NOEXEC | syscall.MS_NOATIME)
 	if err := os.MkdirAll(vaultMount, 0o755); err != nil {
 		return err
 	}
 
 	device := "/dev/" + part
-	err = syscall.Mount(device, vaultMount, "exfat", flags, options)
+	err = syscall.Mount(device, vaultMount, kernelFS, flags, options)
 	if errors.Is(err, syscall.EBUSY) {
 		// * La partición está reservada por el mapeo de Ventoy: se usa VentoyPart.
 		device, err = ensureVentoyPart(part)
 		if err == nil {
-			err = syscall.Mount(device, vaultMount, "exfat", flags, options)
+			err = syscall.Mount(device, vaultMount, kernelFS, flags, options)
 		}
 	}
 	if err != nil {
@@ -106,11 +112,12 @@ func bootDiskName() (string, error) {
 	return parentDisk(name), nil
 }
 
-// * vaultPartition busca en el disco la partición exFAT con la etiqueta del Vault.
-func vaultPartition(disk string) (string, error) {
+// * vaultPartition busca en el disco la partición exFAT o NTFS con la etiqueta del Vault y
+// * devuelve su nombre y su sistema de archivos.
+func vaultPartition(disk string) (string, string, error) {
 	entries, err := os.ReadDir(filepath.Join("/sys/block", disk))
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	for _, entry := range entries {
 		if _, err := os.Stat(filepath.Join("/sys/block", disk, entry.Name(), "partition")); err != nil {
@@ -121,11 +128,16 @@ func vaultPartition(disk string) (string, error) {
 			continue
 		}
 		props := string(out)
-		if strings.Contains(props, "LABEL="+vaultLabel+"\n") && strings.Contains(props, "TYPE=exfat") {
-			return entry.Name(), nil
+		if !strings.Contains(props, "LABEL="+vaultLabel+"\n") {
+			continue
+		}
+		for _, fsType := range []string{"exfat", "ntfs"} {
+			if strings.Contains(props, "TYPE="+fsType+"\n") {
+				return entry.Name(), fsType, nil
+			}
 		}
 	}
-	return "", fmt.Errorf("el disco %s no tiene una partición %s", disk, vaultLabel)
+	return "", "", fmt.Errorf("el disco %s no tiene una partición %s", disk, vaultLabel)
 }
 
 // * ensureVentoyPart devuelve el dispositivo del mapeo VentoyPart, creándolo

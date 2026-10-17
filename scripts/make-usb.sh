@@ -8,6 +8,13 @@
 # *       Escribe en un dispositivo real. --confirm debe repetir exactamente el
 # *       mismo dispositivo y el dispositivo debe ser extraíble.
 # *
+# *   make-usb.sh --image RUTA.img --size 2G --adopt --iso REBOOTERA.iso
+# *       Imita "añadir Rebootera a un USB que ya tenía cosas" (hecho con Rufus):
+# *       crea un USB MBR con una partición NTFS llena de archivos de usuario y una
+# *       partición pequeña tipo UEFI:NTFS, encoge el NTFS como hace Ventoy en Windows
+# *       y le instala Ventoy SIN borrar (-n). Los archivos de usuario se conservan y
+# *       su suma queda en RUFUS-USER-FILES.sha256, en la raíz, para comprobarla.
+# *
 # * Resultado: tabla GPT; partición 1 exFAT "REBOOTERA" (el Vault: sistema,
 # * imágenes, drivers, herramientas y archivos) y partición 2 VTOYEFI (Ventoy).
 # ! Escribir en un dispositivo BORRA TODO SU CONTENIDO. El script se niega con
@@ -63,7 +70,11 @@ populate_vault() {
 	local part="$1" iso="$2" art
 	MNT="$(mktemp -d)"
 	# * Driver exFAT del kernel si existe; si no (por ejemplo en WSL), FUSE.
-	mount -t exfat "$part" "$MNT" 2>/dev/null || mount.exfat-fuse "$part" "$MNT"
+	if [ "$(blkid -o value -s TYPE "$part")" = "ntfs" ]; then
+		mount -t ntfs-3g "$part" "$MNT"
+	else
+		mount -t exfat "$part" "$MNT" 2>/dev/null || mount.exfat-fuse "$part" "$MNT"
+	fi
 	mkdir -p "$MNT/rebootera/state" "$MNT/isos/windows" "$MNT/isos/linux" "$MNT/isos/tools" \
 		"$MNT/drivers" "$MNT/tools" "$MNT/files" "$MNT/ventoy/theme"
 	# * Ventoy no busca imágenes en carpetas con .ventoyignore.
@@ -89,9 +100,40 @@ populate_vault() {
 	MNT=""
 }
 
+# * rufus_like prepara en $LOOP un USB como el que hace Rufus con una ISO de Windows y deja el
+# * NTFS encogido y etiquetado para añadirle Rebootera sin borrar nada.
+rufus_like() {
+	local loop="$1" size_mib="$2" end mnt shrink_mib=48
+	end=$((size_mib - 2))
+	parted -s "$loop" mklabel msdos mkpart primary ntfs 1MiB "${end}MiB" mkpart primary fat16 "${end}MiB" "$((size_mib - 1))MiB" >/dev/null
+	partprobe "$loop" 2>/dev/null || true
+	udevadm settle 2>/dev/null || true
+	mkntfs -F -Q -L RUFUS "${loop}p1" >/dev/null 2>&1
+	mkfs.vfat "${loop}p2" >/dev/null
+	mnt="$(mktemp -d)"
+	mount -t ntfs-3g "${loop}p1" "$mnt"
+	# * Archivos "de Windows 11 LTSC" y propios del usuario; ocupan buena parte de la partición.
+	mkdir -p "$mnt/sources" "$mnt/Mis cosas"
+	head -c 200000000 /dev/urandom >"$mnt/sources/install.wim"
+	head -c 30000000 /dev/urandom >"$mnt/Mis cosas/fotos.bin"
+	echo "datos de usuario" >"$mnt/Mis cosas/notas.txt"
+	(cd "$mnt" && find . -type f ! -name 'RUFUS-USER-FILES.sha256' -print0 | sort -z | xargs -0 sha256sum >RUFUS-USER-FILES.sha256)
+	umount "$mnt"
+	rmdir "$mnt"
+	# * Como hace Ventoy en Windows: se encoge primero el sistema de archivos y la partición.
+	ntfsresize -f -s "$((end - 2 - shrink_mib))M" "${loop}p1" >/dev/null 2>&1 <<<"y"
+	# * sfdisk en vez de parted: parted pregunta antes de encoger una partición y -s lo cancela.
+	echo ",$(( (end - shrink_mib - 1) * 2048 ))" | sfdisk --no-reread -N 1 "$loop" >/dev/null
+	partprobe "$loop" 2>/dev/null || true
+	udevadm settle 2>/dev/null || true
+	# * ntfsresize deja el volumen marcado para que Windows lo revise; Windows, al encogerlo, no lo marca.
+	# * Se quita la marca para imitar lo que haría Windows y que Linux pueda montarlo.
+	ntfsfix -d "${loop}p1" >/dev/null 2>&1 || true
+}
+
 # * main interpreta las opciones y crea el USB.
 main() {
-	local image="" device="" confirm="" size="16G" iso="" ventoy target
+	local image="" device="" confirm="" size="16G" iso="" ventoy target adopt=0
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		--image) image="$2"; shift 2 ;;
@@ -99,6 +141,7 @@ main() {
 		--confirm) confirm="$2"; shift 2 ;;
 		--size) size="$2"; shift 2 ;;
 		--iso) iso="$2"; shift 2 ;;
+		--adopt) adopt=1; shift ;;
 		*) die "opción desconocida: $1" ;;
 		esac
 	done
@@ -119,11 +162,22 @@ main() {
 		target="$LOOP"
 	fi
 
+	if [ "$adopt" = "1" ]; then
+		[ -n "$image" ] || die "--adopt solo se admite con --image"
+		log "Creando un USB tipo Rufus con archivos de usuario"
+		rufus_like "$target" "$(( $(numfmt --from=iec "$size") / 1048576 ))"
+	fi
+
 	log "Obteniendo Ventoy verificado"
 	ventoy="$(bash "$SRC/scripts/fetch-ventoy.sh" linux | tail -n1)"
 
-	log "Instalando Ventoy en $target (GPT, Secure Boot, etiqueta REBOOTERA)"
-	(cd "$ventoy" && printf 'y\ny\n' | ./Ventoy2Disk.sh -I -g -s -L REBOOTERA "$target") >/dev/null
+	if [ "$adopt" = "1" ]; then
+		log "Instalando Ventoy SIN borrar en $target (-n)"
+		(cd "$ventoy" && printf 'y\ny\n' | ./Ventoy2Disk.sh -I -n -s "$target") >/dev/null
+	else
+		log "Instalando Ventoy en $target (GPT, Secure Boot, etiqueta REBOOTERA)"
+		(cd "$ventoy" && printf 'y\ny\n' | ./Ventoy2Disk.sh -I -g -s -L REBOOTERA "$target") >/dev/null
+	fi
 	partprobe "$target" 2>/dev/null || true
 	udevadm settle 2>/dev/null || true
 
@@ -132,6 +186,8 @@ main() {
 	*loop* | *nvme* | *mmcblk*) part1="${target}p1" ;;
 	*) part1="${target}1" ;;
 	esac
+	# * Rebootera encuentra su Vault por la etiqueta: en un USB adoptado se la pone la aplicación.
+	[ "$adopt" = "1" ] && ntfslabel "$part1" REBOOTERA
 	populate_vault "$part1" "$iso"
 	log "USB de Rebootera listo en ${image:-$device}"
 }

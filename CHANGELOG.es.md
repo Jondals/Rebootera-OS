@@ -3,6 +3,21 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.6.0] - 2026-10-18
+
+### Añadido
+
+- **Gestor de particiones** (Discos y particiones, en Rebootera OS): cada disco es una barra visual con una pieza por partición y por hueco libre. Eliges una pieza y puedes **cambiar su tamaño**, **repartir espacio con su vecina** (mover el límite entre dos particiones con un deslizador), **fusionar** dos vecinas, **borrar** o **crear** una partición en un hueco. Cada acción enseña cómo quedará el disco, los pasos exactos, lo que se borra y lo que se copia, y pide escribir `CHANGE <disco>`. Funciona con ext4 y NTFS (los sistemas de archivos que se pueden redimensionar sin perder archivos); exFAT y FAT32 se pueden absorber en una fusión, borrar y crear. Mover un límite copia los datos de la partición de la derecha, con progreso y el aviso de no desconectar ni apagar. Nunca se toca el USB desde el que arranca Rebootera, las unidades ópticas, los discos con particiones abiertas, los de solo lectura ni los MBR con particiones extendidas; el agente lo comprueba todo otra vez (no se fía de la interfaz) y deja cada operación en el registro.
+- **Añadir Rebootera a un USB que ya tiene cosas, sin borrarlo** (por ejemplo uno hecho con Rufus): Crear USB lo ofrece junto a "USB nuevo". Usa la instalación no destructiva de Ventoy (Windows encoge un poco el volumen si el disco está lleno), deja los archivos donde están y muestra en el menú de arranque las imágenes (ISO) que ya tuviera. Rebootera OS acepta un Vault NTFS (montado con el controlador `ntfs3` del kernel) además de exFAT. El arranque del instalador de Rufus de esa unidad se sustituye por el menú de Rebootera.
+
+### Cambiado
+
+- **Descargar sistemas** es más simple: una lista corta de imágenes oficiales con un botón por fila y el tamaño a la derecha; las transferencias solo aparecen cuando las hay; los detalles (compatibilidad de arranque, firma, Secure Boot) quedan plegados tras un botón de información; filtro por Linux, Windows o herramientas. La última versión y su tamaño se consultan en segundo plano y Core las guarda 10 minutos, así que la página sale al instante.
+- **Copias al USB más rápidas.** Ahora se lee y se escribe a la vez con búferes de 4 MiB (antes cada trozo se leía, se escribía y se calculaba su hash uno detrás de otro), la imagen de Rebootera OS ya no se relee tras copiarla (el sistema la servía desde su caché, así que no comprobaba nada y duplicaba el tiempo; se comprueba el tamaño tras vaciar el búfer) y el listado de la biblioteca se guarda 3 segundos.
+- **Rebootera Desktop más ligero.** En reposo la interfaz gastaba un 40 % de un núcleo (WebView2 animando el fondo y los desenfoques): Desktop usa ahora siempre el modo ligero, sondea solo el USB cada 5 segundos (ni sensores, ni discos, ni registro del kernel, ni hardware, que no existen en Windows) y PowerShell ya no abre una ventana de golpe (todos los ayudantes se ejecutan ocultos).
+- **Instalar es la segunda pestaña** de Rebootera OS (Resumen, Instalar, Biblioteca, Drivers, Descargar, Discos).
+- Distribuciones de teclado: solo español e inglés.
+
 ## [0.5.0] - 2026-10-17
 
 ### Cambiado
@@ -24,7 +39,7 @@ Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 ### Añadido
 
 - **Imágenes firmadas de Arch Linux y Alpine**: los dos proyectos firman cada ISO (no su lista de sumas), así que, cuando el SHA-256 coincide, Rebootera baja la firma OpenPGP separada (`.sig` en Arch, `.asc` en Alpine) y verifica la imagen entera, en streaming, con la clave fijada del proyecto (huellas comprobadas contra archlinux.org/download y alpinelinux.org/downloads). Una imagen cuya firma no coincide se borra, igual que una con la suma mala. El Centro de descargas muestra la insignia "Imagen firmada (GPG)". Comprobado con las imágenes reales de Arch 2026.10.01 y Alpine 3.24.2.
-- **Distribución del teclado** en Ajustes (español, inglés EE. UU., inglés Reino Unido, alemán, francés, italiano y portugués). Core se lo pide al agente, que solo acepta esa lista cerrada, escribe la distribución donde la lee `start-kiosk` y reinicia la interfaz (cage ignora SIGTERM, así que se mata y systemd la reabre en 2 segundos). La elección se guarda en el Vault y se vuelve a aplicar en el siguiente arranque. Antes la distribución estaba fija en español.
+- **Distribución del teclado** en Ajustes (español e inglés). Core se lo pide al agente, que solo acepta esa lista cerrada, escribe la distribución donde la lee `start-kiosk` y reinicia la interfaz (cage ignora SIGTERM, así que se mata y systemd la reabre en 2 segundos). La elección se guarda en el Vault y se vuelve a aplicar en el siguiente arranque. Antes la distribución estaba fija en español.
 - **Comprobaciones continuas** (`.github/workflows/test.yml`): `gofmt`, `go vet` y `go test` del núcleo, tipos y Prettier de la interfaz, en cada push y pull request.
 - `scripts/vmtest-v03.py` incluye una prueba del teclado (el cambio reinicia el kiosco y cage arranca con el nuevo `XKB_DEFAULT_LAYOUT`).
 

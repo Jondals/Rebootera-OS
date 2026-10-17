@@ -4,15 +4,18 @@
 package desktop
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
+	"hash"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"rebootera/core/internal/fastcopy"
 )
 
 // * usbFolders son las carpetas de un USB de Rebootera recién creado.
@@ -79,16 +82,21 @@ func InstallSystem(root, isoPath string, progress Progress) error {
 	previous := filepath.Join(dir, "rebootera-os.previous.iso")
 	staged := current + ".new"
 
+	sourceInfo, err := os.Stat(isoPath)
+	if err != nil {
+		return err
+	}
+	sourceSize := sourceInfo.Size()
 	sourceHash, err := copyWithHash(isoPath, staged, progress)
 	if err != nil {
 		os.Remove(staged)
 		return err
 	}
-	// * Se relee la copia del USB: así se detecta un USB que escribe mal.
-	copiedHash, err := hashFile(staged)
-	if err != nil || copiedHash != sourceHash {
+	// * No se relee la copia: justo después de escribirla el sistema la sirve desde su caché,
+	// * así que no comprobaría el USB y duplicaría el tiempo. Se vació con Sync y se comprobó el tamaño.
+	if written, statErr := os.Stat(staged); statErr != nil || written.Size() != sourceSize {
 		os.Remove(staged)
-		return errors.New("la copia en el USB no coincide con el original: el USB podría estar dañado")
+		return errors.New("la copia en el USB no tiene el tamaño del original: el USB podría estar dañado")
 	}
 	if _, err := os.Stat(current); err == nil {
 		os.Remove(previous)
@@ -119,8 +127,8 @@ func copyWithHash(src, dst string, progress Progress) (string, error) {
 		return "", err
 	}
 	hasher := sha256.New()
-	counter := &progressCounter{total: info.Size(), report: progress}
-	if _, err := io.Copy(io.MultiWriter(out, hasher, counter), in); err != nil {
+	visitor := &hashProgress{hasher: hasher, total: info.Size(), report: progress}
+	if _, err := fastcopy.Copy(context.Background(), out, in, visitor); err != nil {
 		out.Close()
 		return "", fmt.Errorf("no se pudo copiar al USB: %w", err)
 	}
@@ -134,32 +142,19 @@ func copyWithHash(src, dst string, progress Progress) (string, error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-// * hashFile calcula el SHA-256 de un archivo.
-func hashFile(path string) (string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	hasher := sha256.New()
-	if _, err := io.Copy(hasher, f); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hasher.Sum(nil)), nil
-}
-
-// progressCounter cuenta bytes copiados e informa del avance.
-type progressCounter struct {
+// hashProgress calcula el hash de lo copiado e informa del avance.
+type hashProgress struct {
+	hasher hash.Hash
 	total  int64
 	done   int64
 	report Progress
 }
 
-// * Write implementa io.Writer.
-func (p *progressCounter) Write(b []byte) (int, error) {
-	p.done += int64(len(b))
-	if p.report != nil && p.total > 0 {
-		p.report(float64(p.done) / float64(p.total))
+// * Visit suma un trozo al hash y publica el avance.
+func (h *hashProgress) Visit(chunk []byte) {
+	h.hasher.Write(chunk)
+	h.done += int64(len(chunk))
+	if h.report != nil && h.total > 0 {
+		h.report(float64(h.done) / float64(h.total))
 	}
-	return len(b), nil
 }

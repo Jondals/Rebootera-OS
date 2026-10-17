@@ -150,6 +150,15 @@ func (a *agent) handle(req agentproto.Request) ([]string, error) {
 		return keyboardGet()
 	case agentproto.OpKeyboardSet:
 		return nil, keyboardSet(req.Layout)
+	case agentproto.OpPartInfo:
+		return partInfo(req.Disk, req.Part)
+	case agentproto.OpPartApply:
+		if req.Partition == nil {
+			return nil, errors.New("falta la operación de particiones")
+		}
+		return partApply(*req.Partition, req.Confirm)
+	case agentproto.OpPartStatus:
+		return partStatusLines()
 	}
 	return nil, fmt.Errorf("operación no admitida: %q", req.Op)
 }
@@ -157,7 +166,7 @@ func (a *agent) handle(req agentproto.Request) ([]string, error) {
 // * isStateChanging indica si una operación cambia el sistema y debe quedar
 // * registrada. Las consultas periódicas no se registran para no llenar el diario.
 func isStateChanging(op string) bool {
-	return op != agentproto.OpPing && op != agentproto.OpKernelLog && op != agentproto.OpWifiStatus && op != agentproto.OpWifiScan && op != agentproto.OpKeyboardGet
+	return op != agentproto.OpPing && op != agentproto.OpKernelLog && op != agentproto.OpWifiStatus && op != agentproto.OpWifiScan && op != agentproto.OpKeyboardGet && op != agentproto.OpPartStatus && op != agentproto.OpPartInfo
 }
 
 // * kernelLog devuelve las últimas líneas del registro del kernel de este

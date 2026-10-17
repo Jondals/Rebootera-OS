@@ -21,6 +21,9 @@ func fakeVault(t *testing.T) string {
 	os.MkdirAll(filepath.Join(root, "isos", ".partial"), 0o755)
 	t.Cleanup(testutil.Keep(&vault.Root).Restore)
 	vault.Root = root
+	// * Sin caché: estas pruebas cambian los archivos desde fuera y esperan verlo al momento.
+	t.Cleanup(testutil.Keep(&cacheTTL).Restore)
+	cacheTTL = 0
 	return root
 }
 
@@ -113,5 +116,29 @@ func TestBorradoSeguro(t *testing.T) {
 	}
 	if err := lib.Delete("isos/linux/a.iso"); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// * TestCacheDelListado comprueba que el recorrido se reutiliza unos segundos y que una mutación lo descarta.
+func TestCacheDelListado(t *testing.T) {
+	root := fakeVault(t)
+	cacheTTL = time.Minute
+	os.WriteFile(filepath.Join(root, "isos/linux/a.iso"), []byte("uno"), 0o644)
+	lib := New()
+	items, _ := lib.List()
+	if len(items) != 1 {
+		t.Fatalf("debería haber una imagen: %+v", items)
+	}
+	// * Una imagen nueva no aparece mientras vale el recorrido guardado.
+	os.WriteFile(filepath.Join(root, "isos/linux/b.iso"), []byte("dos"), 0o644)
+	if items, _ = lib.List(); len(items) != 1 {
+		t.Fatalf("debería servir el recorrido guardado: %+v", items)
+	}
+	// * Registrar una imagen descarta el recorrido y se ven las dos.
+	if err := lib.Register("isos/linux/b.iso", "abc", "", "test"); err != nil {
+		t.Fatal(err)
+	}
+	if items, _ = lib.List(); len(items) != 2 {
+		t.Fatalf("tras registrar deberían verse las dos: %+v", items)
 	}
 }

@@ -3,6 +3,21 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.6.0] - 2026-10-18
+
+### Added
+
+- **Partition manager** (Disks and partitions, in Rebootera OS): every disk is a visual bar with one piece per partition and per free gap. Pick a piece and you can **resize** it, **share space with its neighbor** (move the limit between two partitions with a slider), **merge** two neighbors, **delete** or **create** a partition in a free gap. Every action shows how the disk will look, the exact steps, what gets erased and what gets copied, and asks you to type `CHANGE <disk>`. Works on ext4 and NTFS (the file systems that can be resized without losing files); exFAT and FAT32 can be merged away, deleted and created. Moving a limit copies the data of the partition on the right, with progress and a warning not to unplug or switch off. The USB Rebootera runs from, optical drives, disks with open partitions, read-only disks and MBR disks with extended partitions are never touched; the agent re-checks everything (it does not trust the interface) and logs each operation.
+- **Add Rebootera to a USB that already has things, without erasing it** (for example one made with Rufus): Create USB offers it next to "new USB". It uses Ventoy's non-destructive install (Windows shrinks the volume a little if the drive is full), keeps the files where they are and shows the images (ISO) it already holds in the boot menu. Rebootera OS accepts an NTFS Vault (mounted with the kernel's `ntfs3` driver) besides exFAT. The Rufus installer boot of that drive is replaced by the Rebootera menu.
+
+### Changed
+
+- **Download systems** is simpler: a short list of official images, one button per row and a size on the right; transfers appear only when there are some; details (boot compatibility, signature, Secure Boot) are folded behind an info button; filter by Linux, Windows or tools. The latest version and size are looked up in the background and Core keeps them for 10 minutes, so the page opens at once.
+- **Faster copies to the USB.** Reading and writing now happen at the same time with 4 MiB buffers (before, each chunk was read, written and hashed one after another), the Rebootera OS image is no longer read back after copying (the system served it from its cache, so it checked nothing and doubled the time; the size is checked after flushing), and the library listing is cached for 3 seconds.
+- **Lighter Rebootera Desktop.** At rest the interface took about 40 % of a core (WebView2 animating the background and blurs): Desktop now always uses the light mode, polls only the USB every 5 seconds (no sensors, disks, kernel log or hardware, which do not exist on Windows) and PowerShell no longer flashes a window (every helper runs hidden).
+- **Install is the second tab** of Rebootera OS (Overview, Install, Library, Drivers, Download, Disks).
+- Keyboard layouts: only Spanish and English.
+
 ## [0.5.0] - 2026-10-17
 
 ### Changed
@@ -24,7 +39,7 @@ Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 ### Added
 
 - **Signed images for Arch Linux and Alpine**: both projects sign every ISO (not their checksum list), so after the SHA-256 matches, Rebootera downloads the detached OpenPGP signature (`.sig` for Arch, `.asc` for Alpine) and verifies the whole image, streaming it, against the project's pinned key (fingerprints checked against archlinux.org/download and alpinelinux.org/downloads). An image whose signature does not match is deleted, like one with a bad checksum. The Download Center shows a "GPG-signed image" badge. Checked against the real Arch 2026.10.01 and Alpine 3.24.2 images.
-- **Keyboard layout** in Settings (Spanish, US English, UK English, German, French, Italian, Portuguese). Core asks the agent, which accepts only that closed list, writes the layout where `start-kiosk` reads it and restarts the interface (cage ignores SIGTERM, so it is killed and systemd reopens it in 2 seconds). The choice is saved in the Vault and applied again at the next start. Before, the layout was fixed to Spanish.
+- **Keyboard layout** in Settings (Spanish and English). Core asks the agent, which accepts only that closed list, writes the layout where `start-kiosk` reads it and restarts the interface (cage ignores SIGTERM, so it is killed and systemd reopens it in 2 seconds). The choice is saved in the Vault and applied again at the next start. Before, the layout was fixed to Spanish.
 - **Continuous checks** (`.github/workflows/test.yml`): `gofmt`, `go vet` and `go test` for the core, type check and Prettier for the interface, on every push and pull request.
 - `scripts/vmtest-v03.py` has a keyboard check (the change restarts the kiosk and cage starts with the new `XKB_DEFAULT_LAYOUT`).
 

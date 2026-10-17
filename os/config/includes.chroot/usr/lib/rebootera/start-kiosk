@@ -16,7 +16,7 @@ set -u
 # * Solo se aceptan nombres de letras: el valor acaba en una variable de entorno.
 KEYBOARD="$(cat /run/rebootera/keyboard 2>/dev/null)"
 case "$KEYBOARD" in
-es | us | gb | de | fr | it | pt) export XKB_DEFAULT_LAYOUT="$KEYBOARD" ;;
+es | us) export XKB_DEFAULT_LAYOUT="$KEYBOARD" ;;
 esac
 
 LEVEL_FILE="${XDG_RUNTIME_DIR:-/tmp}/rebootera-kiosk-level"

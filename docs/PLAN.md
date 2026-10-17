@@ -199,6 +199,14 @@ Rebootera OS/
 - **Hito 6 (drivers en Windows y Linux): hecho en lo que se puede comprobar sin un instalador de Windows.** Se genera el `.7z` de drivers que Ventoy extrae en `X:\rebootera-drivers`, el `autounattend.xml` con las rutas de drivers (`windowsPE` y `offlineServicing`) y las entradas `injection` y `auto_install` de `ventoy.json`, y todo se limpia al volver a Rebootera. **Falta el criterio final** (instalar Windows en una VM con un controlador de disco que exige driver): no se ha probado con un instalador de Windows real porque no hay una ISO de Windows en el entorno de pruebas y Microsoft no ofrece una descarga directa sin sesión. Los drivers de Linux (firmware de Debian/Ubuntu/Fedora) siguen sin integrarse: cada instalador de Linux ya trae casi todo.
 - **Hito 8:** la batería está en [PRUEBAS.md](PRUEBAS.md) y crece con cada versión.
 
+### Decisiones de la v0.6.0
+
+- **Gestor de particiones en tres capas:** `internal/partman` (puro y con tablas de números) calcula la distribución, los huecos y el plan de pasos de cada operación; Core lo usa para la vista previa y el agente para ejecutarlo, volviendo a leer el disco y a calcular el plan (no se fía de Core). Los pasos son siempre los mismos: comprobar, encoger el sistema de archivos, copiar datos, cambiar la tabla (con `sfdisk`, conservando identificadores), agrandar el sistema de archivos y formatear. Una simulación en las pruebas comprueba que ningún plan pisa datos vivos ni deja una tabla que no cuadre con dónde están los datos.
+- **Mover el límite entre vecinas = mover el inicio de la partición de la derecha**, así que hay copia de datos (hacia la izquierda de principio a fin y hacia la derecha de fin a principio). Es lo único peligroso: se avisa y se pide confirmación escrita.
+- **NTFS tras redimensionar:** ntfsresize deja el volumen marcado para Windows y se niega a tocarlo otra vez sin `--force`; el agente solo lo fuerza en volúmenes que él mismo redimensionó en esta sesión.
+- **Añadir Rebootera sin borrar (Rufus):** Ventoy `/NonDest`; el Vault puede ser NTFS (`ntfs3`). Los experimentos con imágenes mostraron que Ventoy deja el NTFS más grande que su partición si no se encoge antes; Ventoy en Windows lo encoge por su cuenta, y el script de pruebas imita ese paso con `ntfsresize`.
+- **Descargas y rendimiento:** copia en tubería (`internal/fastcopy`), sin releer lo copiado, caché de la biblioteca (3 s) y de las consultas del catálogo (10 min), modo ligero siempre en Desktop.
+
 ### Decisiones de la v0.5.0
 
 - **Una sola opción para escribir el USB:** "Mi USB" duplicaba "Crear USB". Crear USB elige entre borrar un disco (confirmación escrita) y actualizar un USB de Rebootera existente (sin borrar), y en los dos casos copia en el mismo paso las imágenes y carpetas de drivers que el usuario elija. El Resumen y el Asistente de drivers del escritorio solo leen y gestionan la carpeta de drivers; nunca escriben el sistema.

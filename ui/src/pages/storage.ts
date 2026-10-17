@@ -1,29 +1,34 @@
-// * Página "USB y almacenamiento": todos los discos del equipo con su
-// * distribución de particiones, sistema de archivos, función y uso.
-// ! Solo lectura: esta página no ofrece ninguna acción que escriba en disco.
+// * Página "Discos y particiones": cada disco como una barra visual (una pieza por
+// * partición y por hueco libre). Se elige una pieza y se puede cambiar su tamaño,
+// * mover el límite con su vecina, fusionarla, borrarla o crear una partición en un
+// * hueco. Cada acción enseña antes cómo quedará el disco y pide confirmación escrita.
+// ! Rebootera nunca toca el USB desde el que ha arrancado ni un disco con particiones
+// ! montadas; el resto de discos se editan con la confirmación "CHANGE <disco>".
 
-import type { Disk, Partition } from "../api.js";
-import { badge, emptyState, pageHeader, progress, type Tone } from "../components.js";
+import { getJSON } from "../api.js";
+import {
+  badge,
+  button,
+  emptyState,
+  errorBox,
+  pageHeader,
+  panel,
+  progress,
+  type Tone,
+} from "../components.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
+import {
+  neighbour,
+  type Layout,
+  type PartDisk,
+  type PartStatus,
+  type Segment,
+} from "../partman.js";
 import type { Page } from "../router.js";
-import { snapshot } from "../state.js";
-
-/** Tono de cada función de partición (coincide con la barra del resumen). */
-const PART_TONES: Record<string, Tone> = {
-  efi: "amber",
-  msr: "muted",
-  recovery: "violet",
-  windows: "accent",
-  linux: "ok",
-  vault: "accent",
-  "boot-tools": "amber",
-  swap: "muted",
-  data: "muted",
-  unknown: "muted",
-};
+import { openBoundary, openCreate, openDelete, openMerge, openResize } from "./partdialogs.js";
 
 /** Tono de cada función de disco. */
 const ROLE_TONES: Record<string, Tone> = {
@@ -33,60 +38,286 @@ const ROLE_TONES: Record<string, Tone> = {
   optical: "muted",
 };
 
-let list: HTMLElement | null = null;
+/** Cada cuántos ms se vuelve a leer el estado de la operación y, en reposo, los discos. */
+const STATUS_MS = 2000;
+const RELOAD_EVERY = 8;
+
+let body: HTMLElement | null = null;
+let message: HTMLElement | null = null;
+let disks: PartDisk[] | null = null;
+let selected = "";
+let status: PartStatus | null = null;
+let timer = 0;
+let ticks = 0;
 let lastSignature = "";
 
-/** Dibuja la estructura fija de la página. */
-function render(root: HTMLElement): void {
-  list = el("div", { class: "disk-list" });
-  lastSignature = "";
-  root.append(
-    el("div", { class: "page" }, [pageHeader(t("storage.title"), t("storage.subtitle")), list]),
-  );
+/** Clave de selección de una pieza. */
+function keyOf(disk: string, segment: Segment): string {
+  return disk + ":" + (segment.number > 0 ? "p" + segment.number : "f" + segment.start);
 }
 
-/** Fila de una partición. */
-function partitionRow(part: Partition): HTMLElement {
-  const usage =
-    part.mountPoint && part.usedBytes + part.freeBytes > 0
-      ? el("div", { class: "part-usage" }, [
-          progress(
-            part.usedBytes / (part.usedBytes + part.freeBytes),
-            PART_TONES[part.role] ?? "accent",
-          ),
-          el("span", { class: "mono-small" }, [
-            t("sidebar.usedFree", {
-              used: fmt.bytes(part.usedBytes),
-              free: fmt.bytes(part.freeBytes),
-            }),
-          ]),
-        ])
-      : el("span", { class: "muted" }, [
-          part.mountPoint
-            ? t("storage.mountedAt", { path: part.mountPoint })
-            : t("storage.notMounted"),
-        ]);
-  return el("div", { class: "part-row" }, [
-    el("span", { class: "part-swatch swatch-" + (PART_TONES[part.role] ?? "muted") }),
-    el("div", { class: "part-name" }, [
-      el("strong", {}, [part.label || part.name]),
-      el("span", { class: "mono-small muted" }, [part.path]),
+/** Dibuja la estructura fija de la página y empieza a vigilar. */
+function render(root: HTMLElement): void {
+  body = el("div", { class: "disk-list" });
+  message = el("div", { class: "page-message", "aria-live": "polite" });
+  lastSignature = "";
+  const refresh = button(t("common.refresh"), reload, { iconPaths: icons.refresh });
+  root.append(
+    el("div", { class: "page" }, [
+      pageHeader(t("storage.title"), t("storage.subtitle"), [refresh]),
+      message,
+      body,
     ]),
-    badge(t("storage.parts." + part.role), PART_TONES[part.role] ?? "muted"),
-    el("span", { class: "mono-small" }, [part.fsType || "—"]),
-    el("span", { class: "mono-small part-size" }, [fmt.bytes(part.sizeBytes)]),
-    usage,
+  );
+  window.clearInterval(timer);
+  timer = window.setInterval(tick, STATUS_MS);
+  reload();
+}
+
+/** Lee la distribución de todos los discos. */
+async function reload(): Promise<void> {
+  try {
+    disks = await getJSON<PartDisk[]>("/api/partitions");
+    message?.replaceChildren();
+  } catch (error) {
+    message?.replaceChildren(errorBox(error));
+  }
+  draw();
+}
+
+/** Vigila la operación en curso; en reposo, refresca los discos de vez en cuando. */
+async function tick(): Promise<void> {
+  if (body === null || !body.isConnected) {
+    window.clearInterval(timer);
+    return;
+  }
+  ticks += 1;
+  let next: PartStatus | null = null;
+  try {
+    next = await getJSON<PartStatus>("/api/partitions/status");
+  } catch {
+    // * Sin respuesta del agente se reintenta en el siguiente ciclo.
+  }
+  const wasRunning = status?.running === true;
+  const changed = JSON.stringify(next) !== JSON.stringify(status);
+  status = next;
+  if (wasRunning && next && !next.running) {
+    // * Terminó: se enseña el resultado y se vuelven a leer los discos.
+    await reload();
+    return;
+  }
+  if (changed && next?.running) {
+    draw();
+  } else if (
+    !next?.running &&
+    ticks % RELOAD_EVERY === 0 &&
+    document.querySelector("dialog.modal") === null
+  ) {
+    reload();
+  }
+}
+
+/** Elige una pieza de un disco. */
+function select(event: MouseEvent): void {
+  selected = (event.currentTarget as HTMLElement).dataset.key ?? "";
+  lastSignature = "";
+  draw();
+}
+
+/** Color y clase de una pieza por su sistema de archivos. */
+function pieceClass(segment: Segment): string {
+  if (segment.number === 0) {
+    return "pm-free";
+  }
+  switch (segment.fsType) {
+    case "ntfs":
+      return "pm-fs-ntfs";
+    case "ext2":
+    case "ext3":
+    case "ext4":
+      return "pm-fs-ext";
+    case "exfat":
+    case "vfat":
+      return "pm-fs-fat";
+    case "swap":
+      return "pm-fs-swap";
+  }
+  return "pm-fs-other";
+}
+
+/** Nombre que se muestra de una pieza. */
+function titleOf(segment: Segment): string {
+  if (segment.number === 0) {
+    return t("pm.free");
+  }
+  return segment.label || segment.name || "#" + segment.number;
+}
+
+/** Barra del disco: una pieza clicable por partición y por hueco. */
+function diskBar(disk: PartDisk): HTMLElement {
+  const bar = el("div", {
+    class: "pm-bar",
+    role: "group",
+    "aria-label": t("pm.barLabel", { disk: disk.name }),
+  });
+  for (const segment of disk.layout.segments) {
+    const key = keyOf(disk.name, segment);
+    const piece = el(
+      "button",
+      {
+        class: "pm-seg " + pieceClass(segment) + (selected === key ? " pm-selected" : ""),
+        type: "button",
+        "data-key": key,
+        "aria-pressed": String(selected === key),
+        title: titleOf(segment) + " · " + fmt.bytes(segment.sectors * 512),
+      },
+      [
+        el("strong", {}, [titleOf(segment)]),
+        el("span", { class: "mono-small" }, [fmt.bytes(segment.sectors * 512)]),
+        segment.fsType ? el("span", { class: "mono-small pm-fs" }, [segment.fsType]) : null,
+      ],
+    );
+    piece.style.flexGrow = String(Math.max(segment.sectors, disk.layout.totalSectors * 0.02));
+    piece.addEventListener("click", select);
+    bar.append(piece);
+  }
+  return bar;
+}
+
+/** Vuelve a leer los discos tras una operación aceptada: el progreso lo enseña el estado. */
+function started(): void {
+  status = {
+    running: true,
+    done: false,
+    disk: "",
+    step: 0,
+    total: 1,
+    kind: "",
+    part: 0,
+    progress: 0,
+    seconds: 0,
+  };
+  draw();
+  tick();
+}
+
+/** Botón de acción del panel de una pieza (deshabilitado con su motivo si no se puede). */
+function action(
+  label: string,
+  onClick: () => void,
+  allowed: boolean,
+  why: string,
+  iconPaths: string,
+): HTMLButtonElement {
+  const node = button(label, onClick, { iconPaths });
+  node.disabled = !allowed;
+  if (!allowed) {
+    node.title = why;
+  }
+  return node;
+}
+
+/** Panel de la pieza elegida con sus acciones. */
+function actionsPanel(layout: Layout, segment: Segment): HTMLElement {
+  const lines: HTMLElement[] = [
+    el("strong", {}, [titleOf(segment)]),
+    el("span", { class: "mono-small muted" }, [
+      [
+        segment.fsType || "—",
+        fmt.bytes(segment.sectors * 512),
+        segment.mounted ? t("pm.mounted") : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    ]),
+  ];
+  const buttons: HTMLElement[] = [];
+  if (segment.number === 0) {
+    buttons.push(
+      action(
+        t("pm.create"),
+        function create(): void {
+          openCreate(layout, segment, started);
+        },
+        true,
+        "",
+        icons.sparkle,
+      ),
+    );
+  } else {
+    const left = neighbour(layout, segment, "left");
+    const right = neighbour(layout, segment, "right");
+    const resizeWhy = segment.resizable ? "" : t("pm.cannotResize", { fs: segment.fsType || "?" });
+    buttons.push(
+      action(
+        t("pm.resize"),
+        function resize(): void {
+          openResize(layout, segment, started);
+        },
+        segment.resizable,
+        resizeWhy,
+        icons.refresh,
+      ),
+    );
+    for (const other of [left, right]) {
+      if (other) {
+        const [a, b] = other.start < segment.start ? [other, segment] : [segment, other];
+        const both = a.resizable && b.resizable;
+        buttons.push(
+          action(
+            t("pm.boundary", { name: titleOf(other) }),
+            function boundary(): void {
+              openBoundary(layout, a, b, started);
+            },
+            both,
+            t("pm.cannotResize", { fs: (a.resizable ? b : a).fsType || "?" }),
+            icons.disk,
+          ),
+        );
+      }
+    }
+    if (left || right) {
+      buttons.push(
+        action(
+          t("pm.merge"),
+          function merge(): void {
+            openMerge(layout, segment, started);
+          },
+          true,
+          "",
+          icons.library,
+        ),
+      );
+    }
+    buttons.push(
+      action(
+        t("pm.delete"),
+        function remove(): void {
+          openDelete(layout, segment, started);
+        },
+        true,
+        "",
+        icons.x,
+      ),
+    );
+  }
+  return el("div", { class: "pm-panel" }, [
+    el("div", { class: "pm-info" }, lines),
+    el("div", { class: "image-actions" }, buttons),
   ]);
 }
 
+/** Texto del bloqueo de un disco. */
+function lockedText(code: string): string {
+  return t("pm.locked." + code);
+}
+
 /** Tarjeta de un disco. */
-function diskCard(disk: Disk): HTMLElement {
-  const barNode = el("div", { class: "partition-bar partition-bar-large", role: "presentation" });
-  for (const part of disk.partitions) {
-    const segment = el("span", { class: "segment segment-" + (PART_TONES[part.role] ?? "muted") });
-    segment.style.flexGrow = String(Math.max(part.sizeBytes / Math.max(1, disk.sizeBytes), 0.01));
-    barNode.append(segment);
-  }
+function diskCard(disk: PartDisk): HTMLElement {
+  const locked = disk.layout.locked ?? "";
+  const picked = disk.layout.segments.find(function isPicked(segment) {
+    return keyOf(disk.name, segment) === selected;
+  });
   return el("article", { class: "disk-card" }, [
     el("header", { class: "disk-header" }, [
       el("span", { class: "disk-icon" }, [icon(disk.transport === "usb" ? icons.usb : icons.disk)]),
@@ -94,46 +325,99 @@ function diskCard(disk: Disk): HTMLElement {
         el("strong", {}, [[disk.vendor, disk.model].filter(Boolean).join(" ") || disk.name]),
         el("span", { class: "mono-small muted" }, [
           [
-            disk.path,
+            "/dev/" + disk.name,
             fmt.bytes(disk.sizeBytes),
             disk.transport.toUpperCase(),
-            disk.partTable.toUpperCase() || t("storage.noTable"),
+            disk.layout.table.toUpperCase(),
           ]
             .filter(Boolean)
             .join(" · "),
         ]),
       ]),
       badge(t("storage.roles." + disk.role), ROLE_TONES[disk.role] ?? "muted"),
-      disk.protected
+      locked
         ? el("span", { class: "guard-chip" }, [icon(icons.lock), t("common.protected")])
         : null,
     ]),
-    disk.partitions.length > 0 ? barNode : null,
-    el("div", { class: "part-table" }, disk.partitions.map(partitionRow)),
+    disk.layout.segments.length > 0
+      ? diskBar(disk)
+      : el("p", { class: "muted" }, [t("storage.noTable")]),
+    locked
+      ? el("p", { class: "muted small-note" }, [lockedText(locked)])
+      : picked
+        ? actionsPanel(disk.layout, picked)
+        : el("p", { class: "muted small-note" }, [t("pm.pick")]),
   ]);
 }
 
-/** Refresca la lista solo si los discos han cambiado. */
-function update(): void {
-  if (list === null || !list.isConnected) {
+/** Panel con el avance de la operación en curso. */
+function runningPanel(current: PartStatus): HTMLElement {
+  const overall = current.total > 0 ? (current.step + current.progress) / current.total : 0;
+  return panel(
+    t("pm.running"),
+    [
+      el("p", {}, [
+        current.kind
+          ? t("pm.steps." + current.kind, { n: current.part, size: "" }) +
+            " (" +
+            (current.step + 1) +
+            "/" +
+            current.total +
+            ")"
+          : t("pm.starting"),
+      ]),
+      progress(overall, "accent"),
+      el("p", { class: "mono-small muted" }, [fmt.duration(current.seconds)]),
+      el("div", { class: "error-box" }, [t("pm.dontUnplug")]),
+    ],
+    { iconPaths: icons.disk },
+  );
+}
+
+/** Dibuja la página entera. */
+function draw(): void {
+  if (body === null || !body.isConnected) {
     return;
   }
-  const disks = snapshot.disks;
-  if (disks === null) {
-    list.replaceChildren(el("p", { class: "muted" }, [t("common.loading")]));
-    return;
-  }
-  // * Se evita redibujar si no ha cambiado nada (el sondeo es periódico).
-  const signature = JSON.stringify(disks);
+  const finished = status && !status.running && (status.done || status.error);
+  const signature = JSON.stringify([disks, selected, status]);
   if (signature === lastSignature) {
     return;
   }
   lastSignature = signature;
-  list.replaceChildren(
-    ...(disks.length > 0
-      ? disks.map(diskCard)
-      : [emptyState(icons.disk, t("storage.noDisks"), "")]),
-  );
+  const parts: (Node | null)[] = [];
+  if (status?.running) {
+    parts.push(runningPanel(status));
+  } else if (finished && status?.error) {
+    parts.push(el("div", { class: "error-box" }, [t("pm.failed", { error: status.error })]));
+  } else if (finished && status?.done) {
+    parts.push(el("div", { class: "notice notice-ok" }, [icon(icons.check), t("pm.done")]));
+  }
+  if (disks === null) {
+    parts.push(el("p", { class: "muted" }, [t("common.loading")]));
+  } else if (disks.length === 0) {
+    parts.push(emptyState(icons.disk, t("storage.noDisks"), ""));
+  } else {
+    // * Mientras se ejecuta algo no se puede elegir otra cosa: los discos se enseñan sin acciones.
+    parts.push(
+      ...disks.map(function card(disk) {
+        return status?.running ? disabledCard(disk) : diskCard(disk);
+      }),
+    );
+  }
+  body.replaceChildren(...parts.filter(isNode));
 }
 
-export const storagePage: Page = { render, update };
+/** Tarjeta de un disco sin acciones (hay una operación en marcha). */
+function disabledCard(disk: PartDisk): HTMLElement {
+  const card = diskCard({ ...disk, layout: { ...disk.layout, locked: "busy" } });
+  card.classList.add("pm-busy");
+  return card;
+}
+
+/** Filtro de tipo para quitar los huecos de la lista. */
+function isNode(node: Node | null): node is Node {
+  return node !== null;
+}
+
+export const storagePage: Page = { render };

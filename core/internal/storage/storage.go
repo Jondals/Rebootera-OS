@@ -17,11 +17,13 @@ import (
 
 // Disk es un dispositivo de bloques completo.
 type Disk struct {
-	Name       string      `json:"name"`
-	Path       string      `json:"path"`
-	Model      string      `json:"model"`
-	Vendor     string      `json:"vendor"`
-	SizeBytes  uint64      `json:"sizeBytes"`
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	Model     string `json:"model"`
+	Vendor    string `json:"vendor"`
+	SizeBytes uint64 `json:"sizeBytes"`
+	// Sectors es el tamaño del disco en sectores de 512 bytes.
+	Sectors    uint64      `json:"sectors"`
 	Transport  string      `json:"transport"`
 	Removable  bool        `json:"removable"`
 	Rotational bool        `json:"rotational"`
@@ -34,10 +36,15 @@ type Disk struct {
 
 // Partition es una partición de un disco.
 type Partition struct {
-	Name       string `json:"name"`
-	Path       string `json:"path"`
-	Number     int    `json:"number"`
-	SizeBytes  uint64 `json:"sizeBytes"`
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	Number    int    `json:"number"`
+	SizeBytes uint64 `json:"sizeBytes"`
+	// StartSector y Sectors sitúan la partición en el disco (sectores de 512 bytes).
+	StartSector uint64 `json:"startSector"`
+	Sectors     uint64 `json:"sectors"`
+	// TypeCode es el tipo de partición de la tabla (GUID en GPT, 0x83... en MBR), en minúsculas.
+	TypeCode   string `json:"typeCode"`
 	FSType     string `json:"fsType"`
 	Label      string `json:"label"`
 	Role       string `json:"role"`
@@ -159,6 +166,7 @@ func readDisk(name string, mounts []mount) Disk {
 		Model:      firstNonEmpty(readTrim(filepath.Join(base, "device/model")), props["ID_MODEL"]),
 		Vendor:     firstNonEmpty(readTrim(filepath.Join(base, "device/vendor")), props["ID_VENDOR"]),
 		SizeBytes:  readUint(filepath.Join(base, "size")) * 512,
+		Sectors:    readUint(filepath.Join(base, "size")),
 		Removable:  readTrim(filepath.Join(base, "removable")) == "1",
 		Rotational: readTrim(filepath.Join(base, "queue/rotational")) == "1",
 		ReadOnly:   readTrim(filepath.Join(base, "ro")) == "1",
@@ -223,12 +231,15 @@ func readPartition(diskBase, name string, mounts []mount) Partition {
 	props := udevProps(majMin)
 	number, _ := strconv.Atoi(readTrim(filepath.Join(base, "partition")))
 	part := Partition{
-		Name:      name,
-		Path:      "/dev/" + name,
-		Number:    number,
-		SizeBytes: readUint(filepath.Join(base, "size")) * 512,
-		FSType:    props["ID_FS_TYPE"],
-		Label:     firstNonEmpty(props["ID_FS_LABEL"], props["ID_PART_ENTRY_NAME"]),
+		Name:        name,
+		Path:        "/dev/" + name,
+		Number:      number,
+		SizeBytes:   readUint(filepath.Join(base, "size")) * 512,
+		StartSector: readUint(filepath.Join(base, "start")),
+		Sectors:     readUint(filepath.Join(base, "size")),
+		TypeCode:    strings.ToLower(props["ID_PART_ENTRY_TYPE"]),
+		FSType:      props["ID_FS_TYPE"],
+		Label:       firstNonEmpty(props["ID_FS_LABEL"], props["ID_PART_ENTRY_NAME"]),
 	}
 	part.Role = partitionRole(props)
 	// * Con Ventoy, el medio live (la ISO mapeada) y el Vault están en la misma

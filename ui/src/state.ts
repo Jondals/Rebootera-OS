@@ -18,9 +18,8 @@ import {
 /** Número de muestras que se guardan para las gráficas. */
 const HISTORY = 40;
 
-/** Intervalos de sondeo en milisegundos. */
-const FAST_MS = isLite() ? 5000 : 3000;
-const SLOW_MS = isLite() ? 15000 : 10000;
+/** Intervalo de sondeo del Vault en Rebootera Desktop (no hay nada más que vigilar). */
+const DESKTOP_MS = 5000;
 
 /** Datos actuales y su historial. */
 export interface Snapshot {
@@ -189,9 +188,18 @@ export async function refreshVault(): Promise<void> {
 }
 
 /** Arranca el sondeo periódico y hace la primera lectura completa. */
-export async function start(): Promise<void> {
-  window.setInterval(pollFast, FAST_MS);
-  window.setInterval(pollVault, FAST_MS);
-  window.setInterval(pollSlow, SLOW_MS);
+export async function start(desktop = false): Promise<void> {
+  // * En el escritorio solo cambian el USB, la biblioteca y las descargas: no se sondean
+  // * ni sensores, ni discos, ni registro del kernel, ni hardware (no existen en Windows).
+  if (desktop) {
+    window.setInterval(pollVault, DESKTOP_MS);
+    await pollVault();
+    return;
+  }
+  const fast = isLite() ? 5000 : 3000;
+  const slow = isLite() ? 15000 : 10000;
+  window.setInterval(pollFast, fast);
+  window.setInterval(pollVault, fast);
+  window.setInterval(pollSlow, slow);
   await refreshAll();
 }

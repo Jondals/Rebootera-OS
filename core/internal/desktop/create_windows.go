@@ -7,7 +7,8 @@
 // *   3. Renombra la partición de datos a REBOOTERA (la CLI de Ventoy no tiene
 // *      opción de etiqueta).
 // *   4. Copia la estructura del USB, la configuración y Rebootera OS.
-// ! El paso 2 BORRA el disco. Solo se aceptan discos USB que no son de
+// ! El paso 2 BORRA el disco (salvo en el modo "conservar", que usa la instalación sin
+// ! borrar de Ventoy: /NonDest). Solo se aceptan discos USB que no son de
 // ! sistema ni de arranque, y la interfaz exige confirmación explícita.
 package desktop
 
@@ -38,7 +39,7 @@ const (
 )
 
 // * Create empieza a crear un USB de Rebootera en segundo plano.
-func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string, extras Extras) error {
+func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string, extras Extras, keepData bool) error {
 	if err := begin(); err != nil {
 		return err
 	}
@@ -80,7 +81,21 @@ func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string, extras
 		finish("", err)
 		return err
 	}
-	job := &createJob{disk: diskNumber, iso: isoPath, kit: kit, desktopExe: desktopExe, extras: extras}
+	// ! Conservar los archivos solo se admite en un disco que lo permite (NTFS o exFAT con datos).
+	if keepData {
+		adopt := false
+		for _, d := range disks {
+			if d.Number == diskNumber && d.Adoptable {
+				adopt = true
+			}
+		}
+		if !adopt {
+			err := fmt.Errorf("al disco %d no se puede añadir Rebootera sin borrarlo: su primera partición no es NTFS ni exFAT", diskNumber)
+			finish("", err)
+			return err
+		}
+	}
+	job := &createJob{disk: diskNumber, iso: isoPath, kit: kit, desktopExe: desktopExe, extras: extras, keepData: keepData}
 	go job.run()
 	return nil
 }
@@ -92,6 +107,7 @@ type createJob struct {
 	kit        fs.FS
 	desktopExe string
 	extras     Extras
+	keepData   bool
 }
 
 // * run ejecuta todos los pasos e informa del resultado.
@@ -121,6 +137,11 @@ func (j *createJob) steps() (string, error) {
 	done := filepath.Join(ventoyDir, "cli_done.txt")
 	os.Remove(done)
 	args := fmt.Sprintf("VTOYCLI /I /PhyDrive:%d /GPT", j.disk)
+	if j.keepData {
+		// * Sin /GPT: se respeta el estilo de particiones que ya tenga el disco. Ventoy mismo
+		// * encoge la primera partición si hace falta sitio para su partición de arranque.
+		args = fmt.Sprintf("VTOYCLI /I /PhyDrive:%d /NonDest", j.disk)
+	}
 	if _, err := RunElevated(filepath.Join(ventoyDir, "Ventoy2Disk.exe"), args, ventoyDir); err != nil {
 		return "", err
 	}
@@ -294,7 +315,7 @@ func waitVentoy(dir, done string) error {
 func waitDriveLetter(disk int) (string, error) {
 	script := fmt.Sprintf("(Get-Partition -DiskNumber %d -PartitionNumber 1).DriveLetter", disk)
 	for i := 0; i < 30; i++ {
-		out, err := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script).Output()
+		out, err := quiet(exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script)).Output()
 		letter := strings.TrimSpace(string(out))
 		if err == nil && len(letter) == 1 {
 			return letter, nil
