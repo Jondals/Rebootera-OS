@@ -33,6 +33,8 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 
 **Descarga:** la web (GitHub Pages de este repositorio) ofrece siempre la última compilación: `Rebootera-Desktop.exe` para Windows y `rebootera-os-amd64.iso`. Ambas se recompilan en cada push a `master` y se publican en la [release `latest`](https://github.com/Jondals/Rebootera-OS/releases/tag/latest).
 
+**Canales:** `master` es el canal estable (release `latest`). La rama `beta` se crea sola a partir de la primera release estable y publica la prerelease `beta` en cada push: ahí se prueban los cambios antes de pasarlos a `master`.
+
 **Desde Windows**: ejecuta `Rebootera Desktop.exe` y abre **Crear USB** (es la primera opción). Elige de dónde sale Rebootera OS (*descargar la última versión*, lo recomendado, comprobada con su SHA-256 publicado antes de borrar nada, o *usar una ISO de Rebootera de este PC*), después el pendrive, y escribe la confirmación. Windows pedirá permiso de administrador para preparar el pendrive. Se borra todo el contenido del pendrive elegido; los discos que contienen datos aparecen claramente marcados. Antes de confirmar puedes **añadir imágenes y carpetas de drivers** (tu Windows 11 LTSC, un Linux, tus drivers de red): se copian en el mismo paso. Si ya tienes un USB de Rebootera, elígelo en la lista: no se borra nada, se puede actualizar Rebootera OS y se copia lo que añadas.
 
 **Desde Linux**, como root:

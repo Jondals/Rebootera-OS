@@ -33,6 +33,8 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 
 **Download:** the website (GitHub Pages of this repository) always offers the latest build: `Rebootera-Desktop.exe` for Windows and `rebootera-os-amd64.iso`. Both are rebuilt on every push to `master` and published in the [`latest` release](https://github.com/Jondals/Rebootera-OS/releases/tag/latest).
 
+**Channels:** `master` is the stable channel (release `latest`). The `beta` branch is created automatically from the first stable release and publishes the `beta` prerelease on every push to it: that is where changes are tried before merging them into `master`.
+
 **From Windows** — run `Rebootera Desktop.exe` and open **Create USB** (it is the first option). Choose where Rebootera OS comes from — *download the latest version* (recommended, checked against its published SHA-256 before anything is erased) or *use a Rebootera ISO from this PC* — then the USB drive, and type the confirmation. Windows asks for administrator permission to prepare the drive. Everything on the chosen drive is erased; disks that contain data are clearly marked. Before confirming you can **add images and driver folders** (your Windows 11 LTSC, a Linux, your network drivers): they are copied in the same step. If you already have a Rebootera USB, choose it in the list instead: nothing is erased, Rebootera OS can be updated and what you add is copied.
 
 **From Linux** — as root:

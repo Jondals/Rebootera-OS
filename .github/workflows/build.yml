@@ -1,6 +1,13 @@
-# Compila Rebootera OS (ISO) y Rebootera Desktop (.exe) en cada push a master y
-# los publica en la release "latest", de donde los descarga la landing page y
-# Rebootera Desktop ("Crear USB" y "Actualizar").
+# Compila Rebootera OS (ISO) y Rebootera Desktop (.exe) en cada push y los
+# publica en una release, de donde los descarga la landing page y Rebootera
+# Desktop ("Crear USB" y "Actualizar"). Hay dos canales:
+#
+#   master -> release "latest" (estable). Al publicarla, si la rama "beta" no
+#             existe se crea desde este commit; si existe y no tiene commits
+#             propios se avanza hasta aquí; y la release "beta" se publica con
+#             los mismos archivos.
+#   beta   -> release "beta" (prerelease), donde se prueban los cambios antes de
+#             pasarlos a master. Nunca toca "latest".
 #
 # La compilación se hace dentro de un contenedor Debian 13, igual que el entorno
 # de desarrollo (WSL "RebooteraBuild"), con las dependencias del README.
@@ -8,7 +15,7 @@ name: Build and publish
 
 on:
   push:
-    branches: [master]
+    branches: [master, beta]
     paths-ignore:
       - "site/**"
       - ".github/workflows/pages.yml"
@@ -19,7 +26,7 @@ permissions:
 
 # * Un push nuevo cancela la compilación anterior: "latest" siempre es la última.
 concurrency:
-  group: latest-build
+  group: build-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -28,6 +35,8 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Free disk space
         run: |
@@ -60,19 +69,58 @@ jobs:
           echo "ISO_SHA=$(cut -d' ' -f1 dist/rebootera-os-amd64.iso.sha256)" >> "$GITHUB_ENV"
           ls -lh dist
 
-      - name: Publish the "latest" release
+      - name: Publish the release of this channel
         env:
           GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
         run: |
-          gh release delete latest --cleanup-tag --yes || true
-          gh release create latest dist/* \
+          if [ "$BRANCH" = "master" ]; then
+            TAG=latest
+            FLAGS=--latest
+            TITLE="Rebootera OS ${VERSION} (latest build)"
+            WHAT="Automatic build of the last push to master (stable)."
+          else
+            TAG=beta
+            FLAGS=--prerelease
+            TITLE="Rebootera OS ${VERSION} (beta build)"
+            WHAT="Automatic build of the last push to the beta branch. Use it to try changes before they reach master."
+          fi
+          gh release delete "$TAG" --cleanup-tag --yes || true
+          gh release create "$TAG" dist/* \
             --target "$GITHUB_SHA" \
-            --latest \
-            --title "Rebootera OS ${VERSION} (latest build)" \
-            --notes "Automatic build of the last push to master.
+            $FLAGS \
+            --title "$TITLE" \
+            --notes "$WHAT
 
           version: ${VERSION}
           commit: ${GITHUB_SHA}
           sha256: ${ISO_SHA}
 
           Files: \`Rebootera-Desktop.exe\` (Windows app that creates the USB) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."
+
+      - name: Create or advance the beta branch and publish the beta release
+        if: github.ref_name == 'master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin beta 2>/dev/null || true
+          if ! git rev-parse --verify --quiet origin/beta >/dev/null; then
+            echo "The beta branch does not exist: creating it from $GITHUB_SHA"
+          elif git merge-base --is-ancestor origin/beta "$GITHUB_SHA"; then
+            echo "beta has no commits of its own: moving it to $GITHUB_SHA"
+          else
+            echo "beta has commits that are not in master: left untouched (merge master into beta by hand)."
+            exit 0
+          fi
+          # * Con GITHUB_TOKEN este push no lanza otra compilación: la release "beta" se publica aquí mismo.
+          git push origin "$GITHUB_SHA:refs/heads/beta"
+          gh release delete beta --cleanup-tag --yes || true
+          gh release create beta dist/* \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Rebootera OS ${VERSION} (beta build)" \
+            --notes "Same build as the latest release, published when the beta branch was created or moved to it.
+
+          version: ${VERSION}
+          commit: ${GITHUB_SHA}
+          sha256: ${ISO_SHA}"

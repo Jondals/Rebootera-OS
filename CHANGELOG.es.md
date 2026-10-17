@@ -12,6 +12,7 @@ Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
 ### Añadido
 
+- **Canales estable y beta.** Cada push a `master` publica la release `latest` y, si la rama `beta` no existe, la crea desde ese commit (o la avanza si no tiene commits propios) y publica la prerelease `beta` con los mismos archivos. Los push a `beta` compilan y publican solo la prerelease `beta`, así que los cambios se prueban antes de llegar a `master`.
 - **Mete tus cosas en el USB en el mismo paso.** Crear USB tiene un paso nuevo para añadir **imágenes** (varias ISO/IMG/WIM/VHD a la vez, por ejemplo un Windows 11 LTSC; cada una va a `isos/windows`, `isos/linux` o `isos/tools`, adivinado por el nombre y editable) y **carpetas de drivers**. Se copian justo después de Rebootera OS, con el avance de cada archivo, así que el USB sale listo para arrancar y usar sin mover nada a mano. Los archivos se escriben como `.part` y se renombran al terminar, de modo que un corte nunca deja una imagen a medias con su nombre definitivo.
 - Todo se valida antes de tocar el USB: un archivo que no existe, una categoría que no existe, una imagen repetida o una carpeta de drivers sin ningún paquete `.inf` x64 se rechazan antes de borrar o cambiar nada. De una carpeta de drivers solo se copian archivos de drivers: se omiten instaladores (`.exe`, `.msi`), archivos comprimidos e imágenes de disco.
 - Diálogos nativos de Windows para elegir varias imágenes y para elegir una carpeta.
