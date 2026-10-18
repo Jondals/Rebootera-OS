@@ -9,8 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"rebootera/core/internal/release"
 )
 
 // Origen de Rebootera OS al actualizar un USB existente.
@@ -58,20 +56,20 @@ func Apply(request ApplyRequest) error {
 
 // * applySteps ejecuta la actualización e informa del resultado.
 func applySteps(request ApplyRequest) {
-	iso := request.ISO
-	// ! La descarga va antes de tocar el USB: si falla, no se cambia nada.
+	// * La última versión se descarga directamente en el USB, en un archivo aparte (.new): hasta que su
+	// * SHA-256 no coincide con el publicado, la versión que ya tenía el USB sigue intacta.
 	if request.System == SystemLatest {
 		setPhase("download", 0)
-		path, err := release.Fetch(release.CacheDir(), downloadProgress)
-		if err != nil {
+		if err := InstallLatest(request.Root, downloadProgress); err != nil {
 			finish("", err)
 			return
 		}
-		iso = path
+		finish(request.Root, ApplyExtras(request.Root, request.Extras))
+		return
 	}
 	if request.System != SystemKeep {
 		setPhase("copy-system", 0)
-		if err := InstallSystem(request.Root, iso, systemProgress); err != nil {
+		if err := InstallSystem(request.Root, request.ISO, systemProgress); err != nil {
 			finish("", err)
 			return
 		}

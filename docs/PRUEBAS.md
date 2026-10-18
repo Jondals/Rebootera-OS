@@ -215,6 +215,26 @@ Crear USB / actualizar (Rebootera Desktop, Windows 11), sin tocar ningún disco 
 
 Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el ratón; solo se probó el análisis de su resultado), "Crear USB" borrando un pendrive real, instalar dentro de un USB ajeno (Rufus), un instalador real de Windows y la ejecución de los workflows de GitHub.
 
+## v0.7.0 (2026-10-18)
+
+| Prueba | Resultado |
+| --- | --- |
+| Resolución real de las 40 entradas del catálogo (`go test -tags online ./internal/catalog/`) | 37 resuelven y responden a HEAD, 2 son manuales (Windows 11 y 10 de Microsoft, solo desde su web); Tumbleweed falla a ratos porque el espejo elegido por `download.opensuse.org` aún no tiene la instantánea nueva (un reintento elige otro espejo) |
+| Firmas OpenPGP de Mint, Kali y AlmaLinux (claves fijadas) y de Ubuntu/Debian/Fedora | verificadas con las listas de sumas reales |
+| Descarga con varias conexiones contra un servidor local que limita cada conexión | 4 conexiones claramente más rápidas que 1; reanuda con el mapa de bloques sin repetir bloques; hash malo se rechaza; servidor sin Range cae a una conexión; con `-race` |
+| Límite de velocidad y ajustes | cubeta de fichas con horas inventadas; los ajustes se guardan en el Vault y se validan |
+| Instalador en carpetas a ISO (Linux, `genisoimage`) | firma `CD001`, catálogo El Torito con plataformas 0x00 (BIOS) y 0xEF (UEFI), etiqueta del volumen; cancelación |
+| Instalador en carpetas a ISO (Windows 11, IMAPI, ejecutando el binario de pruebas compilado, sin ventana) | mismas comprobaciones: `CD001`, El Torito BIOS + EFI |
+| Trabajo `iso` de la cola, registro en la biblioteca como "sin comprobar" y rutas de la API (buscar, inspeccionar, crear; rechaza carpetas que no son instaladores y rutas que salen del medio) | pruebas Go |
+| `release.FetchTo` (descarga directa al USB, reanudar, parcial corrupto) | pruebas Go |
+| Interfaz (Centro de descargas y Biblioteca) | dibujada en WebKitGTK sin ventana (`scripts/preview-ui.sh`) y revisada a mano |
+
+### No probado en la v0.7.0
+
+- **Arrancar de verdad** cada imagen nueva desde el menú de Ventoy: todas figuran como "sin probar" (solo Rebootera OS, Debian y alguna más se probaron en versiones anteriores).
+- **Que un instalador de Windows hecho por `Make ISO` arranque en un equipo real o en una VM con Windows de verdad**: solo se comprobó la estructura (ISO 9660 + El Torito con BIOS y EFI + UDF), no el arranque, porque en el entorno no hay un Windows extraído para probar.
+- **Descargas de varios GB por varias conexiones** contra los servidores reales de cada proyecto: la prueba de velocidad es contra un servidor local.
+
 ## v0.6.0 (2026-10-18)
 
 Batería completa (`scripts/test-all.sh`, unos 15 a 20 minutos con la compilación de las dos ISO): dbg UEFI+SB 17 OK, dbg BIOS 16, definitiva UEFI+SB 2 y BIOS 2, USB de extremo a extremo 20, Wi-Fi/drivers/teclado 20, Windows 8, Debian 12 y los dos escenarios nuevos:

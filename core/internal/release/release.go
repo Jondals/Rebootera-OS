@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"net/http"
 	"os"
@@ -72,6 +73,36 @@ func get(rawURL string) (*http.Response, error) {
 	return resp, nil
 }
 
+// * open abre una URL HTTPS desde offset (con Range) y acepta 200, 206 y 416; el resto son errores.
+func open(rawURL string, offset int64) (*http.Response, error) {
+	if offset == 0 {
+		return get(rawURL)
+	}
+	if !strings.HasPrefix(rawURL, "https://") {
+		return nil, fmt.Errorf("solo se admiten descargas HTTPS: %s", rawURL)
+	}
+	req, err := http.NewRequest("GET", rawURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("Range", "bytes="+strconv.FormatInt(offset, 10)+"-")
+	resp, err := Client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("no se pudo conectar con %s: %w", rawURL, err)
+	}
+	if resp.Request.URL.Scheme != "https" {
+		resp.Body.Close()
+		return nil, fmt.Errorf("%s redirigió a una conexión sin cifrar", rawURL)
+	}
+	switch resp.StatusCode {
+	case http.StatusOK, http.StatusPartialContent, http.StatusRequestedRangeNotSatisfiable:
+		return resp, nil
+	}
+	resp.Body.Close()
+	return nil, fmt.Errorf("%s respondió %d", rawURL, resp.StatusCode)
+}
+
 // * ExpectedHash lee el SHA-256 publicado junto a la ISO ("hash  archivo").
 func ExpectedHash() (string, error) {
 	resp, err := get(BaseURL + ISOName + ".sha256")
@@ -110,38 +141,75 @@ func hashFile(path string) (string, error) {
 // * Fetch deja la última ISO de Rebootera OS en dir y devuelve su ruta. Si ya
 // * hay una copia con el SHA-256 publicado, no vuelve a descargarla.
 func Fetch(dir string, progress Progress) (string, error) {
-	expected, err := ExpectedHash()
-	if err != nil {
-		return "", err
-	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
 	final := filepath.Join(dir, ISOName)
+	if _, err := FetchTo(final, progress); err != nil {
+		return "", err
+	}
+	return final, nil
+}
+
+// * FetchTo descarga la última ISO publicada directamente en final (puede ser el propio USB) y devuelve
+// * su SHA-256. Se escribe en final+".part" y solo se renombra cuando el SHA-256 coincide con el publicado;
+// * si la descarga se corta, se reanuda donde quedó. Si final ya tiene el SHA-256 publicado, no descarga nada.
+func FetchTo(final string, progress Progress) (string, error) {
+	expected, err := ExpectedHash()
+	if err != nil {
+		return "", err
+	}
 	if have, err := hashFile(final); err == nil && have == expected {
 		if progress != nil {
 			progress(1)
 		}
-		return final, nil
+		return expected, nil
 	}
-
-	resp, err := get(BaseURL + ISOName)
+	part := final + ".part"
+	hasher := sha256.New()
+	var offset int64
+	if existing, err := os.Open(part); err == nil {
+		offset, err = io.Copy(hasher, existing)
+		existing.Close()
+		if err != nil {
+			offset = 0
+			hasher.Reset()
+		}
+	}
+	resp, err := open(BaseURL+ISOName, offset)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-	total := resp.ContentLength
+	flags := os.O_CREATE | os.O_WRONLY
+	switch resp.StatusCode {
+	case http.StatusPartialContent:
+	case http.StatusRequestedRangeNotSatisfiable:
+		// * Lo que había ya era el archivo entero: solo falta comprobarlo.
+		return finishFetch(part, final, expected, hasher, progress)
+	default:
+		// * El servidor no admite reanudar: se empieza de cero.
+		offset = 0
+		hasher.Reset()
+		flags |= os.O_TRUNC
+	}
+	total := offset + resp.ContentLength
+	if resp.ContentLength < 0 {
+		total = 0
+	}
 	if total > maxISOBytes {
 		return "", errors.New("la imagen publicada es mayor de lo esperado")
 	}
-	part := final + ".part"
-	out, err := os.Create(part)
+	out, err := os.OpenFile(part, flags, 0o644)
 	if err != nil {
 		return "", err
 	}
-	h := sha256.New()
-	buf := make([]byte, 1<<20)
-	var done int64
+	if _, err := out.Seek(offset, io.SeekStart); err != nil {
+		out.Close()
+		return "", err
+	}
+	buf := make([]byte, 4<<20)
+	done := offset
 	for {
 		n, readErr := resp.Body.Read(buf)
 		if n > 0 {
@@ -150,10 +218,9 @@ func Fetch(dir string, progress Progress) (string, error) {
 				os.Remove(part)
 				return "", errors.New("la imagen publicada es mayor de lo esperado")
 			}
-			h.Write(buf[:n])
+			hasher.Write(buf[:n])
 			if _, err := out.Write(buf[:n]); err != nil {
 				out.Close()
-				os.Remove(part)
 				return "", fmt.Errorf("no se pudo guardar la descarga: %w", err)
 			}
 			if progress != nil && total > 0 {
@@ -164,16 +231,24 @@ func Fetch(dir string, progress Progress) (string, error) {
 			break
 		}
 		if readErr != nil {
+			// * Se conserva lo descargado: al reintentar se reanuda.
 			out.Close()
-			os.Remove(part)
 			return "", fmt.Errorf("la descarga se interrumpió: %w", readErr)
 		}
 	}
-	if err := out.Close(); err != nil {
-		os.Remove(part)
+	if err := out.Sync(); err != nil {
+		out.Close()
 		return "", err
 	}
-	if got := hex.EncodeToString(h.Sum(nil)); got != expected {
+	if err := out.Close(); err != nil {
+		return "", err
+	}
+	return finishFetch(part, final, expected, hasher, progress)
+}
+
+// * finishFetch comprueba el SHA-256 de lo descargado y lo deja en su sitio.
+func finishFetch(part, final, expected string, hasher hash.Hash, progress Progress) (string, error) {
+	if got := hex.EncodeToString(hasher.Sum(nil)); got != expected {
 		os.Remove(part)
 		return "", errors.New("el SHA-256 de la descarga no coincide con el publicado: se ha borrado")
 	}
@@ -184,7 +259,7 @@ func Fetch(dir string, progress Progress) (string, error) {
 	if progress != nil {
 		progress(1)
 	}
-	return final, nil
+	return expected, nil
 }
 
 // * Size devuelve el tamaño anunciado de la ISO publicada (0 si no se sabe).

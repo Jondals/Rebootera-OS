@@ -56,17 +56,23 @@ type Deps struct {
 // * registerVault añade los endpoints del Vault al enrutador.
 func (s *Server) registerVault(mux *http.ServeMux) {
 	get := map[string]http.HandlerFunc{
-		"/api/vault":     s.handleVault,
-		"/api/settings":  s.handleGetSettings,
-		"/api/catalog":   s.handleCatalog,
-		"/api/transfers": s.handleTransfers,
-		"/api/library":   s.handleLibrary,
+		"/api/vault":              s.handleVault,
+		"/api/settings":           s.handleGetSettings,
+		"/api/catalog":            s.handleCatalog,
+		"/api/catalog/families":   s.handleFamilies,
+		"/api/transfers/settings": s.handleGetBandwidth,
+		"/api/transfers":          s.handleTransfers,
+		"/api/library":            s.handleLibrary,
+		"/api/installer/found":    s.handleFoundInstallers,
 	}
 	post := map[string]http.HandlerFunc{
 		"/api/settings":           s.handleSaveSettings,
 		"/api/catalog/resolve":    s.handleResolve,
+		"/api/transfers/settings": s.handleSetBandwidth,
 		"/api/transfers/download": s.handleDownload,
 		"/api/transfers/import":   s.handleImport,
+		"/api/transfers/iso":      s.handleMakeISO,
+		"/api/installer/inspect":  s.handleInspect,
 		"/api/transfers/pause":    s.handleTransferAction,
 		"/api/transfers/resume":   s.handleTransferAction,
 		"/api/transfers/cancel":   s.handleTransferAction,
@@ -502,4 +508,33 @@ func (s *Server) handleBootInstall(w http.ResponseWriter, r *http.Request) {
 	task := &delayedOp{op: agentproto.OpReboot, agent: s.agent}
 	time.AfterFunc(powerDelay, task.run)
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": "rebooting", "bootOrder": bootOrder})
+}
+
+// * handleFamilies devuelve las familias del catálogo (las tarjetas del Centro de descargas).
+func (s *Server) handleFamilies(w http.ResponseWriter, r *http.Request) {
+	families, err := catalog.Families()
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, families)
+}
+
+// * handleGetBandwidth devuelve el límite de velocidad y las conexiones de las descargas.
+func (s *Server) handleGetBandwidth(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.deps.Transfers.Settings())
+}
+
+// * handleSetBandwidth cambia el límite de velocidad y las conexiones; se aplica también a la descarga en marcha.
+func (s *Server) handleSetBandwidth(w http.ResponseWriter, r *http.Request) {
+	var req transfers.Settings
+	if err := decode(r, &req); err != nil {
+		fail(w, err)
+		return
+	}
+	if err := s.deps.Transfers.SetSettings(req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error(), "code": "invalid"})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.deps.Transfers.Settings())
 }

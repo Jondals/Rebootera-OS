@@ -3,6 +3,26 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.7.0] - 2026-10-18
+
+### Añadido
+
+- **Muchos más sistemas, 40 imágenes en 21 familias.** Windows 11/10 y Server 2022/2025 (las imágenes de evaluación se descargan directamente de Microsoft), Ubuntu (Desktop, Server, Kubuntu, Xubuntu, Lubuntu, Ubuntu MATE), Debian (netinst y live GNOME/KDE/Xfce), Fedora (Workstation, Xfce, Cinnamon, Server), Linux Mint (Cinnamon, Xfce, MATE), Arch, Alpine, openSUSE Tumbleweed, Kali, Rocky, AlmaLinux, Proxmox VE, FreeBSD, OpenBSD, SystemRescue y Rescuezilla. Cuando el proyecto firma sus sumas (Ubuntu, Debian, Fedora, Mint, Kali, AlmaLinux) se verifica la firma OpenPGP con una clave fijada; el resto se comprueba con la suma que el proyecto publica por HTTPS. Resolutores nuevos para BSD, releases de GitHub, SourceForge y enlaces directos. Cada entrada descargable se resolvió contra los servidores reales (Windows 11 y 10 Home/Pro siguen siendo manuales, desde la página de Microsoft).
+- **Los instaladores hechos con Rufus (o con cualquier herramienta que extraiga Windows en carpetas) se convierten en ISO.** Rebootera busca carpetas de instalador de Windows en tus discos (la raíz de cada unidad y sus carpetas de primer nivel; en Rebootera OS, en los medios abiertos) y "Crear ISO" reempaqueta una en una ISO arrancable con arranque BIOS y UEFI (y UDF para archivos de más de 4 GB como `install.wim`) directamente en la biblioteca, como un trabajo normal de la cola con su progreso. Rebootera Desktop también deja elegir una carpeta a mano. La carpeta de origen solo se lee. En Linux se usa `genisoimage` y en Windows IMAPI (viene con Windows); las dos se probaron de verdad (firma ISO 9660, catálogo El Torito con plataformas BIOS y EFI, etiqueta del volumen).
+- **Descargas con varias conexiones.** Las imágenes grandes se descargan en bloques de 1 MiB por varias conexiones a la vez (hasta 8, 4 por defecto) con un mapa de bloques, así que un corte se reanuda donde quedó, y el hash se sigue calculando en orden. **Ajustar ancho de banda** (Centro de descargas) fija el número de conexiones y un límite de velocidad que se aplica al momento, también a una descarga en curso, y se recuerda en el USB.
+- **Directo al USB.** Las descargas ya iban directas al USB; ahora "Actualizar Rebootera OS (la última)" en Rebootera Desktop también descarga la imagen del sistema directamente en el USB (como `.new`, así que la versión que ya tenía sigue intacta hasta que el SHA-256 coincide con el publicado), se reanuda si se corta y no hace nada si el USB ya tiene esa versión. Al actualizar, la imagen ya no se descarga antes al disco del PC.
+
+### Cambiado
+
+- **Centro de descargas nuevo**: una tarjeta por familia con versiones elegibles (etiquetas como Recomendado, LTS, Ligero, Live; tamaño en cada una), buscador, pestañas (Todos, Windows, Linux, Servidores y BSD, Rescate y herramientas), tarjeta con el estado del USB de destino (nombre y espacio libre), barra inferior con la descarga activa, **Ver cola** y **Ajustar ancho de banda**, copiar el SHA-256 de cada imagen y un estado claro de "ya está en tu USB".
+- **Biblioteca** muestra las carpetas de instalador encontradas y su botón "Crear ISO".
+- Rebootera Desktop abre en tu navegador los enlaces a las páginas de los fabricantes.
+
+### Corregido
+
+- La comprobación del catálogo ya no falla con imágenes sin suma publicada (las de evaluación de Microsoft): se importan como "sin comprobar" y la interfaz lo dice.
+- Se quita `kali-linux-live`: Kali ya no aloja las imágenes live para descarga directa (solo torrents).
+
 ## [0.6.0] - 2026-10-18
 
 ### Añadido

@@ -14,8 +14,12 @@
       "signature": {
         "type": "detached",
         "url": "https://releases.ubuntu.com/26.04/SHA256SUMS.gpg",
-        "keys": ["ubuntu.asc"],
-        "fingerprints": ["843938DF228D22F7B3742BC0D94AA3F0EFE21092"]
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
       }
     },
     "secureBoot": "signed",
@@ -31,7 +35,14 @@
         "en": "Tested with 26.04.1: the live desktop and its installer start from the Rebootera USB (UEFI).",
         "es": "Probado con 26.04.1: el escritorio en vivo y su instalador arrancan desde el USB de Rebootera (UEFI)."
       }
-    }
+    },
+    "family": "ubuntu",
+    "group": "linux",
+    "edition": "Desktop 26.04 LTS",
+    "tags": [
+      "recommended",
+      "lts"
+    ]
   },
   {
     "id": "ubuntu-24.04-desktop",
@@ -48,8 +59,12 @@
       "signature": {
         "type": "detached",
         "url": "https://releases.ubuntu.com/24.04/SHA256SUMS.gpg",
-        "keys": ["ubuntu.asc"],
-        "fingerprints": ["843938DF228D22F7B3742BC0D94AA3F0EFE21092"]
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
       }
     },
     "secureBoot": "signed",
@@ -65,7 +80,13 @@
         "en": "Tested with 24.04.5.1: the live desktop and its installer start from the Rebootera USB (UEFI).",
         "es": "Probado con 24.04.5.1: el escritorio en vivo y su instalador arrancan desde el USB de Rebootera (UEFI)."
       }
-    }
+    },
+    "family": "ubuntu",
+    "group": "linux",
+    "edition": "Desktop 24.04 LTS",
+    "tags": [
+      "lts"
+    ]
   },
   {
     "id": "debian-13-netinst",
@@ -82,8 +103,12 @@
       "signature": {
         "type": "detached",
         "url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS.sign",
-        "keys": ["debian.asc"],
-        "fingerprints": ["DF9B9C49EAA9298432589D76DA87E80D6294BE9B"]
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
       }
     },
     "secureBoot": "signed",
@@ -99,7 +124,13 @@
         "en": "Tested: the graphical installer starts from the Rebootera USB (UEFI).",
         "es": "Probado: el instalador gráfico arranca desde el USB de Rebootera (UEFI)."
       }
-    }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "13 netinst (installs over the network)",
+    "tags": [
+      "light"
+    ]
   },
   {
     "id": "fedora-44-workstation",
@@ -115,7 +146,9 @@
       "pattern": "^Fedora-Workstation-Live-44-\\d+\\.\\d+\\.x86_64\\.iso$",
       "signature": {
         "type": "clearsign",
-        "keys": ["fedora.asc"],
+        "keys": [
+          "fedora.asc"
+        ],
         "fingerprints": [
           "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
           "4F50A6114CD5C6976A7F1179655A4B02F577861E",
@@ -137,7 +170,13 @@
         "en": "Tested with 44-1.7: the live desktop and its installer start from the Rebootera USB (UEFI).",
         "es": "Probado con 44-1.7: el escritorio en vivo y su instalador arrancan desde el USB de Rebootera (UEFI)."
       }
-    }
+    },
+    "family": "fedora",
+    "group": "linux",
+    "edition": "Workstation 44 (GNOME)",
+    "tags": [
+      "recommended"
+    ]
   },
   {
     "id": "archlinux",
@@ -154,8 +193,12 @@
       "isoSignature": {
         "type": "iso-detached",
         "suffix": ".sig",
-        "keys": ["arch.asc"],
-        "fingerprints": ["3E80CA1A8B89F69CBA57D98A76A5EF9054449A5C"]
+        "keys": [
+          "arch.asc"
+        ],
+        "fingerprints": [
+          "3E80CA1A8B89F69CBA57D98A76A5EF9054449A5C"
+        ]
       }
     },
     "secureBoot": "unsigned",
@@ -171,7 +214,13 @@
         "en": "Tested with 2026.10.01: it starts from the Rebootera USB in BIOS (legacy) mode. In UEFI the screen stays black, so on a UEFI-only computer write this image alone to a separate USB drive.",
         "es": "Probado con 2026.10.01: arranca desde el USB de Rebootera en modo BIOS (heredado). En UEFI se queda en pantalla negra: en un equipo solo UEFI, graba esta imagen sola en otro pendrive."
       }
-    }
+    },
+    "family": "arch",
+    "group": "linux",
+    "edition": "Latest ISO",
+    "tags": [
+      "rolling"
+    ]
   },
   {
     "id": "alpine-standard",
@@ -188,8 +237,12 @@
       "isoSignature": {
         "type": "iso-detached",
         "suffix": ".asc",
-        "keys": ["alpine.asc"],
-        "fingerprints": ["0482D84022F52DF1C4E7CD43293ACD0907D9495A"]
+        "keys": [
+          "alpine.asc"
+        ],
+        "fingerprints": [
+          "0482D84022F52DF1C4E7CD43293ACD0907D9495A"
+        ]
       }
     },
     "secureBoot": "unsigned",
@@ -205,7 +258,13 @@
         "en": "Alpine 3.24 does not start from the Rebootera boot menu (Ventoy 1.1.18): in UEFI the boot loader cannot load its kernel and in BIOS the image cannot be mounted. Write this image alone to a separate USB drive instead.",
         "es": "Alpine 3.24 no arranca desde el menú de Rebootera (Ventoy 1.1.18): en UEFI el cargador no puede cargar su kernel y en BIOS no se puede montar la imagen. Graba esta imagen sola en otro pendrive."
       }
-    }
+    },
+    "family": "alpine",
+    "group": "rescue",
+    "edition": "Standard",
+    "tags": [
+      "light"
+    ]
   },
   {
     "id": "alpine-virt",
@@ -222,8 +281,12 @@
       "isoSignature": {
         "type": "iso-detached",
         "suffix": ".asc",
-        "keys": ["alpine.asc"],
-        "fingerprints": ["0482D84022F52DF1C4E7CD43293ACD0907D9495A"]
+        "keys": [
+          "alpine.asc"
+        ],
+        "fingerprints": [
+          "0482D84022F52DF1C4E7CD43293ACD0907D9495A"
+        ]
       }
     },
     "secureBoot": "unsigned",
@@ -239,7 +302,13 @@
         "en": "Alpine 3.24 does not start from the Rebootera boot menu (Ventoy 1.1.18): in UEFI the boot loader cannot load its kernel and in BIOS the image cannot be mounted. Write this image alone to a separate USB drive instead.",
         "es": "Alpine 3.24 no arranca desde el menú de Rebootera (Ventoy 1.1.18): en UEFI el cargador no puede cargar su kernel y en BIOS no se puede montar la imagen. Graba esta imagen sola en otro pendrive."
       }
-    }
+    },
+    "family": "alpine",
+    "group": "rescue",
+    "edition": "Virtual (for virtual machines)",
+    "tags": [
+      "light"
+    ]
   },
   {
     "id": "windows-11",
@@ -265,6 +334,1255 @@
         "en": "Not tested yet from the Rebootera USB.",
         "es": "Todavía no se ha probado desde el USB de Rebootera."
       }
+    },
+    "family": "windows-11",
+    "group": "windows",
+    "edition": "Home / Pro (from Microsoft)",
+    "tags": [
+      "recommended"
+    ]
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light"
+    ],
+    "id": "windows-11-ltsc-eval",
+    "name": "Windows 11 Enterprise LTSC",
+    "vendor": "Microsoft",
+    "version": "2024 (evaluation)",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/evalcenter/evaluate-windows-11-iot-enterprise-ltsc",
+    "resolver": {
+      "type": "direct",
+      "index": "https://go.microsoft.com/fwlink/?linkid=2289029&clcid=0x409&culture=en-us&country=us"
+    },
+    "family": "windows-11",
+    "group": "windows",
+    "edition": "Enterprise LTSC 2024 (90-day evaluation, English)",
+    "notes": {
+      "en": "The lightest Windows 11: long-term servicing, no Store apps and no feature churn. Microsoft's official 90-day evaluation image, in English.",
+      "es": "El Windows 11 más ligero: servicio a largo plazo, sin apps de la Tienda ni cambios constantes. Imagen oficial de evaluación de 90 días de Microsoft, en inglés."
+    }
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "windows-11-enterprise-eval",
+    "name": "Windows 11 Enterprise",
+    "vendor": "Microsoft",
+    "version": "24H2 (evaluation)",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/evalcenter/evaluate-windows-11-enterprise",
+    "resolver": {
+      "type": "direct",
+      "index": "https://go.microsoft.com/fwlink/?linkid=2289031&clcid=0x409&culture=en-us&country=us"
+    },
+    "family": "windows-11",
+    "group": "windows",
+    "edition": "Enterprise 24H2 (90-day evaluation, English)",
+    "notes": {
+      "en": "Full Windows 11 Enterprise for trying it out for 90 days. Microsoft's official evaluation image, in English.",
+      "es": "Windows 11 Enterprise completo para probarlo 90 días. Imagen oficial de evaluación de Microsoft, en inglés."
+    }
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "legacy"
+    ],
+    "id": "windows-10",
+    "name": "Windows 10",
+    "vendor": "Microsoft",
+    "version": "22H2",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/software-download/windows10",
+    "resolver": {
+      "type": "manual"
+    },
+    "family": "windows-10",
+    "group": "windows",
+    "edition": "Home / Pro (from Microsoft)",
+    "notes": {
+      "en": "Microsoft only offers temporary download links from its website. Download the ISO there and add it with \"Add images\" or copy it to the isos/windows folder of this USB.",
+      "es": "Microsoft solo ofrece enlaces de descarga temporales desde su web. Descarga allí la ISO y añádela con \"Añadir imágenes\" o cópiala a la carpeta isos/windows de este USB."
+    }
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light"
+    ],
+    "id": "windows-10-ltsc-eval-es",
+    "name": "Windows 10 Enterprise LTSC",
+    "vendor": "Microsoft",
+    "version": "2021 (evaluation)",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/evalcenter/evaluate-windows-10-enterprise",
+    "resolver": {
+      "type": "direct",
+      "index": "https://go.microsoft.com/fwlink/?linkid=2195404&clcid=0x40a&culture=es-es&country=es"
+    },
+    "family": "windows-10",
+    "group": "windows",
+    "edition": "Enterprise LTSC 2021 (90-day evaluation, Spanish)",
+    "notes": {
+      "en": "Light, long-term Windows 10 for older hardware. Microsoft's official 90-day evaluation image, in Spanish.",
+      "es": "Windows 10 ligero y de soporte largo para equipos antiguos. Imagen oficial de evaluación de 90 días de Microsoft, en español."
+    }
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "recommended"
+    ],
+    "id": "windows-server-2025-eval",
+    "name": "Windows Server 2025",
+    "vendor": "Microsoft",
+    "version": "(evaluation)",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/evalcenter/evaluate-windows-server-2025",
+    "resolver": {
+      "type": "direct",
+      "index": "https://go.microsoft.com/fwlink/?linkid=2293312&clcid=0x409&culture=en-us&country=us"
+    },
+    "family": "windows-server",
+    "group": "servers",
+    "edition": "Server 2025 (180-day evaluation, English)",
+    "notes": {
+      "en": "Microsoft's official 180-day evaluation image of Windows Server 2025, in English.",
+      "es": "Imagen oficial de evaluación de 180 días de Windows Server 2025 de Microsoft, en inglés."
+    }
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "windows-server-2022-eval",
+    "name": "Windows Server 2022",
+    "vendor": "Microsoft",
+    "version": "(evaluation)",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/evalcenter/evaluate-windows-server-2022",
+    "resolver": {
+      "type": "direct",
+      "index": "https://go.microsoft.com/fwlink/?linkid=2195280&clcid=0x409&culture=en-us&country=us"
+    },
+    "family": "windows-server",
+    "group": "servers",
+    "edition": "Server 2022 (180-day evaluation, English)",
+    "notes": {
+      "en": "Microsoft's official 180-day evaluation image of Windows Server 2022, in English.",
+      "es": "Imagen oficial de evaluación de 180 días de Windows Server 2022 de Microsoft, en inglés."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "recommended",
+      "lts"
+    ],
+    "id": "ubuntu-26.04-server",
+    "name": "Ubuntu Server",
+    "vendor": "Canonical",
+    "version": "26.04 LTS",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/download/server",
+    "resolver": {
+      "type": "sums",
+      "index": "https://releases.ubuntu.com/26.04/SHA256SUMS",
+      "pattern": "^ubuntu-26\\.04(\\.\\d+)?-live-server-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://releases.ubuntu.com/26.04/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-server",
+    "group": "servers",
+    "edition": "Server 26.04 LTS",
+    "notes": {
+      "en": "Text-mode installer for servers, with long-term support.",
+      "es": "Instalador en modo texto para servidores, con soporte extendido."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "lts"
+    ],
+    "id": "ubuntu-24.04-server",
+    "name": "Ubuntu Server",
+    "vendor": "Canonical",
+    "version": "24.04 LTS",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/download/server",
+    "resolver": {
+      "type": "sums",
+      "index": "https://releases.ubuntu.com/24.04/SHA256SUMS",
+      "pattern": "^ubuntu-24\\.04(\\.\\d+)?-live-server-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://releases.ubuntu.com/24.04/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-server",
+    "group": "servers",
+    "edition": "Server 24.04 LTS",
+    "notes": {
+      "en": "Text-mode installer for servers, with long-term support.",
+      "es": "Instalador en modo texto para servidores, con soporte extendido."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "lts"
+    ],
+    "id": "kubuntu-24.04",
+    "name": "Kubuntu",
+    "vendor": "Ubuntu community",
+    "version": "24.04 LTS",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/desktop/flavors",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.ubuntu.com/kubuntu/releases/24.04/release/SHA256SUMS",
+      "pattern": "^kubuntu-24\\.04(\\.\\d+)?-desktop-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.ubuntu.com/kubuntu/releases/24.04/release/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-flavours",
+    "group": "linux",
+    "edition": "Kubuntu 24.04 LTS (KDE Plasma)",
+    "notes": {
+      "en": "Official Ubuntu flavour with the KDE Plasma desktop.",
+      "es": "Sabor oficial de Ubuntu con el escritorio KDE Plasma."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "lts",
+      "light"
+    ],
+    "id": "xubuntu-24.04",
+    "name": "Xubuntu",
+    "vendor": "Ubuntu community",
+    "version": "24.04 LTS",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/desktop/flavors",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.ubuntu.com/xubuntu/releases/24.04/release/SHA256SUMS",
+      "pattern": "^xubuntu-24\\.04(\\.\\d+)?-desktop-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.ubuntu.com/xubuntu/releases/24.04/release/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-flavours",
+    "group": "linux",
+    "edition": "Xubuntu 24.04 LTS (Xfce)",
+    "notes": {
+      "en": "Official Ubuntu flavour with the Xfce desktop.",
+      "es": "Sabor oficial de Ubuntu con el escritorio Xfce."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "lts",
+      "light"
+    ],
+    "id": "lubuntu-24.04",
+    "name": "Lubuntu",
+    "vendor": "Ubuntu community",
+    "version": "24.04 LTS",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/desktop/flavors",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.ubuntu.com/lubuntu/releases/24.04/release/SHA256SUMS",
+      "pattern": "^lubuntu-24\\.04(\\.\\d+)?-desktop-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.ubuntu.com/lubuntu/releases/24.04/release/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-flavours",
+    "group": "linux",
+    "edition": "Lubuntu 24.04 LTS (LXQt)",
+    "notes": {
+      "en": "Official Ubuntu flavour with the LXQt desktop.",
+      "es": "Sabor oficial de Ubuntu con el escritorio LXQt."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "lts"
+    ],
+    "id": "ubuntu-mate-24.04",
+    "name": "Ubuntu MATE",
+    "vendor": "Ubuntu community",
+    "version": "24.04 LTS",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/desktop/flavors",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.ubuntu.com/ubuntu-mate/releases/24.04/release/SHA256SUMS",
+      "pattern": "^ubuntu-mate-24\\.04(\\.\\d+)?-desktop-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.ubuntu.com/ubuntu-mate/releases/24.04/release/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-flavours",
+    "group": "linux",
+    "edition": "Ubuntu MATE 24.04 LTS (MATE)",
+    "notes": {
+      "en": "Official Ubuntu flavour with the MATE desktop.",
+      "es": "Sabor oficial de Ubuntu con el escritorio MATE."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "live"
+    ],
+    "id": "debian-13-live-gnome",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "13 (GNOME)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-13\\.\\d+\\.\\d+-amd64-gnome\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 13 (GNOME)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the GNOME desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio GNOME."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "live"
+    ],
+    "id": "debian-13-live-kde",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "13 (KDE Plasma)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-13\\.\\d+\\.\\d+-amd64-kde\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 13 (KDE Plasma)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the KDE Plasma desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio KDE Plasma."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "live",
+      "light"
+    ],
+    "id": "debian-13-live-xfce",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "13 (Xfce)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-13\\.\\d+\\.\\d+-amd64-xfce\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 13 (Xfce)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the Xfce desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio Xfce."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light"
+    ],
+    "id": "fedora-44-xfce",
+    "name": "Fedora Xfce",
+    "vendor": "Fedora Project",
+    "version": "44",
+    "category": "linux",
+    "homepage": "https://fedoraproject.org/spins",
+    "resolver": {
+      "type": "fedora",
+      "index": "https://download.fedoraproject.org/pub/fedora/linux/releases/44/Spins/x86_64/iso/",
+      "pattern": "^Fedora-Xfce-Live-44-\\d+\\.\\d+\\.x86_64\\.iso$",
+      "signature": {
+        "type": "clearsign",
+        "keys": [
+          "fedora.asc"
+        ],
+        "fingerprints": [
+          "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+          "4F50A6114CD5C6976A7F1179655A4B02F577861E",
+          "C6E7F081CF80E13146676E88829B606631645531",
+          "D924B10D3E810DABDD8B56B596E7E91491211FCE"
+        ]
+      }
+    },
+    "family": "fedora",
+    "group": "linux",
+    "edition": "Xfce spin 44",
+    "notes": {
+      "en": "Fedora with the Xfce desktop.",
+      "es": "Fedora con el escritorio Xfce."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "fedora-44-cinnamon",
+    "name": "Fedora Cinnamon",
+    "vendor": "Fedora Project",
+    "version": "44",
+    "category": "linux",
+    "homepage": "https://fedoraproject.org/spins",
+    "resolver": {
+      "type": "fedora",
+      "index": "https://download.fedoraproject.org/pub/fedora/linux/releases/44/Spins/x86_64/iso/",
+      "pattern": "^Fedora-Cinnamon-Live-44-\\d+\\.\\d+\\.x86_64\\.iso$",
+      "signature": {
+        "type": "clearsign",
+        "keys": [
+          "fedora.asc"
+        ],
+        "fingerprints": [
+          "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+          "4F50A6114CD5C6976A7F1179655A4B02F577861E",
+          "C6E7F081CF80E13146676E88829B606631645531",
+          "D924B10D3E810DABDD8B56B596E7E91491211FCE"
+        ]
+      }
+    },
+    "family": "fedora",
+    "group": "linux",
+    "edition": "Cinnamon spin 44",
+    "notes": {
+      "en": "Fedora with the Cinnamon desktop.",
+      "es": "Fedora con el escritorio Cinnamon."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light"
+    ],
+    "id": "fedora-44-server",
+    "name": "Fedora Server",
+    "vendor": "Fedora Project",
+    "version": "44 (netinst)",
+    "category": "linux",
+    "homepage": "https://fedoraproject.org/server/download",
+    "resolver": {
+      "type": "fedora",
+      "index": "https://download.fedoraproject.org/pub/fedora/linux/releases/44/Server/x86_64/iso/",
+      "pattern": "^Fedora-Server-netinst-x86_64-44-\\d+\\.\\d+\\.iso$",
+      "signature": {
+        "type": "clearsign",
+        "keys": [
+          "fedora.asc"
+        ],
+        "fingerprints": [
+          "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+          "4F50A6114CD5C6976A7F1179655A4B02F577861E",
+          "C6E7F081CF80E13146676E88829B606631645531",
+          "D924B10D3E810DABDD8B56B596E7E91491211FCE"
+        ]
+      }
+    },
+    "family": "fedora-server",
+    "group": "servers",
+    "edition": "Server 44 (netinst)",
+    "notes": {
+      "en": "Small installer for Fedora Server. It downloads the packages during installation.",
+      "es": "Instalador pequeño de Fedora Server. Descarga los paquetes durante la instalación."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "recommended"
+    ],
+    "id": "linuxmint-22.3-cinnamon",
+    "name": "Linux Mint",
+    "vendor": "Linux Mint",
+    "version": "22.3 (Cinnamon)",
+    "category": "linux",
+    "homepage": "https://linuxmint.com/download.php",
+    "resolver": {
+      "type": "sums",
+      "index": "https://mirrors.edge.kernel.org/linuxmint/stable/22.3/sha256sum.txt",
+      "pattern": "^linuxmint-22\\.3-cinnamon-64bit\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://mirrors.edge.kernel.org/linuxmint/stable/22.3/sha256sum.txt.gpg",
+        "keys": [
+          "mint.asc"
+        ],
+        "fingerprints": [
+          "27DEB15644C6B3CF3BD7D291300F846BA25BAE09"
+        ]
+      }
+    },
+    "family": "mint",
+    "group": "linux",
+    "edition": "22.3 Cinnamon",
+    "notes": {
+      "en": "Friendly Ubuntu-based system with the Cinnamon desktop, a good first Linux.",
+      "es": "Sistema amigable basado en Ubuntu con el escritorio Cinnamon, un buen primer Linux."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light"
+    ],
+    "id": "linuxmint-22.3-xfce",
+    "name": "Linux Mint",
+    "vendor": "Linux Mint",
+    "version": "22.3 (Xfce)",
+    "category": "linux",
+    "homepage": "https://linuxmint.com/download.php",
+    "resolver": {
+      "type": "sums",
+      "index": "https://mirrors.edge.kernel.org/linuxmint/stable/22.3/sha256sum.txt",
+      "pattern": "^linuxmint-22\\.3-xfce-64bit\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://mirrors.edge.kernel.org/linuxmint/stable/22.3/sha256sum.txt.gpg",
+        "keys": [
+          "mint.asc"
+        ],
+        "fingerprints": [
+          "27DEB15644C6B3CF3BD7D291300F846BA25BAE09"
+        ]
+      }
+    },
+    "family": "mint",
+    "group": "linux",
+    "edition": "22.3 Xfce",
+    "notes": {
+      "en": "Friendly Ubuntu-based system with the Xfce desktop, a good first Linux.",
+      "es": "Sistema amigable basado en Ubuntu con el escritorio Xfce, un buen primer Linux."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "linuxmint-22.3-mate",
+    "name": "Linux Mint",
+    "vendor": "Linux Mint",
+    "version": "22.3 (MATE)",
+    "category": "linux",
+    "homepage": "https://linuxmint.com/download.php",
+    "resolver": {
+      "type": "sums",
+      "index": "https://mirrors.edge.kernel.org/linuxmint/stable/22.3/sha256sum.txt",
+      "pattern": "^linuxmint-22\\.3-mate-64bit\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://mirrors.edge.kernel.org/linuxmint/stable/22.3/sha256sum.txt.gpg",
+        "keys": [
+          "mint.asc"
+        ],
+        "fingerprints": [
+          "27DEB15644C6B3CF3BD7D291300F846BA25BAE09"
+        ]
+      }
+    },
+    "family": "mint",
+    "group": "linux",
+    "edition": "22.3 MATE",
+    "notes": {
+      "en": "Friendly Ubuntu-based system with the MATE desktop, a good first Linux.",
+      "es": "Sistema amigable basado en Ubuntu con el escritorio MATE, un buen primer Linux."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "rolling"
+    ],
+    "id": "opensuse-tumbleweed",
+    "name": "openSUSE Tumbleweed",
+    "vendor": "openSUSE",
+    "version": "rolling",
+    "category": "linux",
+    "homepage": "https://get.opensuse.org/tumbleweed/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://download.opensuse.org/tumbleweed/iso/openSUSE-Tumbleweed-DVD-x86_64-Current.iso.sha256",
+      "pattern": "^openSUSE-Tumbleweed-DVD-x86_64-Snapshot\\d+-Media\\.iso$"
+    },
+    "family": "opensuse",
+    "group": "linux",
+    "edition": "Tumbleweed DVD (rolling)",
+    "notes": {
+      "en": "Rolling release with the latest software and an excellent installer and snapshots.",
+      "es": "Versión continua con el software más reciente, un instalador excelente y snapshots."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "kali-linux-installer",
+    "name": "Kali Linux",
+    "vendor": "OffSec",
+    "version": "Installer (latest)",
+    "category": "linux",
+    "homepage": "https://www.kali.org/get-kali/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.kali.org/current/SHA256SUMS",
+      "pattern": "^kali-linux-\\d+\\.\\d+-installer-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.kali.org/current/SHA256SUMS.gpg",
+        "keys": [
+          "kali.asc"
+        ],
+        "fingerprints": [
+          "827C8569F2518CC677FECA1AED65462EC8D5E4C5"
+        ]
+      }
+    },
+    "family": "kali",
+    "group": "linux",
+    "edition": "Installer (latest)",
+    "notes": {
+      "en": "Full installer with the security tools.",
+      "es": "Instalador completo con herramientas de seguridad."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "recommended"
+    ],
+    "id": "rocky-10-minimal",
+    "name": "Rocky Linux",
+    "vendor": "Rocky Enterprise Software Foundation",
+    "version": "10 (minimal)",
+    "category": "linux",
+    "homepage": "https://rockylinux.org/download",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://download.rockylinux.org/pub/rocky/10/isos/x86_64/CHECKSUM",
+      "pattern": "^Rocky-10\\.\\d+-x86_64-minimal\\.iso$"
+    },
+    "family": "rocky",
+    "group": "servers",
+    "edition": "10 minimal",
+    "notes": {
+      "en": "Free, compatible rebuild of Red Hat Enterprise Linux 10. Minimal installer with the packages on the image.",
+      "es": "Reconstrucción libre y compatible de Red Hat Enterprise Linux 10. Instalador mínimo con los paquetes en la propia imagen."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "rocky-9-minimal",
+    "name": "Rocky Linux",
+    "vendor": "Rocky Enterprise Software Foundation",
+    "version": "9 (minimal)",
+    "category": "linux",
+    "homepage": "https://rockylinux.org/download",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://download.rockylinux.org/pub/rocky/9/isos/x86_64/CHECKSUM",
+      "pattern": "^Rocky-9\\.\\d+-x86_64-minimal\\.iso$"
+    },
+    "family": "rocky",
+    "group": "servers",
+    "edition": "9 minimal",
+    "notes": {
+      "en": "Rebuild of Red Hat Enterprise Linux 9, supported for years.",
+      "es": "Reconstrucción de Red Hat Enterprise Linux 9, con soporte durante años."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "almalinux-10-minimal",
+    "name": "AlmaLinux",
+    "vendor": "AlmaLinux OS Foundation",
+    "version": "10 (minimal)",
+    "category": "linux",
+    "homepage": "https://almalinux.org/get-almalinux/",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://repo.almalinux.org/almalinux/10/isos/x86_64/CHECKSUM",
+      "pattern": "^AlmaLinux-10\\.\\d+-x86_64-minimal\\.iso$",
+      "signature": {
+        "type": "clearsign",
+        "keys": [
+          "alma.asc"
+        ],
+        "fingerprints": [
+          "EE6DB7B98F5BF5EDD9DA0DE5DEE5C11CC2A1E572"
+        ]
+      }
+    },
+    "family": "almalinux",
+    "group": "servers",
+    "edition": "10 minimal",
+    "notes": {
+      "en": "Binary-compatible Red Hat Enterprise Linux 10 for servers.",
+      "es": "Compatible con Red Hat Enterprise Linux 10 para servidores."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "proxmox-ve",
+    "name": "Proxmox VE",
+    "vendor": "Proxmox",
+    "version": "latest",
+    "category": "linux",
+    "homepage": "https://www.proxmox.com/products/proxmox-virtual-environment/get-started",
+    "resolver": {
+      "type": "sums",
+      "index": "https://enterprise.proxmox.com/iso/SHA256SUMS",
+      "pattern": "^proxmox-ve_\\d+\\.\\d+-\\d+\\.iso$"
+    },
+    "family": "proxmox",
+    "group": "servers",
+    "edition": "Virtual Environment",
+    "notes": {
+      "en": "Virtualization platform for virtual machines and containers, managed from a web page.",
+      "es": "Plataforma de virtualización de máquinas virtuales y contenedores, que se gestiona desde una web."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light"
+    ],
+    "id": "freebsd-15-bootonly",
+    "name": "FreeBSD",
+    "vendor": "FreeBSD Project",
+    "version": "15.0 (Boot only)",
+    "category": "linux",
+    "homepage": "https://www.freebsd.org/where/",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://download.freebsd.org/releases/ISO-IMAGES/15.0/CHECKSUM.SHA256-FreeBSD-15.0-RELEASE-amd64",
+      "pattern": "^FreeBSD-15\\.\\d-RELEASE-amd64-bootonly\\.iso$"
+    },
+    "family": "freebsd",
+    "group": "servers",
+    "edition": "15.0 Boot only",
+    "notes": {
+      "en": "Tiny installer that downloads FreeBSD while installing.",
+      "es": "Instalador diminuto que descarga FreeBSD durante la instalación."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "freebsd-15-disc1",
+    "name": "FreeBSD",
+    "vendor": "FreeBSD Project",
+    "version": "15.0 (Disc 1 (offline))",
+    "category": "linux",
+    "homepage": "https://www.freebsd.org/where/",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://download.freebsd.org/releases/ISO-IMAGES/15.0/CHECKSUM.SHA256-FreeBSD-15.0-RELEASE-amd64",
+      "pattern": "^FreeBSD-15\\.\\d-RELEASE-amd64-disc1\\.iso$"
+    },
+    "family": "freebsd",
+    "group": "servers",
+    "edition": "15.0 Disc 1 (offline)",
+    "notes": {
+      "en": "Installer with everything needed to install without a network.",
+      "es": "Instalador con todo lo necesario para instalar sin red."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light"
+    ],
+    "id": "openbsd-7.9",
+    "name": "OpenBSD",
+    "vendor": "OpenBSD Project",
+    "version": "7.9",
+    "category": "linux",
+    "homepage": "https://www.openbsd.org/faq/faq4.html",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://cdn.openbsd.org/pub/OpenBSD/7.9/amd64/SHA256",
+      "pattern": "^install\\d+\\.iso$"
+    },
+    "family": "openbsd",
+    "group": "servers",
+    "edition": "7.9 installer",
+    "notes": {
+      "en": "Security-focused BSD. Its checksums are signed with signify, which Rebootera does not check yet.",
+      "es": "BSD centrado en la seguridad. Sus sumas van firmadas con signify, que Rebootera todavía no comprueba."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "unknown",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "recommended",
+      "live"
+    ],
+    "id": "systemrescue",
+    "name": "SystemRescue",
+    "vendor": "SystemRescue",
+    "version": "latest",
+    "category": "tools",
+    "homepage": "https://www.system-rescue.org/Download/",
+    "resolver": {
+      "type": "sourceforge",
+      "index": "systemrescuecd",
+      "pattern": "^systemrescue-[\\d.]+-amd64\\.iso$"
+    },
+    "family": "systemrescue",
+    "group": "rescue",
+    "edition": "Latest ISO",
+    "notes": {
+      "en": "Rescue toolkit to repair disks, partitions, boot problems and lost passwords.",
+      "es": "Herramientas de rescate para reparar discos, particiones, problemas de arranque y contraseñas perdidas."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "unknown",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "live"
+    ],
+    "id": "rescuezilla",
+    "name": "Rescuezilla",
+    "vendor": "Rescuezilla",
+    "version": "latest",
+    "category": "tools",
+    "homepage": "https://rescuezilla.com/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/rescuezilla/rescuezilla/releases/latest",
+      "pattern": "^rescuezilla-[\\d.]+-64bit\\.noble\\.iso$"
+    },
+    "family": "rescuezilla",
+    "group": "rescue",
+    "edition": "Latest ISO",
+    "notes": {
+      "en": "Graphical disk imaging and backup: clone or restore whole disks and partitions.",
+      "es": "Copias de seguridad e imágenes de disco gráficas: clona o restaura discos y particiones enteros."
     }
   }
 ]

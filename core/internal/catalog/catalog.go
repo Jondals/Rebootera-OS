@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"path"
@@ -25,6 +26,9 @@ import (
 
 //go:embed catalog.json
 var catalogJSON []byte
+
+//go:embed families.json
+var familiesJSON []byte
 
 // Entry es un sistema del catálogo.
 type Entry struct {
@@ -40,6 +44,34 @@ type Entry struct {
 	Signature  string            `json:"signature"`
 	Notes      map[string]string `json:"notes"`
 	Boot       BootCompat        `json:"boot"`
+	// Family agrupa las versiones de un mismo sistema en una tarjeta de la interfaz.
+	Family string `json:"family"`
+	// Group es la pestaña donde sale: windows, linux, servers o rescue.
+	Group string `json:"group"`
+	// Edition es el nombre corto de esta versión dentro de su familia ("Desktop 24.04 LTS").
+	Edition string `json:"edition"`
+	// Tags son etiquetas de la interfaz: recommended, lts, rolling, light, live, server, legacy.
+	Tags []string `json:"tags"`
+}
+
+// Family es un sistema con sus versiones: la tarjeta del Centro de descargas.
+type Family struct {
+	ID       string            `json:"id"`
+	Name     string            `json:"name"`
+	Vendor   string            `json:"vendor"`
+	Group    string            `json:"group"`
+	Icon     string            `json:"icon"`
+	Homepage string            `json:"homepage"`
+	Summary  map[string]string `json:"summary"`
+}
+
+// * Families devuelve las familias del catálogo.
+func Families() ([]Family, error) {
+	var families []Family
+	if err := json.Unmarshal(familiesJSON, &families); err != nil {
+		return nil, fmt.Errorf("familias del catálogo dañadas: %w", err)
+	}
+	return families, nil
 }
 
 // BootCompat es la compatibilidad de arranque desde el menú del USB de
@@ -107,17 +139,36 @@ func Find(id string) (Entry, error) {
 
 // * Resolve averigua el archivo actual y su SHA-256 desde el índice oficial.
 func Resolve(entry Entry) (Resolved, error) {
+	var resolved Resolved
+	var err error
 	switch entry.Resolver.Type {
 	case "sums":
-		return resolveSums(entry.Resolver)
+		resolved, err = resolveSums(entry.Resolver)
+	case "bsd":
+		resolved, err = resolveBSD(entry.Resolver)
 	case "fedora":
-		return resolveFedora(entry.Resolver)
+		resolved, err = resolveFedora(entry.Resolver)
 	case "alpine":
-		return resolveAlpine(entry.Resolver)
+		resolved, err = resolveAlpine(entry.Resolver)
+	case "github":
+		resolved, err = resolveGitHub(entry.Resolver)
+	case "sourceforge":
+		resolved, err = resolveSourceForge(entry.Resolver)
+	case "direct":
+		resolved, err = resolveDirect(entry.Resolver)
 	case "manual":
 		return Resolved{}, ErrManual
+	default:
+		return Resolved{}, fmt.Errorf("tipo de resolución desconocido: %q", entry.Resolver.Type)
 	}
-	return Resolved{}, fmt.Errorf("tipo de resolución desconocido: %q", entry.Resolver.Type)
+	if err != nil {
+		return Resolved{}, err
+	}
+	// * Casi ningún índice dice el tamaño: se pregunta al servidor (sin descargar nada) para enseñarlo.
+	if resolved.SizeBytes == 0 {
+		resolved.SizeBytes = headSize(resolved.URL)
+	}
+	return resolved, nil
 }
 
 // * fetchAttempts es cuántas veces se intenta leer un índice. Algunos
@@ -243,6 +294,164 @@ func resolveFedora(r Resolver) (Resolved, error) {
 		return Resolved{}, fmt.Errorf("%s: %w", r.Index, err)
 	}
 	return Resolved{URL: sibling(r.Index, name), FileName: name, SHA256: hashes[name], SignedBy: signedBy}, nil
+}
+
+// * resolveBSD lee un archivo de sumas con líneas "SHA256 (archivo) = hash" (Rocky, AlmaLinux, FreeBSD,
+// * OpenBSD) que está directamente en la URL del índice, con su firma si la hay.
+func resolveBSD(r Resolver) (Resolved, error) {
+	text, signedBy, err := fetchIndex(r)
+	if err != nil {
+		return Resolved{}, err
+	}
+	pattern, err := regexp.Compile(r.Pattern)
+	if err != nil {
+		return Resolved{}, err
+	}
+	hashes := map[string]string{}
+	for _, line := range strings.Split(text, "\n") {
+		m := fedoraSum.FindStringSubmatch(strings.TrimSpace(line))
+		if m != nil && pattern.MatchString(m[1]) {
+			hashes[m[1]] = strings.ToLower(m[2])
+		}
+	}
+	name, err := newest(hashes)
+	if err != nil {
+		return Resolved{}, fmt.Errorf("%s: %w", r.Index, err)
+	}
+	return Resolved{URL: sibling(r.Index, name), FileName: name, SHA256: hashes[name], SignedBy: signedBy}, nil
+}
+
+// githubRelease es lo que se lee de la API de releases de GitHub.
+type githubRelease struct {
+	Assets []struct {
+		Name   string `json:"name"`
+		Size   int64  `json:"size"`
+		Digest string `json:"digest"`
+		URL    string `json:"browser_download_url"`
+	} `json:"assets"`
+}
+
+// * resolveGitHub elige, entre los archivos de la última release de un proyecto en GitHub, el que encaja
+// * con el patrón; su SHA-256 es el "digest" que GitHub calcula al subirlo.
+func resolveGitHub(r Resolver) (Resolved, error) {
+	text, err := fetchText(r.Index)
+	if err != nil {
+		return Resolved{}, err
+	}
+	var release githubRelease
+	if err := json.Unmarshal([]byte(text), &release); err != nil {
+		return Resolved{}, fmt.Errorf("respuesta de GitHub no válida: %w", err)
+	}
+	pattern, err := regexp.Compile(r.Pattern)
+	if err != nil {
+		return Resolved{}, err
+	}
+	hashes := map[string]string{}
+	found := map[string]Resolved{}
+	for _, asset := range release.Assets {
+		sum, ok := strings.CutPrefix(asset.Digest, "sha256:")
+		if !pattern.MatchString(asset.Name) || !ok || !isSHA256(sum) || !strings.HasPrefix(asset.URL, "https://github.com/") {
+			continue
+		}
+		hashes[asset.Name] = strings.ToLower(sum)
+		found[asset.Name] = Resolved{URL: asset.URL, FileName: asset.Name, SHA256: strings.ToLower(sum), SizeBytes: asset.Size}
+	}
+	name, err := newest(hashes)
+	if err != nil {
+		return Resolved{}, fmt.Errorf("%s: %w", r.Index, err)
+	}
+	return found[name], nil
+}
+
+// sourceForgeRelease es lo que devuelve best_release.json de un proyecto de SourceForge.
+type sourceForgeRelease struct {
+	Release struct {
+		Filename string `json:"filename"`
+		Bytes    int64  `json:"bytes"`
+	} `json:"release"`
+}
+
+// * resolveSourceForge averigua la última versión de un proyecto de SourceForge (Index es el nombre del
+// * proyecto) y lee su SHA-256 del archivo .sha256 que publica junto a la imagen.
+func resolveSourceForge(r Resolver) (Resolved, error) {
+	base := "https://sourceforge.net/projects/" + url.PathEscape(r.Index)
+	text, err := fetchText(base + "/best_release.json")
+	if err != nil {
+		return Resolved{}, err
+	}
+	var best sourceForgeRelease
+	if err := json.Unmarshal([]byte(text), &best); err != nil {
+		return Resolved{}, fmt.Errorf("respuesta de SourceForge no válida: %w", err)
+	}
+	pattern, err := regexp.Compile(r.Pattern)
+	if err != nil {
+		return Resolved{}, err
+	}
+	file := best.Release.Filename
+	if file == "" || !pattern.MatchString(path.Base(file)) {
+		return Resolved{}, fmt.Errorf("%s: la última versión (%q) no es la imagen buscada", r.Index, file)
+	}
+	sumText, err := fetchText(base + "/files" + file + ".sha256/download")
+	if err != nil {
+		return Resolved{}, fmt.Errorf("no se pudo leer la suma de %s: %w", path.Base(file), err)
+	}
+	fields := strings.Fields(sumText)
+	if len(fields) == 0 || !isSHA256(fields[0]) {
+		return Resolved{}, fmt.Errorf("%s.sha256 no contiene una suma SHA-256", path.Base(file))
+	}
+	return Resolved{URL: base + "/files" + file + "/download", FileName: path.Base(file), SHA256: strings.ToLower(fields[0]), SizeBytes: best.Release.Bytes}, nil
+}
+
+// * resolveDirect sigue el enlace oficial del fabricante (por ejemplo, las ediciones de evaluación de
+// * Microsoft) hasta el archivo y lee su nombre y su tamaño. No hay suma publicada que leer: la
+// * imagen entra en la biblioteca con su SHA-256 calculado pero sin comprobar contra una oficial.
+func resolveDirect(r Resolver) (Resolved, error) {
+	req, err := http.NewRequest("HEAD", r.Index, nil)
+	if err != nil {
+		return Resolved{}, err
+	}
+	req.Header.Set("User-Agent", UserAgent)
+	resp, err := Client.Do(req)
+	if err != nil {
+		return Resolved{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return Resolved{}, fmt.Errorf("%s respondió %d", r.Index, resp.StatusCode)
+	}
+	final := resp.Request.URL
+	if final.Scheme != "https" {
+		return Resolved{}, fmt.Errorf("%s redirigió a una conexión sin cifrar", r.Index)
+	}
+	name := path.Base(final.Path)
+	if _, params, err := mime.ParseMediaType(resp.Header.Get("Content-Disposition")); err == nil && params["filename"] != "" {
+		name = params["filename"]
+	}
+	if !strings.HasSuffix(strings.ToLower(name), ".iso") {
+		return Resolved{}, fmt.Errorf("%s no lleva a una imagen .iso", r.Index)
+	}
+	return Resolved{URL: final.String(), FileName: name, SizeBytes: max(resp.ContentLength, 0)}, nil
+}
+
+// * headSize pregunta al servidor el tamaño de un archivo sin descargarlo (0 si no lo dice).
+func headSize(rawURL string) int64 {
+	if !strings.HasPrefix(rawURL, "https://") {
+		return 0
+	}
+	req, err := http.NewRequest("HEAD", rawURL, nil)
+	if err != nil {
+		return 0
+	}
+	req.Header.Set("User-Agent", UserAgent)
+	resp, err := Client.Do(req)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return 0
+	}
+	return max(resp.ContentLength, 0)
 }
 
 // * resolveAlpine lee latest-releases.yaml y busca la variante (flavor) indicada.

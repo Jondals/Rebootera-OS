@@ -174,6 +174,21 @@ export interface VaultStatus {
   nextBoot: string;
 }
 
+/** Instalador de Windows en carpetas (lo que extrae Rufus) de /api/installer/*. */
+export interface InstallerFolder {
+  kind: string;
+  root: string;
+  name: string;
+  label: string;
+  biosBoot: string;
+  uefiBoot: string;
+  bytes: number;
+  largeFile: boolean;
+  drive: string;
+  device?: string;
+  rel?: string;
+}
+
 /** Imagen de la biblioteca de /api/library. */
 export interface LibraryItem {
   path: string;
@@ -203,11 +218,35 @@ export interface CatalogEntry {
   secureBoot: "signed" | "unsigned" | "unknown";
   notes: Record<string, string>;
   inLibrary: boolean;
+  /** Tarjeta (familia) a la que pertenece y pestaña donde sale. */
+  family: string;
+  group: "windows" | "linux" | "servers" | "rescue";
+  /** Nombre corto de esta versión dentro de su familia. */
+  edition: string;
+  tags: string[];
+  signature: string;
   boot: {
     status: "verified" | "incompatible" | "untested";
     tested: string;
     notes: Record<string, string>;
   };
+}
+
+/** Familia del catálogo de /api/catalog/families (una tarjeta del Centro de descargas). */
+export interface Family {
+  id: string;
+  name: string;
+  vendor: string;
+  group: "windows" | "linux" | "servers" | "rescue";
+  icon: string;
+  homepage: string;
+  summary: Record<string, string>;
+}
+
+/** Ajustes de ancho de banda de /api/transfers/settings. */
+export interface BandwidthSettings {
+  maxBytesPerSecond: number;
+  connections: number;
 }
 
 /** Transferencia de /api/transfers. */

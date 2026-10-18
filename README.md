@@ -41,7 +41,7 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 **From Linux** — as root:
 
 ```bash
-scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.6.0-amd64.iso
+scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.7.0-amd64.iso
 ```
 
 The script refuses non-removable disks and the system disk.

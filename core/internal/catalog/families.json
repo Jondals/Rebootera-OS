@@ -1,0 +1,254 @@
+[
+  {
+    "id": "windows-11",
+    "name": "Windows 11",
+    "vendor": "Microsoft",
+    "group": "windows",
+    "icon": "windows",
+    "homepage": "https://www.microsoft.com/windows/windows-11",
+    "summary": {
+      "en": "The current Windows. Microsoft's own images: evaluation editions download directly; Home and Pro come from Microsoft's page.",
+      "es": "El Windows actual. Imágenes de Microsoft: las ediciones de evaluación se descargan directamente; Home y Pro, desde la página de Microsoft."
+    }
+  },
+  {
+    "id": "windows-10",
+    "name": "Windows 10",
+    "vendor": "Microsoft",
+    "group": "windows",
+    "icon": "windows",
+    "homepage": "https://www.microsoft.com/windows",
+    "summary": {
+      "en": "Windows for older computers.",
+      "es": "Windows para equipos antiguos."
+    }
+  },
+  {
+    "id": "windows-server",
+    "name": "Windows Server",
+    "vendor": "Microsoft",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://www.microsoft.com/windows-server",
+    "summary": {
+      "en": "Microsoft's server system, evaluation editions.",
+      "es": "El sistema de servidores de Microsoft, ediciones de evaluación."
+    }
+  },
+  {
+    "id": "ubuntu",
+    "name": "Ubuntu",
+    "vendor": "Canonical",
+    "group": "linux",
+    "icon": "ubuntu",
+    "homepage": "https://ubuntu.com",
+    "summary": {
+      "en": "Universal Linux, easy to install, with a huge community.",
+      "es": "Linux universal, fácil de instalar y con una comunidad enorme."
+    }
+  },
+  {
+    "id": "ubuntu-flavours",
+    "name": "Ubuntu flavours",
+    "vendor": "Ubuntu community",
+    "group": "linux",
+    "icon": "ubuntu",
+    "homepage": "https://ubuntu.com/desktop/flavors",
+    "summary": {
+      "en": "Ubuntu with other desktops: KDE, Xfce, LXQt and MATE.",
+      "es": "Ubuntu con otros escritorios: KDE, Xfce, LXQt y MATE."
+    }
+  },
+  {
+    "id": "debian",
+    "name": "Debian",
+    "vendor": "Debian Project",
+    "group": "linux",
+    "icon": "debian",
+    "homepage": "https://www.debian.org",
+    "summary": {
+      "en": "The stable, universal system many others are built on.",
+      "es": "El sistema estable y universal sobre el que se construyen muchos otros."
+    }
+  },
+  {
+    "id": "fedora",
+    "name": "Fedora",
+    "vendor": "Fedora Project",
+    "group": "linux",
+    "icon": "fedora",
+    "homepage": "https://fedoraproject.org",
+    "summary": {
+      "en": "Cutting-edge Linux with GNOME, a recent kernel and Wayland.",
+      "es": "Linux de vanguardia con GNOME, kernel reciente y Wayland."
+    }
+  },
+  {
+    "id": "mint",
+    "name": "Linux Mint",
+    "vendor": "Linux Mint",
+    "group": "linux",
+    "icon": "mint",
+    "homepage": "https://linuxmint.com",
+    "summary": {
+      "en": "Friendly and familiar, a good first Linux coming from Windows.",
+      "es": "Amigable y familiar, un buen primer Linux viniendo de Windows."
+    }
+  },
+  {
+    "id": "arch",
+    "name": "Arch Linux",
+    "vendor": "Arch Linux",
+    "group": "linux",
+    "icon": "arch",
+    "homepage": "https://archlinux.org",
+    "summary": {
+      "en": "Rolling, minimal and flexible. For experienced users.",
+      "es": "Continuo, mínimo y flexible. Para usuarios con experiencia."
+    }
+  },
+  {
+    "id": "opensuse",
+    "name": "openSUSE",
+    "vendor": "openSUSE",
+    "group": "linux",
+    "icon": "suse",
+    "homepage": "https://www.opensuse.org",
+    "summary": {
+      "en": "Rolling release with an excellent installer and snapshots.",
+      "es": "Versión continua con un instalador excelente y snapshots."
+    }
+  },
+  {
+    "id": "kali",
+    "name": "Kali Linux",
+    "vendor": "OffSec",
+    "group": "linux",
+    "icon": "kali",
+    "homepage": "https://www.kali.org",
+    "summary": {
+      "en": "Security testing and forensics toolbox.",
+      "es": "Herramientas de pruebas de seguridad y análisis forense."
+    }
+  },
+  {
+    "id": "fedora-server",
+    "name": "Fedora Server",
+    "vendor": "Fedora Project",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://fedoraproject.org/server",
+    "summary": {
+      "en": "Fedora for servers.",
+      "es": "Fedora para servidores."
+    }
+  },
+  {
+    "id": "ubuntu-server",
+    "name": "Ubuntu Server",
+    "vendor": "Canonical",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://ubuntu.com/server",
+    "summary": {
+      "en": "Ubuntu for servers, long-term support.",
+      "es": "Ubuntu para servidores, con soporte extendido."
+    }
+  },
+  {
+    "id": "rocky",
+    "name": "Rocky Linux",
+    "vendor": "RESF",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://rockylinux.org",
+    "summary": {
+      "en": "Free, compatible Red Hat Enterprise Linux.",
+      "es": "Red Hat Enterprise Linux libre y compatible."
+    }
+  },
+  {
+    "id": "almalinux",
+    "name": "AlmaLinux",
+    "vendor": "AlmaLinux OS Foundation",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://almalinux.org",
+    "summary": {
+      "en": "Binary-compatible Red Hat Enterprise Linux.",
+      "es": "Compatible a nivel binario con Red Hat Enterprise Linux."
+    }
+  },
+  {
+    "id": "proxmox",
+    "name": "Proxmox VE",
+    "vendor": "Proxmox",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://www.proxmox.com",
+    "summary": {
+      "en": "Virtualization platform for virtual machines and containers.",
+      "es": "Plataforma de virtualización de máquinas virtuales y contenedores."
+    }
+  },
+  {
+    "id": "freebsd",
+    "name": "FreeBSD",
+    "vendor": "FreeBSD Project",
+    "group": "servers",
+    "icon": "bsd",
+    "homepage": "https://www.freebsd.org",
+    "summary": {
+      "en": "Advanced BSD system for servers and networks.",
+      "es": "Sistema BSD avanzado para servidores y redes."
+    }
+  },
+  {
+    "id": "openbsd",
+    "name": "OpenBSD",
+    "vendor": "OpenBSD Project",
+    "group": "servers",
+    "icon": "bsd",
+    "homepage": "https://www.openbsd.org",
+    "summary": {
+      "en": "BSD system focused on security and clean code.",
+      "es": "Sistema BSD centrado en la seguridad y el código limpio."
+    }
+  },
+  {
+    "id": "alpine",
+    "name": "Alpine Linux",
+    "vendor": "Alpine Linux",
+    "group": "rescue",
+    "icon": "alpine",
+    "homepage": "https://alpinelinux.org",
+    "summary": {
+      "en": "Tiny, fast system, useful as a rescue console.",
+      "es": "Sistema diminuto y rápido, útil como consola de rescate."
+    }
+  },
+  {
+    "id": "systemrescue",
+    "name": "SystemRescue",
+    "vendor": "SystemRescue",
+    "group": "rescue",
+    "icon": "rescue",
+    "homepage": "https://www.system-rescue.org",
+    "summary": {
+      "en": "Repair disks, partitions and boot problems.",
+      "es": "Repara discos, particiones y problemas de arranque."
+    }
+  },
+  {
+    "id": "rescuezilla",
+    "name": "Rescuezilla",
+    "vendor": "Rescuezilla",
+    "group": "rescue",
+    "icon": "rescue",
+    "homepage": "https://rescuezilla.com",
+    "summary": {
+      "en": "Graphical disk cloning and backup.",
+      "es": "Clonado y copias de seguridad de discos con interfaz gráfica."
+    }
+  }
+]

@@ -50,6 +50,7 @@ const (
 const (
 	KindDownload = "download"
 	KindImport   = "import"
+	KindMakeISO  = "iso"
 )
 
 // * spaceMargin es el espacio que se deja siempre libre en el Vault (64 MB).
@@ -123,6 +124,11 @@ type Manager struct {
 	current string
 	stop    string
 	loaded  bool
+	// Ajustes de ancho de banda y el limitador que reparte la velocidad entre las conexiones.
+	setMu          sync.Mutex
+	settings       Settings
+	settingsLoaded bool
+	limiter        limiter
 }
 
 // * New crea el gestor; el trabajador se arranca con Run.
@@ -290,7 +296,7 @@ func (m *Manager) interrupt(id, status string) error {
 	job.Status = status
 	job.SpeedBps = 0
 	if status == StatusCancelled {
-		os.Remove(partialPath(job))
+		removePartial(job)
 	}
 	m.save()
 	return nil
@@ -419,7 +425,7 @@ func (m *Manager) process(job *Job) {
 	case stop != "":
 		job.Status = stop
 		if stop == StatusCancelled {
-			os.Remove(partialPath(job))
+			removePartial(job)
 		}
 	case err != nil:
 		job.Status = StatusFailed
@@ -436,7 +442,7 @@ func (m *Manager) process(job *Job) {
 // * finish comprueba el hash y mueve el archivo a la biblioteca.
 func (m *Manager) finish(job *Job, sha string) error {
 	partial := partialPath(job)
-	if job.Kind == KindDownload && !strings.EqualFold(sha, job.SHA256) {
+	if job.Kind == KindDownload && !(job.SHA256 == "" || strings.EqualFold(sha, job.SHA256)) {
 		os.Remove(partial)
 		return coded(CodeChecksum, fmt.Errorf("el SHA-256 no coincide con el oficial (descargado %s…, oficial %s…): la imagen se ha borrado", sha[:12], job.SHA256[:12]))
 	}
@@ -461,10 +467,19 @@ func (m *Manager) finish(job *Job, sha string) error {
 	}
 	rel, _ := filepath.Rel(vault.Root, final)
 	source := "import"
-	if job.Kind == KindDownload {
+	switch job.Kind {
+	case KindDownload:
 		source = job.CatalogID
+	case KindMakeISO:
+		source = "installer"
 	}
 	return m.lib.Register(filepath.ToSlash(rel), sha, job.SHA256, source)
+}
+
+// * removePartial borra lo descargado de una transferencia y su mapa de bloques.
+func removePartial(job *Job) {
+	os.Remove(partialPath(job))
+	os.Remove(partialPath(job) + ".map")
 }
 
 // * partialPath es donde se escribe una transferencia sin terminar.
@@ -483,12 +498,23 @@ func (m *Manager) transfer(ctx context.Context, job *Job) (string, error) {
 		return "", err
 	}
 	os.WriteFile(filepath.Join(vault.PartialDir(), ".ventoyignore"), nil, 0o640)
+	// * Un instalador en carpetas se empaqueta en una ISO nueva (ver makeiso.go): no se reanuda, se rehace.
+	if job.Kind == KindMakeISO {
+		return m.makeISO(ctx, job)
+	}
 	partial := partialPath(job)
 	file, err := os.OpenFile(partial, os.O_CREATE|os.O_RDWR, 0o640)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
+
+	// * Con varias conexiones el archivo se descarga por trozos (ver parallel.go).
+	if job.Kind == KindDownload {
+		if sum, done, err := m.tryParallel(ctx, job, file); done {
+			return sum, err
+		}
+	}
 
 	// * Al reanudar, el hash se pone al día leyendo lo ya descargado.
 	hasher := sha256.New()
@@ -623,6 +649,11 @@ type pumpVisitor struct {
 func (v *pumpVisitor) Visit(chunk []byte) {
 	v.hasher.Write(chunk)
 	v.done += int64(len(chunk))
+	// * Límite de velocidad: si se va más deprisa de lo permitido se espera; el resto de la tubería se
+	// * llena y la lectura se frena sola.
+	if wait := v.m.limiter.take(int64(len(chunk)), v.m.Settings().MaxBytesPerSecond); wait > 0 {
+		time.Sleep(wait)
+	}
 	now := time.Now()
 	if now.Sub(v.lastTick) < time.Second {
 		return

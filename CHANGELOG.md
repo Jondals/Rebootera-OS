@@ -3,6 +3,26 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.7.0] - 2026-10-18
+
+### Added
+
+- **Many more systems, 40 images in 21 families.** Windows 11/10 and Server 2022/2025 (evaluation images download directly from Microsoft), Ubuntu (Desktop, Server, Kubuntu, Xubuntu, Lubuntu, Ubuntu MATE), Debian (netinst and GNOME/KDE/Xfce live), Fedora (Workstation, Xfce, Cinnamon, Server), Linux Mint (Cinnamon, Xfce, MATE), Arch, Alpine, openSUSE Tumbleweed, Kali, Rocky, AlmaLinux, Proxmox VE, FreeBSD, OpenBSD, SystemRescue and Rescuezilla. Where a project signs its checksums (Ubuntu, Debian, Fedora, Mint, Kali, AlmaLinux) the OpenPGP signature is verified with a pinned key; every other image is checked against the checksum the project publishes over HTTPS. New resolvers for BSD, GitHub releases, SourceForge and direct links. Every downloadable entry was resolved against the real servers (Windows 11 and 10 Home/Pro stay manual, from Microsoft's page).
+- **Installers made with Rufus (or any tool that extracts Windows into folders) become ISOs.** Rebootera finds Windows installer folders on your drives (root of each drive and its first-level folders; in Rebootera OS on the opened media), and "Make ISO" repackages one into a bootable ISO with both BIOS and UEFI boot (and UDF for files over 4 GB such as `install.wim`) straight into the library, as a normal job in the queue with progress. Rebootera Desktop also lets you choose a folder by hand. The source folder is only read. Linux uses `genisoimage` and Windows uses IMAPI (built into Windows); both were tested for real (ISO 9660 signature, El Torito catalog with BIOS and EFI platforms, volume label).
+- **Multi-connection downloads.** Large images are downloaded in 1 MiB blocks over several connections at once (up to 8, 4 by default) with a block map, so a cut resumes where it stopped, and the hash is still computed in order. **Adjust bandwidth** (Download Center) sets the number of connections and a speed limit that applies at once, even to a download in progress, and is remembered on the USB.
+- **Direct to the USB.** Downloads already go straight to the USB; now "Update Rebootera OS (latest)" in Rebootera Desktop also downloads the system image directly into the USB (as `.new`, so the version already there stays intact until the SHA-256 matches the published one), resumes if cut, and does nothing if the USB already has that version. The image is no longer downloaded to the PC's disk first when updating.
+
+### Changed
+
+- **New Download Center**: one card per family with selectable versions (tags such as Recommended, LTS, Light, Live; size on each), a search box, tabs (All, Windows, Linux, Servers & BSD, Rescue & tools), a status card for the destination USB (name and free space), a bottom bar with the active download, **View queue** and **Adjust bandwidth**, copy SHA-256 for each image and a clear "already on your USB" state.
+- **Library** shows the installer folders found and their "Make ISO" button.
+- Rebootera Desktop opens links to the vendors' pages in your browser from the app.
+
+### Fixed
+
+- The catalog check no longer fails on images with no published checksum (Microsoft evaluation images): they are imported as "not verified" and the interface says so.
+- `kali-linux-live` removed: Kali no longer hosts the live images for direct download (only torrents).
+
 ## [0.6.0] - 2026-10-18
 
 ### Added

@@ -58,7 +58,8 @@ func TestCatalogoEmbebido(t *testing.T) {
 		t.Fatalf("catálogo: %v", err)
 	}
 	for _, e := range entries {
-		if e.Resolver.Type != "manual" && !strings.HasPrefix(e.Resolver.Index, "https://") {
+		// * SourceForge se indica por el nombre del proyecto; el resto, por una URL HTTPS.
+		if e.Resolver.Type != "manual" && e.Resolver.Type != "sourceforge" && !strings.HasPrefix(e.Resolver.Index, "https://") {
 			t.Fatalf("%s no usa HTTPS: %s", e.ID, e.Resolver.Index)
 		}
 		if e.Notes["en"] == "" || e.Notes["es"] == "" {

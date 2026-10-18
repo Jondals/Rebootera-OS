@@ -39,6 +39,14 @@ func TestFuentesReales(t *testing.T) {
 		if entry.Resolver.Signature != nil && got.SignedBy == "" {
 			t.Errorf("%s: debería venir firmado", entry.ID)
 		}
-		t.Logf("%-24s %s  %d MB  sha256 %s…  firmado por: %s", entry.ID, got.FileName, resp.ContentLength>>20, got.SHA256[:12], got.SignedBy)
+		t.Logf("%-24s %s  %d MB  sha256 %s…  firmado por: %s", entry.ID, got.FileName, resp.ContentLength>>20, short(got.SHA256), got.SignedBy)
 	}
+}
+
+// * short abrevia una suma; las imágenes de evaluación no publican ninguna.
+func short(sum string) string {
+	if len(sum) < 12 {
+		return "(sin suma)"
+	}
+	return sum[:12]
 }

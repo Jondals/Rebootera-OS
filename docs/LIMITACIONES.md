@@ -1,8 +1,11 @@
 # Limitaciones y errores conocidos
 
-Estado a 2026-10-17, versión 0.6.0.
+Estado a 2026-10-18, versión 0.7.0.
 
 ## Lo que todavía no existe
+
+- **Imágenes del catálogo sin probar el arranque:** la mayoría de las 40 imágenes figuran como "sin probar" desde el USB de Rebootera. Las evaluaciones de Microsoft no publican suma (se calcula al bajarlas, pero no hay con qué compararla). Tumbleweed puede dar un 404 si el espejo que le toca aún no tiene la instantánea: reintentar elige otro.
+- **Instalador en carpetas a ISO (Rufus):** solo se reconocen instaladores de **Windows** (bootmgr + sources\boot.wim + install.wim/esd/swm). No se comprobó que la ISO resultante arranque en un equipo real; se comprobó su estructura. En Windows se usa IMAPI mediante PowerShell: si una directiva de grupo impide PowerShell, no funciona.
 
 - **Drivers de Windows en un instalador real**: se leen los INF, se casan con el hardware, se empaquetan en un `.7z`, se generan `autounattend.xml` y las entradas `injection` y `auto_install` de Ventoy, y todo se comprueba en VM con INF reales de virtio-win (ver PRUEBAS.md). Ventoy extrae el archivo en `X:\` (se comprobó en el código de su ayudante de WinPE, `vtoyjump64.exe`: `7za.exe x -y -aoa -oX:\`), pero **no** se ha podido comprobar que el instalador de Windows cargue esos drivers: no hay una ISO de Windows en el entorno de pruebas (Microsoft no da una descarga directa sin sesión) y no se sabe si WinPE lee las rutas de drivers del `autounattend.xml` antes o después de que Ventoy extraiga el archivo. Si un dispositivo crítico sigue sin disco o red en el instalador, queda el método de siempre: "Cargar controlador" y examinar `X:\rebootera-drivers` (o la carpeta `drivers/` del USB).
 - **Los drivers los pones tú**: Rebootera no descarga drivers de los fabricantes (Dell, HP, Lenovo, Intel...); casa los que copies en `drivers/`. Del catálogo `.cat` se comprueba que exista y sea un PKCS#7 firmado, pero **no** se verifica la cadena de certificados (eso lo hace Windows al cargar el driver). No se ejecuta nunca un `.exe`.

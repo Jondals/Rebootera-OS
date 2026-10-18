@@ -44,6 +44,7 @@ func main() {
 	// ! -url-file solo sirve para pruebas automáticas: escribe la dirección
 	// ! (con su token) en un archivo que elige quien lanza la aplicación.
 	urlFile := flag.String("url-file", "", "archivo donde escribir la dirección local (pruebas)")
+	noWindow := flag.Bool("no-window", false, "solo el servidor local, sin abrir ninguna ventana (pruebas)")
 	route := flag.String("route", "", "sección con la que se abre la interfaz (pruebas)")
 	usbRoot := flag.String("usb-root", "", "carpeta que se trata como USB de Rebootera (pruebas)")
 	prepare := flag.Bool("prepare-ventoy", false, "solo descarga y verifica Ventoy (no toca ningún disco)")
@@ -113,6 +114,10 @@ func main() {
 	log.Printf("Rebootera Desktop %s en http://127.0.0.1:%s", version.Version, port)
 	if *urlFile != "" {
 		os.WriteFile(*urlFile, []byte(url), 0o600)
+	}
+	// ! -no-window evita que las pruebas automáticas abran ventanas y roben el foco del equipo.
+	if *noWindow {
+		select {}
 	}
 	openWindow(url)
 }

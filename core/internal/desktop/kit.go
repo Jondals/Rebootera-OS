@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"rebootera/core/internal/fastcopy"
+	"rebootera/core/internal/release"
 )
 
 // * usbFolders son las carpetas de un USB de Rebootera recién creado.
@@ -79,7 +80,6 @@ func InstallSystem(root, isoPath string, progress Progress) error {
 		return err
 	}
 	current := filepath.Join(dir, "rebootera-os.iso")
-	previous := filepath.Join(dir, "rebootera-os.previous.iso")
 	staged := current + ".new"
 
 	sourceInfo, err := os.Stat(isoPath)
@@ -98,6 +98,35 @@ func InstallSystem(root, isoPath string, progress Progress) error {
 		os.Remove(staged)
 		return errors.New("la copia en el USB no tiene el tamaño del original: el USB podría estar dañado")
 	}
+	return promoteSystem(dir, filepath.Base(isoPath), sourceHash)
+}
+
+// * InstallLatest descarga la última Rebootera OS publicada directamente en el USB (sin pasar por el disco
+// * del PC) y la deja como versión actual, conservando la anterior. Si el USB ya tiene esa versión, no hace nada.
+// * La descarga se reanuda si se corta y solo se da por buena si su SHA-256 coincide con el publicado.
+func InstallLatest(root string, progress Progress) error {
+	dir := filepath.Join(root, "rebootera")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	staged := filepath.Join(dir, "rebootera-os.iso.new")
+	hash, err := release.FetchTo(staged, release.Progress(progress))
+	if err != nil {
+		return err
+	}
+	return promoteSystem(dir, release.ISOName, hash)
+}
+
+// * promoteSystem convierte la copia preparada (.new) en la versión actual y guarda la anterior.
+func promoteSystem(dir, versionName, hash string) error {
+	current := filepath.Join(dir, "rebootera-os.iso")
+	previous := filepath.Join(dir, "rebootera-os.previous.iso")
+	staged := current + ".new"
+	if have, err := os.ReadFile(current + ".sha256"); err == nil && strings.HasPrefix(string(have), hash) {
+		// * Ya es la versión instalada.
+		os.Remove(staged)
+		return nil
+	}
 	if _, err := os.Stat(current); err == nil {
 		os.Remove(previous)
 		if err := os.Rename(current, previous); err != nil {
@@ -107,8 +136,8 @@ func InstallSystem(root, isoPath string, progress Progress) error {
 	if err := os.Rename(staged, current); err != nil {
 		return err
 	}
-	os.WriteFile(current+".sha256", []byte(sourceHash+"  rebootera-os.iso\n"), 0o644)
-	return os.WriteFile(filepath.Join(dir, "VERSION"), []byte(filepath.Base(isoPath)+"\n"), 0o644)
+	os.WriteFile(current+".sha256", []byte(hash+"  rebootera-os.iso\n"), 0o644)
+	return os.WriteFile(filepath.Join(dir, "VERSION"), []byte(versionName+"\n"), 0o644)
 }
 
 // * copyWithHash copia un archivo calculando su SHA-256 e informando del avance.

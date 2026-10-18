@@ -45,6 +45,7 @@ dosfstools
 ntfs-3g
 e2fsprogs
 parted
+genisoimage
 gdisk
 
 # Microcódigo de CPU

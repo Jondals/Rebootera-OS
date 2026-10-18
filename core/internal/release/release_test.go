@@ -2,6 +2,7 @@
 package release
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"rebootera/core/internal/testutil"
 )
@@ -26,7 +28,7 @@ func (f *fakeRelease) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/" + ISOName + ".sha256":
 		w.Write([]byte(f.hash + "  " + ISOName + "\n"))
 	case "/" + ISOName:
-		w.Write(f.iso)
+		http.ServeContent(w, r, ISOName, time.Time{}, bytes.NewReader(f.iso))
 	default:
 		http.NotFound(w, r)
 	}
@@ -101,5 +103,39 @@ func TestSoloHTTPS(t *testing.T) {
 	BaseURL = "http://example.com/"
 	if _, err := Fetch(t.TempDir(), nil); err == nil || !strings.Contains(err.Error(), "HTTPS") {
 		t.Fatalf("debería exigir HTTPS: %v", err)
+	}
+}
+
+// * TestFetchToReanuda continúa un archivo parcial en vez de empezar de cero y deja el resultado exacto.
+func TestFetchToReanuda(t *testing.T) {
+	iso := []byte(strings.Repeat("reanudar", 50000))
+	publish(t, iso, false)
+	final := filepath.Join(t.TempDir(), "rebootera-os.iso.new")
+	if err := os.WriteFile(final+".part", iso[:123457], 0o644); err != nil {
+		t.Fatal(err)
+	}
+	sum, err := FetchTo(final, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _ := os.ReadFile(final)
+	want := sha256.Sum256(iso)
+	if string(got) != string(iso) || sum != hex.EncodeToString(want[:]) {
+		t.Fatalf("reanudar: %d bytes, suma %s", len(got), sum)
+	}
+	// * Un parcial corrupto no pasa la comprobación: se borra y el siguiente intento empieza limpio.
+	bad := append([]byte("x"), iso[1:2000]...)
+	if err := os.WriteFile(final+".part", bad, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	os.Remove(final)
+	if _, err := FetchTo(final, nil); err == nil {
+		t.Fatal("un parcial corrupto debería fallar")
+	}
+	if _, err := os.Stat(final + ".part"); err == nil {
+		t.Fatal("el parcial corrupto debería haberse borrado")
+	}
+	if _, err := FetchTo(final, nil); err != nil {
+		t.Fatalf("tras borrar el parcial debe descargar entero: %v", err)
 	}
 }

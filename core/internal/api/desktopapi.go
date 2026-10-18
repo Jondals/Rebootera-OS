@@ -8,9 +8,11 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/url"
 	"runtime"
 	"strconv"
 
+	"rebootera/core/internal/catalog"
 	"rebootera/core/internal/desktop"
 	"rebootera/core/internal/drivers"
 	"rebootera/core/internal/vault"
@@ -52,6 +54,7 @@ func (s *Server) registerDesktop(mux *http.ServeMux) {
 	post := map[string]http.HandlerFunc{
 		"/api/desktop/select":         s.handleSelectDrive,
 		"/api/desktop/pick":           s.handlePick,
+		"/api/desktop/open":           s.handleOpenURL,
 		"/api/desktop/pick-files":     s.handlePickFiles,
 		"/api/desktop/pick-folder":    s.handlePickFolder,
 		"/api/desktop/add":            s.handleAddImage,
@@ -291,4 +294,44 @@ func (s *Server) handleDriversRemove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.handleDesktopDrivers(w, r)
+}
+
+// openRequest es el cuerpo de POST /api/desktop/open.
+type openRequest struct {
+	URL string `json:"url"`
+}
+
+// * handleOpenURL abre en el navegador la página del fabricante de un sistema del catálogo.
+// ! Solo se abren direcciones HTTPS de las páginas del propio catálogo: la interfaz no puede lanzar
+// ! cualquier dirección.
+func (s *Server) handleOpenURL(w http.ResponseWriter, r *http.Request) {
+	var req openRequest
+	if err := decode(r, &req); err != nil {
+		fail(w, err)
+		return
+	}
+	parsed, err := url.Parse(req.URL)
+	if err != nil || parsed.Scheme != "https" || !catalogHost(parsed.Host) {
+		fail(w, errors.New("esa dirección no es una página del catálogo"))
+		return
+	}
+	if err := desktop.OpenURL(parsed.String()); err != nil {
+		fail(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"opened": parsed.String()})
+}
+
+// * catalogHost indica si un servidor es el de la página de alguna entrada o familia del catálogo.
+func catalogHost(host string) bool {
+	entries, err := catalog.Entries()
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if page, err := url.Parse(entry.Homepage); err == nil && page.Host == host {
+			return true
+		}
+	}
+	return false
 }

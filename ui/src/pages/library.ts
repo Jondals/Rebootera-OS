@@ -20,6 +20,7 @@ import * as fmt from "../format.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
 import { guessCategory, openImporter } from "../importer.js";
+import { installersSection } from "./installers.js";
 import { isDesktop } from "../mode.js";
 import { navigate, type Page } from "../router.js";
 import { refreshVault, snapshot } from "../state.js";
@@ -85,6 +86,9 @@ function render(root: HTMLElement): void {
       pageHeader(t("library.title"), t("library.subtitle"), [more, add]),
       message,
       body,
+      installersSection(function showMessage(node) {
+        message?.replaceChildren(...(node ? [node] : []));
+      }),
     ]),
   );
 }
