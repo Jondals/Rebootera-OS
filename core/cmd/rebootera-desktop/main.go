@@ -68,20 +68,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// * Sin USB de Rebootera, las imágenes se guardan en la carpeta "Rebootera"
-	// * del usuario: descargar sistemas funciona aunque aún no haya USB.
+	// * Las imágenes solo se guardan en un USB de Rebootera: sin USB no hay dónde descargar y la
+	// * interfaz pide conectarlo (nunca se llena el disco del PC en silencio).
 	if *usbRoot != "" && desktop.IsRebootera(*usbRoot) {
 		vault.Root = *usbRoot
 		log.Printf("USB de Rebootera de pruebas en %s", vault.Root)
 	} else if drives := desktop.RebooteraDrives(); len(drives) == 1 {
 		vault.Root = drives[0].Root
 		log.Printf("USB de Rebootera detectado en %s", vault.Root)
-	} else if local, err := desktop.LocalLibrary(); err == nil {
-		vault.Root, vault.Local = local, true
-		log.Printf("sin USB de Rebootera: biblioteca local en %s", local)
 	} else {
 		vault.Root = filepath.Join(os.TempDir(), "rebootera-no-usb")
-		log.Printf("no se pudo preparar la biblioteca local: %v", err)
+		log.Printf("sin USB de Rebootera: se espera a que se conecte uno")
 	}
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")

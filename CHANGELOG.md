@@ -3,6 +3,28 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.10.0] - 2026-10-19
+
+### Changed
+
+- **A new look, from scratch.** Dark, elegant and calm: warm black with brass accents, serif titles (Fraunces) and Inter for text, hairline borders instead of heavy shadows, a compact icon sidebar and a background of slow-moving lights with a few specks of dust (it only moves layers, so it costs almost nothing). Fonts are bundled, so it looks the same offline.
+- **Three themes, remembered** (also on the USB): Obsidian (dark, brass), Ivory (light, like paper) and Sapphire (deep blue). Switch from the three dots in the top bar or from Settings.
+- **Every system has its logo** in Download (Windows, Ubuntu, Debian, Fedora, Mint, Arch, openSUSE, Kali, Rocky, Alma, Proxmox, FreeBSD, OpenBSD, Alpine, NixOS, Void, CentOS and more; the rest get a monogram).
+- **Downloads only go to your Rebootera USB, and it says so.** A banner at the top of Download shows which USB they are saved to and how much space is left; without a USB it asks you to connect one. The "library on this PC" is gone: nothing is ever downloaded to the computer's disk. Rebootera Desktop picks your Rebootera USB by itself as soon as it is connected.
+- **Home** has fewer, bigger cards, now including "Windows from Rufus".
+- **Disks and partitions** redone: each part shows how full it is, with a colour legend; picking a part shows its summary and clear action cards (Resize, Share space with a neighbor, Merge, Delete, Create) with one line each and the reason when one is not possible.
+- **The intro is light**: no blurred layers or blend modes (that is what made it stutter), only a fade and a thin bar; about 1.2 s minimum, and almost instant on computers without graphics acceleration.
+
+### Added
+
+- **Reduce Windows telemetry** (Install, Options, for Windows images): while installing it sets the diagnostic-data policies to zero, disables the DiagTrack and dmwappushservice services, turns off advertising and suggested content and skips the express-settings screen, with no change to your language or disks. It works fully on Enterprise, Education and LTSC (so Windows 11 LTSC); on Home and Pro Windows keeps its basic level.
+- **Windows made with Rufus is easier to add**: "Windows from Rufus" on Home and the top of My images. Plug in the USB Rufus made (or choose its folder) and it becomes a bootable ISO on your Rebootera USB, keeping everything Rufus added (answer files, privacy settings).
+- **Internet Archive** as a source: FreeDOS 1.2, Haiku R1/beta4, Tiny Core Linux (CorePlus) and KolibriOS, with the SHA-1 the Archive publishes checked after downloading (it detects damaged copies, not forged ones; the page says so). New "Other" tab for them.
+
+### Fixed
+
+- Rebootera Desktop no longer fills the PC's disk with a hidden local library.
+
 ## [0.9.0] - 2026-10-19
 
 ### Changed

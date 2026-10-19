@@ -4,14 +4,12 @@
 // * La misma interfaz sirve a Rebootera OS (modo live) y a Rebootera Desktop
 // * (modo escritorio), con secciones distintas en cada modo.
 
-import { getJSON } from "./api.js";
-import { progress } from "./components.js";
+import { getJSON, postJSON } from "./api.js";
 import { openPowerDialog } from "./dialogs.js";
 import { el, icon } from "./dom.js";
-import * as fmt from "./format.js";
 import { t, translateStatic } from "./i18n.js";
 import { icons } from "./icons.js";
-import { liveMedia, onlineInterface } from "./insights.js";
+import { onlineInterface } from "./insights.js";
 import { playIntro } from "./intro.js";
 import { appMode, isDesktop, loadMode } from "./mode.js";
 import { createPage } from "./pages/create.js";
@@ -44,7 +42,7 @@ import {
   startRouter,
   type Route,
 } from "./router.js";
-import { snapshot, start, subscribe } from "./state.js";
+import { refreshVault, snapshot, start, subscribe } from "./state.js";
 
 /** Icono de cada entrada del menú lateral. */
 const NAV_ICONS: Record<string, string> = {
@@ -107,7 +105,7 @@ function chip(iconPaths: string, text: string, tone: string): HTMLElement {
 function renderShell(): void {
   let notice: HTMLElement | null = null;
   if (isDesktop()) {
-    if (!appMode.usb && !appMode.library) {
+    if (!appMode.usb) {
       notice = chip(icons.usb, t("desktop.noUsbChip"), "warn");
     }
   } else if (snapshot.system !== null && onlineInterface(snapshot.system) === null) {
@@ -117,44 +115,9 @@ function renderShell(): void {
   renderDriveCard();
 }
 
-/** Tarjeta inferior del menú lateral con el uso del USB de Rebootera. */
+/** La tarjeta del USB ya no está en el menú lateral: el USB se ve en Inicio y en Descargar. */
 function renderDriveCard(): void {
-  const card = byId("drive-card");
-  const media = liveMedia(snapshot.disks);
-  const store = snapshot.vault;
-  // * Rebootera Desktop sin USB: las imágenes viven en una carpeta del equipo.
-  if (isDesktop() && appMode.library) {
-    card.replaceChildren(
-      el("div", { class: "drive-head" }, [
-        icon(icons.disk),
-        el("strong", {}, [t("desktop.localChip")]),
-      ]),
-      el("p", { class: "drive-hint mono-small" }, [appMode.library]),
-    );
-    return;
-  }
-  if (store === null || !store.available) {
-    card.replaceChildren(
-      el("div", { class: "drive-head" }, [
-        icon(icons.lock),
-        el("strong", {}, [t("sidebar.readOnly")]),
-      ]),
-      el("p", { class: "drive-hint" }, [t("sidebar.readOnlyHint")]),
-    );
-    return;
-  }
-  const total = store.usedBytes + store.freeBytes;
-  card.replaceChildren(
-    el("div", { class: "drive-head" }, [
-      icon(icons.usb),
-      el("strong", {}, [isDesktop() ? t("desktop.rebooteraDrive") : t("sidebar.liveDrive")]),
-      el("span", { class: "mono-small accent" }, [fmt.bytes(media?.sizeBytes ?? total)]),
-    ]),
-    progress(store.usedBytes / Math.max(1, total), "accent"),
-    el("p", { class: "drive-hint mono-small" }, [
-      t("sidebar.usedFree", { used: fmt.bytes(store.usedBytes), free: fmt.bytes(store.freeBytes) }),
-    ]),
-  );
+  byId("drive-card").replaceChildren();
 }
 
 /** Alterna entre inglés y español desde la barra superior. */
@@ -198,6 +161,38 @@ function pickTheme(event: MouseEvent): void {
   savePrefs();
   drawThemeSwitch();
   document.dispatchEvent(new CustomEvent("rebootera:theme"));
+}
+
+/** Unidad de /api/desktop/drives (solo se mira si es un USB de Rebootera). */
+interface DriveInfo {
+  root: string;
+  rebootera: boolean;
+}
+
+/**
+ * Rebootera Desktop sin USB elegido: en cuanto se conecta un USB de Rebootera (y solo hay uno) se
+ * elige solo, sin pasos. Las descargas solo van a un USB, así que no hay que hacer esperar al usuario.
+ */
+async function autoSelectUsb(): Promise<void> {
+  if (appMode.usb !== "") {
+    return;
+  }
+  try {
+    const found = (await getJSON<DriveInfo[]>("/api/desktop/drives")).filter(
+      function isRebootera(drive) {
+        return drive.rebootera;
+      },
+    );
+    if (found.length === 1) {
+      await postJSON("/api/desktop/select", { root: found[0].root });
+      appMode.usb = found[0].root;
+      await refreshVault();
+      renderShell();
+      renderCurrent();
+    }
+  } catch {
+    // * Sin respuesta se vuelve a intentar en el siguiente ciclo.
+  }
 }
 
 /** Abre los ajustes. */
@@ -253,6 +248,7 @@ async function init(): Promise<void> {
     byId("power-button").hidden = true;
     forceLite();
     register("create", createPage);
+    window.setInterval(autoSelectUsb, 4000);
   }
 
   // * Resumen y asistente de drivers son distintos en el escritorio: allí se ve y se gestiona el USB.

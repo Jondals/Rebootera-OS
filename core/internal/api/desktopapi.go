@@ -26,15 +26,11 @@ const (
 
 // * handleMode indica a la interfaz en qué modo y sistema corre Core.
 func (s *Server) handleMode(w http.ResponseWriter, r *http.Request) {
-	selected, library := "", ""
+	selected := ""
 	if s.deps.Mode == ModeDesktop && vault.Available() {
-		if vault.Local {
-			library = vault.Root
-		} else {
-			selected = vault.Root
-		}
+		selected = vault.Root
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"mode": s.mode(), "platform": runtime.GOOS, "usb": selected, "library": library})
+	writeJSON(w, http.StatusOK, map[string]string{"mode": s.mode(), "platform": runtime.GOOS, "usb": selected})
 }
 
 // * mode devuelve el modo con "live" por defecto.
@@ -97,7 +93,7 @@ func (s *Server) handleSelectDrive(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	vault.Root, vault.Local = req.Root, false
+	vault.Root = req.Root
 	log.Printf("escritorio: USB de Rebootera elegido en %s", req.Root)
 	writeJSON(w, http.StatusOK, map[string]string{"usb": req.Root})
 }

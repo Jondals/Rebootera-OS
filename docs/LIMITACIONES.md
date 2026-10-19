@@ -1,8 +1,11 @@
 # Limitaciones y errores conocidos
 
-Estado a 2026-10-19, versión 0.9.0.
+Estado a 2026-10-19, versión 0.10.0.
 
 ## Lo que todavía no existe
+
+- **Internet Archive solo con software libre.** El Archive publica SHA-1 (no SHA-256): se comprueba que la copia llegó entera, pero no que sea auténtica. No se ofrecen ISO de Windows de terceros del Archive (copias sin licencia o modificadas, como Tiny11): para Windows 11 LTSC se usa la imagen de evaluación oficial de Microsoft (ya directa en el catálogo), y la telemetría se reduce con la opción de Instalar (o con Rufus).
+- **Reducir la telemetría** se hace con órdenes en la fase specialize del autounattend.xml; se comprobó que el XML es válido, **no** en un Windows real instalado. En Home y Pro Windows no admite el nivel 0 y lo trata como básico.
 
 - **Imágenes del catálogo sin probar el arranque:** la mayoría de las 65 imágenes figuran como "sin probar" desde el USB de Rebootera. Las evaluaciones de Microsoft no publican suma (se calcula al bajarlas, pero no hay con qué compararla). Tumbleweed puede dar un 404 si el espejo que le toca aún no tiene la instantánea: reintentar elige otro.
 - **Instalador en carpetas a ISO (Rufus):** solo se reconocen instaladores de **Windows** (bootmgr + sources\boot.wim + install.wim/esd/swm). No se comprobó que la ISO resultante arranque en un equipo real; se comprobó su estructura. En Windows se usa IMAPI mediante PowerShell: si una directiva de grupo impide PowerShell, no funciona.

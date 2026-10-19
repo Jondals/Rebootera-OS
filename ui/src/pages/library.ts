@@ -85,10 +85,10 @@ function render(root: HTMLElement): void {
     el("div", { class: "page" }, [
       pageHeader(t("library.title"), t("library.subtitle"), [more, add]),
       message,
-      body,
       installersSection(function showMessage(node) {
         message?.replaceChildren(...(node ? [node] : []));
       }),
+      body,
     ]),
   );
 }

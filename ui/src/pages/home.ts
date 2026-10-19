@@ -177,11 +177,12 @@ function update(): void {
   if (selected) {
     parts.push(
       usbCard(selected),
-      el("div", { class: "tile-grid tile-grid-3" }, [
+      el("div", { class: "tile-grid tile-grid-2" }, [
         tile(icons.sparkle, t("home.make"), t("home.makeText"), openCreate, { primary: true }),
         tile(icons.download, t("home.download"), t("home.downloadText"), openDownloads),
         tile(icons.library, t("home.library"), t("home.libraryText"), openLibrary),
         tile(icons.drivers, t("home.drivers"), t("home.driversText"), openDrivers),
+        tile(icons.library, t("home.rufus"), t("home.rufusText"), openLibrary),
       ]),
     );
   } else {

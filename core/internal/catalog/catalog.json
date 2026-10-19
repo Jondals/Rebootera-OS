@@ -2606,5 +2606,143 @@
     "group": "rescue",
     "edition": "Extended (more programs)",
     "tags": []
+  },
+  {
+    "arch": "x86",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light"
+    ],
+    "id": "freedos-1.2-cd",
+    "name": "FreeDOS",
+    "vendor": "FreeDOS Project",
+    "version": "1.2 (CD)",
+    "category": "tools",
+    "homepage": "https://archive.org/details/FD12CD",
+    "resolver": {
+      "type": "archive",
+      "index": "FD12CD",
+      "pattern": "^FD12CD\\.iso$"
+    },
+    "family": "freedos",
+    "group": "other",
+    "edition": "1.2 CD installer",
+    "notes": {
+      "en": "Free DOS-compatible system: update BIOS and firmware, run old programs and games. From the Internet Archive.",
+      "es": "Sistema libre compatible con DOS: actualiza la BIOS y el firmware, y ejecuta programas y juegos antiguos. Desde el Internet Archive."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "live"
+    ],
+    "id": "haiku-r1beta4",
+    "name": "Haiku",
+    "vendor": "Haiku, Inc.",
+    "version": "R1/beta4",
+    "category": "tools",
+    "homepage": "https://archive.org/details/haiku-r1beta4-x86_64-anyboot_202403",
+    "resolver": {
+      "type": "archive",
+      "index": "haiku-r1beta4-x86_64-anyboot_202403",
+      "pattern": "^haiku-r1beta4-x86_64-anyboot\\.iso$"
+    },
+    "family": "haiku",
+    "group": "other",
+    "edition": "R1/beta4 (64-bit, live and install)",
+    "notes": {
+      "en": "Open-source system inspired by BeOS: fast, light and different. Runs live or installs. From the Internet Archive.",
+      "es": "Sistema libre inspirado en BeOS: rápido, ligero y distinto. Se ejecuta en vivo o se instala. Desde el Internet Archive."
+    }
+  },
+  {
+    "arch": "x86",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light",
+      "live"
+    ],
+    "id": "tinycore-coreplus",
+    "name": "Tiny Core Linux",
+    "vendor": "Tiny Core Team",
+    "version": "CorePlus (current)",
+    "category": "linux",
+    "homepage": "https://archive.org/details/TCL_CorePlusCurrent",
+    "resolver": {
+      "type": "archive",
+      "index": "TCL_CorePlusCurrent",
+      "pattern": "^CorePlus-current\\.iso$"
+    },
+    "family": "tinycore",
+    "group": "linux",
+    "edition": "CorePlus (current)",
+    "notes": {
+      "en": "A complete Linux desktop in about 120 MB that runs entirely from memory. From the Internet Archive.",
+      "es": "Un escritorio Linux completo en unos 120 MB que corre entero desde la memoria. Desde el Internet Archive."
+    }
+  },
+  {
+    "arch": "x86",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light",
+      "live"
+    ],
+    "id": "kolibrios-0.7.7",
+    "name": "KolibriOS",
+    "vendor": "KolibriOS team",
+    "version": "0.7.7",
+    "category": "tools",
+    "homepage": "https://archive.org/details/kolibri_0_7_7",
+    "resolver": {
+      "type": "archive",
+      "index": "kolibri_0_7_7",
+      "pattern": "^kolibri_0_7_7\\.iso$"
+    },
+    "family": "kolibrios",
+    "group": "other",
+    "edition": "0.7.7 (5 MB)",
+    "notes": {
+      "en": "A whole graphical system in 5 MB, written in assembly. A curiosity that boots in seconds. From the Internet Archive.",
+      "es": "Un sistema gráfico entero en 5 MB, escrito en ensamblador. Una curiosidad que arranca en segundos. Desde el Internet Archive."
+    }
   }
 ]

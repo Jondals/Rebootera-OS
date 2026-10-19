@@ -58,8 +58,8 @@ func TestCatalogoEmbebido(t *testing.T) {
 		t.Fatalf("catálogo: %v", err)
 	}
 	for _, e := range entries {
-		// * SourceForge se indica por el nombre del proyecto; el resto, por una URL HTTPS.
-		if e.Resolver.Type != "manual" && e.Resolver.Type != "sourceforge" && !strings.HasPrefix(e.Resolver.Index, "https://") {
+		// * SourceForge y el Internet Archive se indican por el nombre del proyecto o elemento; el resto, por una URL HTTPS.
+		if e.Resolver.Type != "manual" && e.Resolver.Type != "sourceforge" && e.Resolver.Type != "archive" && !strings.HasPrefix(e.Resolver.Index, "https://") {
 			t.Fatalf("%s no usa HTTPS: %s", e.ID, e.Resolver.Index)
 		}
 		if e.Notes["en"] == "" || e.Notes["es"] == "" {
@@ -149,5 +149,8 @@ func TestSiblingRutaAbsoluta(t *testing.T) {
 	}
 	if got := sibling("https://mirror.example/pub/iso/", "/fedora/x/CHECKSUM"); got != "https://mirror.example/fedora/x/CHECKSUM" {
 		t.Fatalf("absoluto: %s", got)
+	}
+	if got := sibling("https://mirror.example/pub/", "https://otro.example/x/CHECKSUM"); got != "https://otro.example/x/CHECKSUM" {
+		t.Fatalf("con servidor: %s", got)
 	}
 }

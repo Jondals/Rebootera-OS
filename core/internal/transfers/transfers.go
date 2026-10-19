@@ -103,6 +103,7 @@ type Job struct {
 	FileName   string    `json:"fileName"`
 	Category   string    `json:"category"`
 	SHA256     string    `json:"sha256,omitempty"`
+	SHA1       string    `json:"sha1,omitempty"`
 	SignedBy   string    `json:"signedBy,omitempty"`
 	TotalBytes int64     `json:"totalBytes"`
 	DoneBytes  int64     `json:"doneBytes"`
@@ -204,6 +205,7 @@ func (m *Manager) Download(entryID string) (Job, error) {
 		FileName:   resolved.FileName,
 		Category:   entry.Category,
 		SHA256:     resolved.SHA256,
+		SHA1:       resolved.SHA1,
 		SignedBy:   resolved.SignedBy,
 		TotalBytes: resolved.SizeBytes,
 	}
@@ -445,6 +447,13 @@ func (m *Manager) finish(job *Job, sha string) error {
 	if job.Kind == KindDownload && !(job.SHA256 == "" || strings.EqualFold(sha, job.SHA256)) {
 		os.Remove(partial)
 		return coded(CodeChecksum, fmt.Errorf("el SHA-256 no coincide con el oficial (descargado %s…, oficial %s…): la imagen se ha borrado", sha[:12], job.SHA256[:12]))
+	}
+	// * El Internet Archive solo publica SHA-1: se calcula con una pasada más y se compara.
+	if job.Kind == KindDownload && job.SHA1 != "" {
+		if got, err := sha1File(partial); err != nil || !strings.EqualFold(got, job.SHA1) {
+			os.Remove(partial)
+			return coded(CodeChecksum, fmt.Errorf("el SHA-1 no coincide con el que publica el Internet Archive: la imagen se ha borrado"))
+		}
 	}
 	// * Si el proyecto firma cada ISO (Arch, Alpine), la firma OpenPGP se comprueba
 	// * con la clave fijada; una ISO con firma incorrecta se borra como una con SHA-256 malo.

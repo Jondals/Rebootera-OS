@@ -35,7 +35,21 @@ class Preview:
         self.window = Gtk.ApplicationWindow(application=app)
         self.window.set_default_size(WIDTH, HEIGHT)
         self.window.set_decorated(False)
-        self.view = WebKit.WebView()
+        manager = WebKit.UserContentManager()
+        fixture = os.environ.get("PREVIEW_FIXTURE", "")
+        if fixture:
+            # * Datos de ejemplo para páginas que necesitan el agente (p. ej. los discos del gestor de particiones).
+            with open(os.path.join(os.path.dirname(__file__), "preview-fixtures", fixture + ".js")) as handle:
+                manager.add_script(
+                    WebKit.UserScript.new(
+                        handle.read(),
+                        WebKit.UserContentInjectedFrames.ALL_FRAMES,
+                        WebKit.UserScriptInjectionTime.START,
+                        None,
+                        None,
+                    )
+                )
+        self.view = WebKit.WebView(user_content_manager=manager)
         self.window.set_child(self.view)
         self.window.present()
         self.queue = [None] + ROUTES

@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"io/fs"
 	"log"
+	"mime"
 	"net/http"
 	"regexp"
 	"strings"
@@ -65,6 +66,11 @@ type Server struct {
 	allowedHosts map[string]bool
 	agent        Agent
 	deps         Deps
+}
+
+// * Las fuentes de la interfaz son woff2: algunos sistemas no conocen su tipo y el navegador las rechazaría.
+func init() {
+	mime.AddExtensionType(".woff2", "font/woff2")
 }
 
 // * New crea el servidor. port es el puerto de escucha, que se usa para

@@ -286,5 +286,53 @@
       "en": "The upcoming Red Hat Enterprise Linux, for servers.",
       "es": "El próximo Red Hat Enterprise Linux, para servidores."
     }
+  },
+  {
+    "id": "freedos",
+    "name": "FreeDOS",
+    "vendor": "FreeDOS Project",
+    "group": "other",
+    "icon": "retro",
+    "homepage": "https://www.freedos.org",
+    "summary": {
+      "en": "Free DOS: update BIOS and firmware, old programs and games.",
+      "es": "DOS libre: actualiza BIOS y firmware, programas y juegos antiguos."
+    }
+  },
+  {
+    "id": "haiku",
+    "name": "Haiku",
+    "vendor": "Haiku, Inc.",
+    "group": "other",
+    "icon": "retro",
+    "homepage": "https://www.haiku-os.org",
+    "summary": {
+      "en": "Open-source successor to BeOS.",
+      "es": "Sucesor libre de BeOS."
+    }
+  },
+  {
+    "id": "tinycore",
+    "name": "Tiny Core Linux",
+    "vendor": "Tiny Core Team",
+    "group": "linux",
+    "icon": "retro",
+    "homepage": "http://tinycorelinux.net",
+    "summary": {
+      "en": "A Linux desktop in 120 MB that runs from memory.",
+      "es": "Un escritorio Linux en 120 MB que corre desde la memoria."
+    }
+  },
+  {
+    "id": "kolibrios",
+    "name": "KolibriOS",
+    "vendor": "KolibriOS team",
+    "group": "other",
+    "icon": "retro",
+    "homepage": "https://kolibrios.org",
+    "summary": {
+      "en": "A graphical system in 5 MB.",
+      "es": "Un sistema gráfico en 5 MB."
+    }
   }
 ]

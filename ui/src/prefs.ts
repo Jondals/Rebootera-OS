@@ -5,11 +5,11 @@
 import { getJSON, postJSON } from "./api.js";
 import { setLanguage, type Language } from "./i18n.js";
 
-/** Temas visuales: cielo (claro), noche (oscuro) y bosque (claro, verde). */
-export type Theme = "sky" | "night" | "forest";
+/** Temas visuales: obsidiana (oscuro y latón), marfil (claro) y zafiro (azul oscuro). */
+export type Theme = "obsidian" | "ivory" | "sapphire";
 
 /** Todos los temas, en el orden en que se ofrecen. */
-export const THEMES: Theme[] = ["sky", "night", "forest"];
+export const THEMES: Theme[] = ["obsidian", "ivory", "sapphire"];
 
 /** Preferencias disponibles. */
 export interface Prefs {
@@ -78,7 +78,7 @@ export function forceLite(): void {
 export const prefs: Prefs = {
   language: "en",
   accent: "aurora",
-  theme: "sky",
+  theme: "obsidian",
   intro: true,
   reduceMotion: false,
 };
@@ -93,8 +93,8 @@ export function loadPrefs(): void {
     if (saved.accent === "aurora" || saved.accent === "nebula") {
       prefs.accent = saved.accent;
     }
-    if (saved.theme === "sky" || saved.theme === "night" || saved.theme === "forest") {
-      prefs.theme = saved.theme;
+    if (THEMES.includes(saved.theme as Theme)) {
+      prefs.theme = saved.theme as Theme;
     }
     if (typeof saved.intro === "boolean") {
       prefs.intro = saved.intro;
@@ -128,7 +128,7 @@ export async function loadVaultPrefs(): Promise<boolean> {
     }
     Object.assign(prefs, data.settings);
     if (!THEMES.includes(prefs.theme)) {
-      prefs.theme = "sky";
+      prefs.theme = "obsidian";
     }
     applyPrefs();
     return true;
@@ -144,7 +144,7 @@ function ignore(): void {}
 export function applyPrefs(): void {
   setLanguage(prefs.language);
   document.documentElement.dataset.accent = prefs.accent;
-  document.documentElement.dataset.theme = THEMES.includes(prefs.theme) ? prefs.theme : "sky";
+  document.documentElement.dataset.theme = THEMES.includes(prefs.theme) ? prefs.theme : "obsidian";
   document.documentElement.dataset.gfx = isLite() ? "lite" : "full";
   document.documentElement.dataset.motion =
     prefs.reduceMotion || (isLite() && !keepMotion) ? "reduced" : "full";

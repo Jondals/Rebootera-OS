@@ -3,6 +3,28 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.10.0] - 2026-10-19
+
+### Cambiado
+
+- **Aspecto nuevo, desde cero.** Oscuro, elegante y tranquilo: negro cálido con acentos de latón, títulos con serifa (Fraunces) e Inter para el texto, filetes finos en vez de sombras pesadas, una barra lateral compacta de iconos y un fondo de luces que se mueven muy despacio con algunas motas de polvo (solo mueve capas, así que cuesta casi nada). Las fuentes van incluidas, así que se ve igual sin conexión.
+- **Tres temas, que se recuerdan** (también en el USB): Obsidiana (oscuro, latón), Marfil (claro, como papel) y Zafiro (azul profundo). Se cambia con los tres puntos de la barra superior o en Ajustes.
+- **Cada sistema tiene su logo** en Descargar (Windows, Ubuntu, Debian, Fedora, Mint, Arch, openSUSE, Kali, Rocky, Alma, Proxmox, FreeBSD, OpenBSD, Alpine, NixOS, Void, CentOS y más; el resto lleva un monograma).
+- **Las descargas solo van a tu USB de Rebootera, y lo dice.** Un aviso arriba en Descargar enseña en qué USB se guardan y cuánto espacio queda; sin USB pide conectarlo. Desaparece la "biblioteca en este PC": nunca se descarga nada al disco del ordenador. Rebootera Desktop elige solo tu USB de Rebootera en cuanto se conecta.
+- **Inicio** tiene menos tarjetas y más grandes, ahora con "Windows de Rufus".
+- **Discos y particiones** rehecho: cada parte enseña lo llena que está, con leyenda de colores; al elegir una parte salen su resumen y tarjetas de acción claras (Cambiar tamaño, Repartir espacio con una vecina, Unir, Borrar, Crear) con una línea cada una y el motivo cuando alguna no se puede.
+- **La intro es ligera**: sin capas desenfocadas ni mezclas (eso era lo que iba a tirones), solo un fundido y una barra fina; unos 1,2 s como mínimo y casi instantánea en equipos sin aceleración gráfica.
+
+### Añadido
+
+- **Reducir la telemetría de Windows** (Instalar, Opciones, en imágenes de Windows): al instalar pone a cero las directivas de datos de diagnóstico, desactiva los servicios DiagTrack y dmwappushservice, quita anuncios y contenido sugerido y se salta la pantalla de configuración rápida, sin tocar el idioma ni los discos. Funciona del todo en Enterprise, Education y LTSC (o sea, Windows 11 LTSC); en Home y Pro Windows mantiene su nivel básico.
+- **Windows hecho con Rufus se añade más fácil**: "Windows de Rufus" en Inicio y arriba en Mis imágenes. Conecta el USB que hizo Rufus (o elige su carpeta) y se convierte en una ISO arrancable en tu USB de Rebootera, conservando todo lo que Rufus añadió (archivos de respuestas, ajustes de privacidad).
+- **Internet Archive** como fuente: FreeDOS 1.2, Haiku R1/beta4, Tiny Core Linux (CorePlus) y KolibriOS, comprobando tras descargar el SHA-1 que publica el Archive (detecta copias dañadas, no falsificadas; la página lo dice). Pestaña nueva "Otros" para ellos.
+
+### Corregido
+
+- Rebootera Desktop ya no llena el disco del PC con una biblioteca local escondida.
+
 ## [0.9.0] - 2026-10-19
 
 ### Cambiado

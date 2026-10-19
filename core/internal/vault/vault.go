@@ -18,11 +18,6 @@ import (
 // Root es donde el agente monta el Vault. Se puede cambiar en las pruebas.
 var Root = "/run/rebootera/vault"
 
-// Local indica que el "Vault" es una carpeta del propio equipo (Rebootera Desktop
-// sin un USB de Rebootera elegido) y no un USB: sirve para descargar y guardar
-// imágenes, pero no para instalar ni actualizar Rebootera OS.
-var Local bool
-
 // ErrUnavailable indica que esta sesión no tiene Vault (medio de solo lectura).
 var ErrUnavailable = errors.New("no hay Vault de Rebootera en esta sesión")
 
@@ -131,7 +126,7 @@ func ReadJSON(path string, value any) error {
 type Settings struct {
 	Language string `json:"language"`
 	Accent   string `json:"accent"`
-	// Theme es el tema visual: "sky", "night" o "forest".
+	// Theme es el tema visual: "obsidian" (oscuro), "ivory" (claro) o "sapphire" (azul oscuro).
 	Theme        string `json:"theme"`
 	Intro        bool   `json:"intro"`
 	ReduceMotion bool   `json:"reduceMotion"`
@@ -143,7 +138,7 @@ var settingsMu sync.Mutex
 func LoadSettings() (Settings, error) {
 	settingsMu.Lock()
 	defer settingsMu.Unlock()
-	settings := Settings{Language: "en", Accent: "aurora", Theme: "sky", Intro: true}
+	settings := Settings{Language: "en", Accent: "aurora", Theme: "obsidian", Intro: true}
 	if !Available() {
 		return settings, ErrUnavailable
 	}
@@ -159,10 +154,12 @@ func SaveSettings(settings Settings) error {
 	if settings.Accent != "aurora" && settings.Accent != "nebula" {
 		return fmt.Errorf("acento no válido: %q", settings.Accent)
 	}
-	if settings.Theme == "" {
-		settings.Theme = "sky"
-	}
-	if settings.Theme != "sky" && settings.Theme != "night" && settings.Theme != "forest" {
+	// * Los temas de la 0.9 (sky, night, forest) pasan al oscuro por defecto.
+	switch settings.Theme {
+	case "", "sky", "night", "forest":
+		settings.Theme = "obsidian"
+	case "obsidian", "ivory", "sapphire":
+	default:
 		return fmt.Errorf("tema no válido: %q", settings.Theme)
 	}
 	settingsMu.Lock()

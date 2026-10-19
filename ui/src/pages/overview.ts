@@ -15,7 +15,7 @@ import { navigate, type Page } from "../router.js";
 import { scanHardware, snapshot } from "../state.js";
 
 /** Contenedores que se refrescan con cada actualización de datos. */
-let refs: { status: HTMLElement; profile: HTMLElement; driversBadge: HTMLElement } | null = null;
+let refs: { status: HTMLElement; profile: HTMLElement } | null = null;
 
 /** Abre el asistente de instalación. */
 function openInstall(): void {
@@ -51,11 +51,12 @@ function rescan(): void {
 function render(root: HTMLElement): void {
   const status = el("div", { class: "home-status" });
   const profile = el("div", { class: "profile-grid" });
-  const driversBadge = el("span", { class: "tile-badge" });
-  refs = { status, profile, driversBadge };
+  refs = { status, profile };
 
   const rescanButton = button(t("common.rescan"), rescan, { iconPaths: icons.refresh });
   rescanButton.classList.add("btn-small");
+  const driversButton = button(t("home.drivers"), openDrivers, { iconPaths: icons.drivers });
+  driversButton.classList.add("btn-small");
   const logButton = button(t("overview.kernelTitle"), openKernelLog, { iconPaths: icons.terminal });
   logButton.classList.add("btn-small");
 
@@ -73,13 +74,11 @@ function render(root: HTMLElement): void {
         tile(icons.download, t("home.download"), t("home.downloadText"), openDownloads),
         tile(icons.library, t("home.library"), t("home.libraryText"), openLibrary),
         tile(icons.usb, t("home.disks"), t("home.disksText"), openDisks),
-        tile(icons.drivers, t("home.drivers"), t("home.driversText"), openDrivers, {
-          badge: driversBadge,
-        }),
+        tile(icons.library, t("home.rufus"), t("home.rufusText"), openLibrary),
       ]),
       more(t("home.thisComputer"), [
         profile,
-        el("div", { class: "more-actions" }, [rescanButton, logButton]),
+        el("div", { class: "more-actions" }, [rescanButton, driversButton, logButton]),
       ]),
     ]),
   );
@@ -93,9 +92,6 @@ function update(): void {
   const system = snapshot.system;
   renderStatus(system);
   renderProfile(system, snapshot.disks);
-  const count = snapshot.devices?.length;
-  refs.driversBadge.textContent = count === undefined ? "" : String(count);
-  refs.driversBadge.hidden = count === undefined;
 }
 
 /** Línea de estado bajo el título: red y modo de arranque, sin jerga. */

@@ -14,35 +14,19 @@ import {
   type Family,
   type Job,
 } from "../api.js";
-import { badge, button, errorBox, progress, type Tone } from "../components.js";
+import { badge, button, errorBox, logoTile, progress, type Tone } from "../components.js";
 import { openModal } from "../dialogs.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { getLanguage, t } from "../i18n.js";
 import { icons } from "../icons.js";
 import { appMode } from "../mode.js";
-import type { Page } from "../router.js";
+import { navigate, type Page } from "../router.js";
 import { refreshVault, snapshot } from "../state.js";
 
 /** Pestañas de la lista. */
-const TABS = ["all", "windows", "linux", "servers", "rescue"] as const;
+const TABS = ["all", "windows", "linux", "servers", "rescue", "other"] as const;
 type Tab = (typeof TABS)[number];
-
-/** Icono de cada tipo de familia. */
-const FAMILY_ICONS: Record<string, string> = {
-  windows: icons.monitor,
-  ubuntu: icons.library,
-  debian: icons.library,
-  fedora: icons.library,
-  mint: icons.library,
-  arch: icons.terminal,
-  suse: icons.library,
-  kali: icons.terminal,
-  server: icons.cpu,
-  bsd: icons.terminal,
-  alpine: icons.recover,
-  rescue: icons.recover,
-};
 
 /** Tono de cada estado de transferencia. */
 const STATUS_TONES: Record<Job["status"], Tone> = {
@@ -502,10 +486,9 @@ function familyCard(family: Family, entries: CatalogEntry[]): HTMLElement {
     }) ??
     entries[0];
   queueResolve(chosen.id);
-  const iconPaths = FAMILY_ICONS[family.icon] ?? icons.library;
   return el("article", { class: "fam-card" }, [
     el("header", { class: "fam-head" }, [
-      el("span", { class: "fam-icon" }, [icon(iconPaths)]),
+      logoTile(family.id, family.name),
       el("div", { class: "fam-title" }, [
         el("h3", {}, [family.name]),
         el("span", { class: "muted" }, [family.summary[getLanguage()] ?? family.summary.en]),
@@ -586,7 +569,15 @@ function drawTabs(): void {
   );
 }
 
-/** Línea del destino de las descargas: el USB (o la carpeta del PC) y su espacio. */
+/** Abre Crear USB (Rebootera Desktop). */
+function openCreateUsb(): void {
+  navigate("create");
+}
+
+/**
+ * Dónde se guardan las descargas, sin dudas: solo en el USB de Rebootera. Con USB, dice cuál y cuánto
+ * espacio queda; sin USB, avisa de que hay que conectarlo (nunca se descarga al disco del PC).
+ */
 function drawDestination(): void {
   if (destinationBody === null) {
     return;
@@ -594,30 +585,45 @@ function drawDestination(): void {
   const vault = snapshot.vault;
   if (vault === null) {
     destinationBody.replaceChildren();
+    destinationBody.className = "dest";
     return;
   }
   if (!vault.available) {
+    const desktopMode = appMode.mode === "desktop";
+    destinationBody.className = "dest dest-warn";
     destinationBody.replaceChildren(
-      icon(icons.lock),
-      el("span", {}, [t("downloads.noStorage") + ". " + t("downloads.noStorageHint")]),
+      el("span", { class: "dest-icon" }, [icon(icons.lock)]),
+      el("div", { class: "dest-text" }, [
+        el("strong", {}, [t("downloads.noUsbTitle")]),
+        el("span", {}, [desktopMode ? t("downloads.noUsbText") : t("downloads.noUsbLive")]),
+      ]),
+      ...(desktopMode
+        ? [
+            button(t("downloads.makeUsb"), openCreateUsb, {
+              variant: "primary",
+              iconPaths: icons.sparkle,
+            }),
+          ]
+        : []),
     );
     return;
   }
-  const where = appMode.usb
-    ? t("downloads.destUsb", { name: drive?.label || appMode.usb })
-    : appMode.library
-      ? t("downloads.destLocal")
-      : t("downloads.destLive");
+  const total = vault.usedBytes + vault.freeBytes;
+  const name = appMode.usb
+    ? (drive?.label || "REBOOTERA") + " (" + appMode.usb + ")"
+    : t("downloads.destLiveName");
+  destinationBody.className = "dest dest-ok";
   destinationBody.replaceChildren(
-    icon(appMode.library && !appMode.usb ? icons.disk : icons.usb),
-    el("span", {}, [
-      where +
-        " · " +
-        t("downloads.destFree", {
-          free: fmt.bytes(vault.freeBytes),
-          total: fmt.bytes(vault.usedBytes + vault.freeBytes),
-        }),
+    el("span", { class: "dest-icon" }, [icon(icons.usb)]),
+    el("div", { class: "dest-text" }, [
+      el("strong", {}, [t("downloads.destTitle")]),
+      el("span", {}, [
+        name +
+          " · " +
+          t("downloads.destFree", { free: fmt.bytes(vault.freeBytes), total: fmt.bytes(total) }),
+      ]),
     ]),
+    progress(vault.usedBytes / Math.max(1, total), "accent"),
   );
 }
 

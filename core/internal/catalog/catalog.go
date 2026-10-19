@@ -100,9 +100,12 @@ type Resolver struct {
 
 // Resolved es el archivo concreto que se descargará.
 type Resolved struct {
-	URL       string `json:"url"`
-	FileName  string `json:"fileName"`
-	SHA256    string `json:"sha256"`
+	URL      string `json:"url"`
+	FileName string `json:"fileName"`
+	SHA256   string `json:"sha256"`
+	// SHA1 es la suma que publica el Internet Archive (no publica SHA-256): comprueba que la copia
+	// llegó entera, pero no la autenticidad de la imagen. Vacía si hay SHA-256 o ninguna.
+	SHA1      string `json:"sha1,omitempty"`
 	SizeBytes int64  `json:"sizeBytes"`
 	// SignedBy es la clave oficial que firmó el índice, comprobada; vacío si no está firmado.
 	SignedBy string `json:"signedBy,omitempty"`
@@ -159,6 +162,8 @@ func Resolve(entry Entry) (Resolved, error) {
 		resolved, err = resolveSourceForge(entry.Resolver)
 	case "direct":
 		resolved, err = resolveDirect(entry.Resolver)
+	case "archive":
+		resolved, err = resolveArchive(entry.Resolver)
 	case "manual":
 		return Resolved{}, ErrManual
 	default:
@@ -225,7 +230,13 @@ func fetchOnce(rawURL string) (string, bool, error) {
 	if err != nil {
 		return "", true, err
 	}
-	return string(data), false, nil
+	text := string(data)
+	// * Si la petición acabó en un espejo distinto (download.fedoraproject.org redirige), sus enlaces con
+	// * ruta absoluta ("/fedora/...") cuelgan de ese espejo, no del servidor al que se preguntó.
+	if final := resp.Request.URL; final.Host != req.URL.Host {
+		text = strings.ReplaceAll(text, `href="/`, `href="`+final.Scheme+"://"+final.Host+"/")
+	}
+	return text, false, nil
 }
 
 // * resolveSums lee un índice estilo GNU ("hash  archivo" o "hash *archivo")
@@ -409,6 +420,66 @@ func resolveSourceForge(r Resolver) (Resolved, error) {
 	return Resolved{URL: base + "/files" + file + "/download", FileName: path.Base(file), SHA256: strings.ToLower(fields[0]), SizeBytes: best.Release.Bytes}, nil
 }
 
+// archiveFile es un archivo de un elemento del Internet Archive.
+type archiveFile struct {
+	Name   string `json:"name"`
+	Source string `json:"source"`
+	Size   string `json:"size"`
+	SHA1   string `json:"sha1"`
+}
+
+// ArchiveBase es la dirección del Internet Archive; se cambia en las pruebas.
+var ArchiveBase = "https://archive.org"
+
+// * resolveArchive elige un archivo de un elemento del Internet Archive (Index es su identificador y
+// * Pattern el nombre del archivo). El Archive publica SHA-1, no SHA-256: se descarga con esa suma.
+func resolveArchive(r Resolver) (Resolved, error) {
+	text, err := fetchText(ArchiveBase + "/metadata/" + url.PathEscape(r.Index))
+	if err != nil {
+		return Resolved{}, err
+	}
+	var item struct {
+		Files []archiveFile `json:"files"`
+	}
+	if err := json.Unmarshal([]byte(text), &item); err != nil {
+		return Resolved{}, fmt.Errorf("respuesta del Internet Archive no válida: %w", err)
+	}
+	pattern, err := regexp.Compile(r.Pattern)
+	if err != nil {
+		return Resolved{}, err
+	}
+	sums := map[string]string{}
+	found := map[string]Resolved{}
+	for _, file := range item.Files {
+		if file.Source != "original" || !pattern.MatchString(file.Name) || len(file.SHA1) != 40 {
+			continue
+		}
+		size, _ := strconv.ParseInt(file.Size, 10, 64)
+		// * El nombre puede llevar subcarpetas: cada tramo se escapa por separado.
+		parts := strings.Split(file.Name, "/")
+		for i, part := range parts {
+			parts[i] = url.PathEscape(part)
+		}
+		sums[file.Name] = strings.ToLower(file.SHA1)
+		found[file.Name] = Resolved{
+			URL:       ArchiveBase + "/download/" + url.PathEscape(r.Index) + "/" + strings.Join(parts, "/"),
+			FileName:  path.Base(file.Name),
+			SHA1:      strings.ToLower(file.SHA1),
+			SizeBytes: size,
+		}
+	}
+	name := ""
+	for candidate := range sums {
+		if name == "" || compareVersions(candidate, name) > 0 {
+			name = candidate
+		}
+	}
+	if name == "" {
+		return Resolved{}, fmt.Errorf("%s: no hay ningún archivo %q con suma en el Internet Archive", r.Index, r.Pattern)
+	}
+	return found[name], nil
+}
+
 // * resolveDirect sigue el enlace oficial del fabricante (por ejemplo, las ediciones de evaluación de
 // * Microsoft) hasta el archivo y lee su nombre y su tamaño. No hay suma publicada que leer: la
 // * imagen entra en la biblioteca con su SHA-256 calculado pero sin comprobar contra una oficial.
@@ -494,6 +565,9 @@ func sibling(indexURL, name string) string {
 	u, err := url.Parse(indexURL)
 	if err != nil {
 		return ""
+	}
+	if strings.HasPrefix(name, "https://") {
+		return name
 	}
 	// * Algunos espejos listan los archivos con rutas absolutas ("/fedora/releases/..."): cuelgan del servidor.
 	if strings.HasPrefix(name, "/") {

@@ -5,6 +5,7 @@ import { ApiError } from "./api.js";
 import { el, icon } from "./dom.js";
 import { t } from "./i18n.js";
 import { icons } from "./icons.js";
+import { LOGOS } from "./logos.js";
 
 /** Tonos de color de insignias y barras. */
 export type Tone = "accent" | "ok" | "warn" | "danger" | "muted" | "violet" | "amber";
@@ -148,4 +149,46 @@ export function more(summary: string, body: (Node | null)[], key = ""): HTMLElem
     });
   }
   return node;
+}
+
+/** Nombre del espacio de nombres SVG. */
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+/** Color estable (por el nombre) para el monograma de un sistema sin logo. */
+function monogramColor(name: string): string {
+  let hash = 0;
+  for (const letter of name) {
+    hash = (hash * 31 + letter.charCodeAt(0)) % 360;
+  }
+  return "hsl(" + hash + ", 42%, 40%)";
+}
+
+/**
+ * Logo de un sistema sobre una ficha clara (así se ve igual de bien en los tres temas). Si el catálogo
+ * no tiene el logo de esa familia, se dibuja un monograma con la inicial.
+ */
+export function logoTile(family: string, name: string): HTMLElement {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "logo-svg");
+  svg.setAttribute("aria-hidden", "true");
+  const logo = LOGOS[family];
+  if (logo) {
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", logo.d);
+    path.setAttribute("fill", logo.color);
+    svg.append(path);
+  } else {
+    const text = document.createElementNS(SVG_NS, "text");
+    text.setAttribute("x", "12");
+    text.setAttribute("y", "17");
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("font-size", "15");
+    text.setAttribute("font-weight", "700");
+    text.setAttribute("font-family", "Fraunces, Georgia, serif");
+    text.setAttribute("fill", monogramColor(name));
+    text.textContent = name.charAt(0).toUpperCase();
+    svg.append(text);
+  }
+  return el("span", { class: "logo-tile" }, [svg]);
 }

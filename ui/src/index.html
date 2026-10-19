@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- * Marco de Rebootera UI: intro, menú lateral, barra superior y área principal. -->
-<html lang="en" data-accent="aurora">
+<!-- * Marco de Rebootera UI: intro, fondo animado, menú lateral, barra superior y área principal. -->
+<html lang="en" data-theme="obsidian">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,54 +10,41 @@
     <link rel="stylesheet" href="styles/layout.css" />
     <link rel="stylesheet" href="styles/components.css" />
     <link rel="stylesheet" href="styles/pages.css" />
-    <link rel="stylesheet" href="styles/calm.css" />
-    <link rel="stylesheet" href="styles/aero.css" />
+    <link rel="stylesheet" href="styles/lux.css" />
     <link rel="stylesheet" href="styles/intro.css" />
     <script type="module" src="js/main.js"></script>
   </head>
   <body>
-    <!-- * Intro: se elimina del documento al terminar (intro.ts). -->
+    <!-- * Intro ligera: se elimina del documento al terminar (intro.ts). -->
     <div id="intro" class="intro" aria-hidden="true">
-      <div class="aurora">
-        <span class="blob blob-a"></span>
-        <span class="blob blob-b"></span>
-        <span class="blob blob-c"></span>
-      </div>
-      <div class="intro-grid"></div>
       <div class="intro-center">
-        <div class="intro-halo"></div>
         <svg class="intro-logo" viewBox="0 0 256 256">
-          <defs>
-            <linearGradient id="intro-g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#5eead4" />
-              <stop offset="1" stop-color="#818cf8" />
-            </linearGradient>
-          </defs>
           <rect class="logo-tile" x="8" y="8" width="240" height="240" rx="56" />
-          <path class="logo-arc" pathLength="1" d="M200 128a72 72 0 1 1-25.7-55.2" />
+          <path class="logo-arc" d="M200 128a72 72 0 1 1-25.7-55.2" />
           <path class="logo-arrow" d="m157 87 28.5-34L198 92.5Z" />
-          <path class="logo-r" pathLength="1" d="M104 172V86h30a24 24 0 0 1 0 48h-30m28 0 24 38" />
+          <path class="logo-r" d="M104 172V86h30a24 24 0 0 1 0 48h-30m28 0 24 38" />
         </svg>
         <h1 class="intro-wordmark"></h1>
         <p class="intro-tagline" data-i18n="intro.tagline"></p>
         <div class="intro-progress"><span class="intro-progress-fill"></span></div>
-        <p class="intro-status" data-i18n="intro.loading"></p>
       </div>
-      <p class="intro-skip" data-i18n="intro.skip"></p>
     </div>
 
-    <!-- * Fondo animado: cielo, colina y burbujas (solo mueven capas, cuestan casi nada). -->
-    <div class="aero-bg" aria-hidden="true">
-      <span class="aero-ray aero-ray-a"></span>
-      <span class="aero-ray aero-ray-b"></span>
-      <span class="aero-hill"></span>
-      <span class="bubble"></span>
-      <span class="bubble"></span>
-      <span class="bubble"></span>
-      <span class="bubble"></span>
-      <span class="bubble"></span>
-      <span class="bubble"></span>
-      <span class="bubble"></span>
+    <!-- * Fondo animado: luces que se desplazan muy despacio y motas de polvo. Solo mueven capas
+         (transform y opacity), así que cuesta casi nada. El grano y la viñeta son estáticos. -->
+    <div class="bg" aria-hidden="true">
+      <span class="bloom bloom-a"></span>
+      <span class="bloom bloom-b"></span>
+      <span class="bloom bloom-c"></span>
+      <span class="mote"></span>
+      <span class="mote"></span>
+      <span class="mote"></span>
+      <span class="mote"></span>
+      <span class="mote"></span>
+      <span class="mote"></span>
+      <span class="mote"></span>
+      <span class="mote"></span>
+      <span class="bg-grain"></span>
     </div>
 
     <div class="app">
@@ -65,7 +52,7 @@
         <nav id="nav" class="nav" data-i18n-label="nav.section"></nav>
         <div class="drive-card" id="drive-card"></div>
         <div class="brand">
-          <img src="logo.svg" alt="" width="30" height="30" />
+          <img src="logo.svg" alt="" width="34" height="34" />
           <div class="brand-text">
             <span class="brand-name">Rebootera <span class="accent">OS</span></span>
             <span class="brand-version" id="version"></span>

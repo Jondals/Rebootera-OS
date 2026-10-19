@@ -12,4 +12,5 @@ mkdirSync(distDir, { recursive: true });
 copyFileSync(join(uiDir, "src/index.html"), join(distDir, "index.html"));
 copyFileSync(join(uiDir, "../branding/logo.svg"), join(distDir, "logo.svg"));
 cpSync(join(uiDir, "src/styles"), join(distDir, "styles"), { recursive: true });
+cpSync(join(uiDir, "src/fonts"), join(distDir, "fonts"), { recursive: true });
 console.log("Interfaz lista en " + distDir);

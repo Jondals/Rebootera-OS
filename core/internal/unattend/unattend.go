@@ -34,6 +34,24 @@ type Options struct {
 	Password string `json:"password"`
 	// Drivers indica que hay un archivo de drivers inyectado en el instalador de Windows.
 	Drivers bool `json:"drivers"`
+	// ReduceTelemetry (solo Windows) desactiva la recogida de datos de diagnóstico y los anuncios al
+	// instalar: directivas de DataCollection a 0, servicios DiagTrack y dmwappushservice desactivados,
+	// sin contenido sugerido y sin la pantalla de "configuración rápida". En Enterprise, Education y LTSC
+	// el nivel 0 ("Security") se respeta; en Home y Pro Windows lo trata como el nivel básico.
+	ReduceTelemetry bool `json:"privacy"`
+}
+
+// privacyCommands son las órdenes que se ejecutan en la fase specialize (como SYSTEM, antes del primer
+// inicio de sesión) cuando se pide reducir la telemetría.
+var privacyCommands = []string{
+	`reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f`,
+	`reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v DoNotShowFeedbackNotifications /t REG_DWORD /d 1 /f`,
+	`reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v AllowDeviceNameInTelemetry /t REG_DWORD /d 0 /f`,
+	`reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f`,
+	`reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" /v DisabledByGroupPolicy /t REG_DWORD /d 1 /f`,
+	`reg add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v Disabled /t REG_DWORD /d 1 /f`,
+	`sc config DiagTrack start= disabled`,
+	`sc config dmwappushservice start= disabled`,
 }
 
 // locale agrupa los códigos de un idioma en cada sistema.
@@ -95,7 +113,8 @@ var reservedUsers = map[string]bool{"root": true, "administrator": true, "admin"
 
 // * Validate comprueba las opciones antes de generar nada.
 func (o Options) Validate() error {
-	if _, ok := locales[o.Language]; !ok {
+	// * Idioma vacío (solo Windows): no se toca el idioma ni el teclado del instalador.
+	if _, ok := locales[o.Language]; !ok && o.Language != "" {
 		return fmt.Errorf("idioma no admitido: %q", o.Language)
 	}
 	if o.TimeZone != "" {
@@ -143,9 +162,11 @@ func windowsPassword(password string) string {
 // drivers y la cuenta local; no incluye DiskConfiguration.
 var windowsTemplate = template.Must(template.New("autounattend").Funcs(template.FuncMap{
 	"esc": html.EscapeString,
+	"inc": plusOne,
 }).Parse(`<?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend">
   <settings pass="windowsPE">
+{{- if .Locale.Windows}}
     <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <SetupUILanguage>
         <UILanguage>{{.Locale.Windows}}</UILanguage>
@@ -155,6 +176,7 @@ var windowsTemplate = template.Must(template.New("autounattend").Funcs(template.
       <UILanguage>{{.Locale.Windows}}</UILanguage>
       <UserLocale>{{.Locale.Windows}}</UserLocale>
     </component>
+{{- end}}
 {{- if .Drivers}}
     <component name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <DriverPaths>
@@ -176,27 +198,46 @@ var windowsTemplate = template.Must(template.New("autounattend").Funcs(template.
     </component>
   </settings>
 {{- end}}
-{{- if .WindowsZone}}
+{{- if or .WindowsZone .PrivacyCommands}}
   <settings pass="specialize">
+{{- if .WindowsZone}}
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <TimeZone>{{.WindowsZone}}</TimeZone>
     </component>
+{{- end}}
+{{- if .PrivacyCommands}}
+    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <RunSynchronous>
+{{- range $i, $cmd := .PrivacyCommands}}
+        <RunSynchronousCommand wcm:action="add">
+          <Order>{{inc $i}}</Order>
+          <Path>{{esc $cmd}}</Path>
+        </RunSynchronousCommand>
+{{- end}}
+      </RunSynchronous>
+    </component>
+{{- end}}
   </settings>
 {{- end}}
   <settings pass="oobeSystem">
+{{- if .Locale.Windows}}
     <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <InputLocale>{{.Locale.Inputs}}</InputLocale>
       <SystemLocale>{{.Locale.Windows}}</SystemLocale>
       <UILanguage>{{.Locale.Windows}}</UILanguage>
       <UserLocale>{{.Locale.Windows}}</UserLocale>
     </component>
-{{- if .UserName}}
+{{- end}}
+{{- if or .UserName .PrivacyCommands}}
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <OOBE>
         <HideEULAPage>true</HideEULAPage>
+{{- if .UserName}}
         <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+{{- end}}
         <ProtectYourPC>3</ProtectYourPC>
       </OOBE>
+{{- if .UserName}}
       <UserAccounts>
         <LocalAccounts>
           <LocalAccount wcm:action="add">
@@ -210,25 +251,34 @@ var windowsTemplate = template.Must(template.New("autounattend").Funcs(template.
           </LocalAccount>
         </LocalAccounts>
       </UserAccounts>
+{{- end}}
     </component>
 {{- end}}
   </settings>
 </unattend>
 `))
 
+// plusOne suma uno (el Order de las órdenes empieza en 1).
+func plusOne(i int) int { return i + 1 }
+
 // * WindowsAnswerFile devuelve el autounattend.xml para las opciones dadas.
 func WindowsAnswerFile(o Options) (string, error) {
 	if err := o.Validate(); err != nil {
 		return "", err
 	}
+	var commands []string
+	if o.ReduceTelemetry {
+		commands = privacyCommands
+	}
 	data := map[string]any{
-		"Locale":      struct{ Windows, Inputs string }{locales[o.Language].windows, locales[o.Language].inputs},
-		"Drivers":     o.Drivers,
-		"DriverPath":  `X:\rebootera-drivers`,
-		"WindowsZone": TimeZones[o.TimeZone],
-		"UserName":    o.UserName,
-		"DisplayName": html.EscapeString(o.fullName()),
-		"PasswordB64": "",
+		"PrivacyCommands": commands,
+		"Locale":          struct{ Windows, Inputs string }{locales[o.Language].windows, locales[o.Language].inputs},
+		"Drivers":         o.Drivers,
+		"DriverPath":      `X:\rebootera-drivers`,
+		"WindowsZone":     TimeZones[o.TimeZone],
+		"UserName":        o.UserName,
+		"DisplayName":     html.EscapeString(o.fullName()),
+		"PasswordB64":     "",
 	}
 	if o.UserName != "" {
 		data["PasswordB64"] = windowsPassword(o.Password)
@@ -245,6 +295,9 @@ func WindowsAnswerFile(o Options) (string, error) {
 func Preseed(o Options) (string, error) {
 	if err := o.Validate(); err != nil {
 		return "", err
+	}
+	if o.Language == "" {
+		return "", errors.New("falta el idioma")
 	}
 	l := locales[o.Language]
 	var out strings.Builder

@@ -215,6 +215,24 @@ Crear USB / actualizar (Rebootera Desktop, Windows 11), sin tocar ningún disco 
 
 Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el ratón; solo se probó el análisis de su resultado), "Crear USB" borrando un pendrive real, instalar dentro de un USB ajeno (Rufus), un instalador real de Windows y la ejecución de los workflows de GitHub.
 
+## v0.10.0 (2026-10-19)
+
+| Prueba | Resultado |
+| --- | --- |
+| Batería completa de VM (`test-all.sh`: ISO de depuración y definitiva en UEFI + Secure Boot y BIOS, USB de extremo a extremo, Wi-Fi, Debian con preseed, adopt, particiones y Windows) | 0 fallos; el escenario de Windows falló una vez en "el equipo se reinicia" (intermitente) y pasó 8 de 8 al repetirlo solo |
+| Resolución real del catálogo (65 + 4 entradas, `go test -tags online ./internal/catalog/`) | todas resuelven salvo fallos puntuales de espejos (Fedora/Tumbleweed) y un 500 puntual del Archive al hacer HEAD; el enlace de Fedora con ruta absoluta de otro espejo se arregló |
+| `resolveArchive` (servidor falso), SHA-1 del Archive correcto y erróneo en el gestor de transferencias | pruebas Go |
+| `autounattend.xml` con reducción de telemetría: válido como XML, órdenes en specialize, sin tocar idioma ni discos | pruebas Go |
+| Interfaz (tres temas, Inicio, Descargar con logos y aviso del USB, Discos con datos de ejemplo, Ajustes, Instalar, Mis imágenes) | dibujada en WebKitGTK sin ventana (`scripts/preview-ui.sh`, con `PREVIEW_THEME` y `PREVIEW_FIXTURE`) y revisada a mano |
+| `scripts/test-installer-windows.ps1` con el exe real (IMAPI, sin ventana) | 7 de 7 |
+
+### No probado en la v0.10.0
+
+- **La reducción de telemetría en un Windows real instalado** (solo se comprobó el XML y que no toca idioma ni discos).
+- **El arranque del USB MBR en un PC real** (solo se creó y arrancó en VM con la ruta de Linux; la de Windows con Ventoy `VTOYCLI` sin `/GPT` no se pudo ejecutar sin tocar un disco real).
+- **El consumo de CPU de la interfaz nueva en Rebootera Desktop** (el fondo animado vuelve a estar activo en el escritorio).
+- Que las imágenes nuevas (Archive, NixOS, Void, CentOS, sabores) arranquen desde el menú de Ventoy.
+
 ## v0.7.0 (2026-10-18)
 
 | Prueba | Resultado |

@@ -132,3 +132,44 @@ func TestInvalidUser(t *testing.T) {
 		t.Fatal("una zona horaria desconocida debe rechazarse")
 	}
 }
+
+// * TestWindowsPrivacy comprueba la reducción de telemetría: órdenes en specialize, sin pantalla de
+// * configuración rápida y sin tocar el idioma cuando no se pide.
+func TestWindowsPrivacy(t *testing.T) {
+	xmlText, err := WindowsAnswerFile(Options{ReduceTelemetry: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wellFormed(t, xmlText)
+	for _, want := range []string{
+		`pass="specialize"`, `Microsoft-Windows-Deployment`, `AllowTelemetry /t REG_DWORD /d 0`,
+		`sc config DiagTrack start= disabled`, `<Order>1</Order>`, `<Order>8</Order>`, `<ProtectYourPC>3</ProtectYourPC>`,
+	} {
+		if !strings.Contains(xmlText, want) {
+			t.Fatalf("falta %q en el XML:\n%s", want, xmlText)
+		}
+	}
+	if strings.Contains(xmlText, "International-Core") || strings.Contains(xmlText, "UserAccounts") {
+		t.Fatalf("sin idioma ni cuenta no debe tocar ninguno de los dos:\n%s", xmlText)
+	}
+	if strings.Contains(xmlText, "DiskConfiguration") {
+		t.Fatal("nunca debe tocar los discos")
+	}
+	// * Con idioma y cuenta conviven con las órdenes.
+	full, err := WindowsAnswerFile(Options{Language: "es", UserName: "ana", Password: "clave", ReduceTelemetry: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wellFormed(t, full)
+	if !strings.Contains(full, "es-ES") || !strings.Contains(full, "<Name>ana</Name>") || !strings.Contains(full, "DiagTrack") {
+		t.Fatalf("faltan partes en el XML combinado:\n%s", full)
+	}
+	// * Sin la opción no aparece nada de telemetría.
+	plain, _ := WindowsAnswerFile(Options{Language: "en"})
+	if strings.Contains(plain, "DataCollection") {
+		t.Fatal("sin la opción no debe haber órdenes de telemetría")
+	}
+	if _, err := Preseed(Options{}); err == nil {
+		t.Fatal("el preseed necesita idioma")
+	}
+}

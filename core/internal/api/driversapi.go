@@ -99,6 +99,8 @@ type installRequest struct {
 	// BootOnce (solo UEFI) pone este USB el último en el orden de arranque durante la
 	// instalación, para que el instalador no se repita; se restaura al volver a Rebootera.
 	BootOnce bool `json:"bootOnce"`
+	// Privacy (solo Windows) reduce la telemetría y los anuncios durante la instalación.
+	Privacy bool `json:"privacy"`
 	// Unattended da respuestas de idioma, zona horaria y cuenta; nunca de disco.
 	Unattended *unattend.Options `json:"unattended"`
 }
@@ -143,9 +145,13 @@ func prepareInstall(item library.Item, req installRequest) (boot.Prep, string, s
 		}
 		prep.DriversArchive = archive
 	}
+	if req.Privacy && system != osWindows {
+		return prep, codeInvalid, "privacy settings only apply to Windows images"
+	}
 	if req.Unattended != nil {
 		options := *req.Unattended
 		options.Drivers = req.Drivers
+		options.ReduceTelemetry = req.Privacy
 		var err error
 		switch system {
 		case osWindows:
@@ -160,9 +166,10 @@ func prepareInstall(item library.Item, req installRequest) (boot.Prep, string, s
 		if err != nil {
 			return prep, codeInvalid, err.Error()
 		}
-	} else if req.Drivers {
-		// * Sin respuestas del usuario, un autounattend mínimo apunta a los drivers.
-		answers, err := unattend.WindowsAnswerFile(unattend.Options{Language: "en", Drivers: true})
+	} else if req.Drivers || req.Privacy {
+		// * Sin respuestas del usuario, un autounattend mínimo apunta a los drivers y/o reduce la telemetría,
+		// * sin tocar el idioma ni el teclado.
+		answers, err := unattend.WindowsAnswerFile(unattend.Options{Drivers: req.Drivers, ReduceTelemetry: req.Privacy})
 		if err != nil {
 			return prep, codeFailed, err.Error()
 		}

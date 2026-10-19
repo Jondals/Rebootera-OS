@@ -91,6 +91,7 @@ let driverPlan: DriverPlan | null = null;
 let planRequested = false;
 let takeDrivers = false;
 let winBypass = false;
+let privacy = false;
 let bootOnce = false;
 const answers: Answers = {
   enabled: false,
@@ -175,6 +176,7 @@ function installRequest(item: LibraryItem): Record<string, unknown> | Error {
     path: item.path,
     drivers: takeDrivers && system === "windows",
     winBypass: winBypass && system === "windows",
+    privacy: privacy && system === "windows",
     bootOnce: bootOnce && snapshot.system?.firmware === "uefi",
   };
   if (answers.enabled && system !== "other") {
@@ -655,6 +657,13 @@ function toggleWinBypass(event: Event): void {
   update();
 }
 
+/** Marca o desmarca reducir la telemetría de Windows. */
+function togglePrivacy(event: Event): void {
+  privacy = (event.currentTarget as HTMLInputElement).checked;
+  lastSignature = "";
+  update();
+}
+
 /** Marca o desmarca arrancar el instalador una sola vez. */
 function toggleBootOnce(event: Event): void {
   bootOnce = (event.currentTarget as HTMLInputElement).checked;
@@ -769,6 +778,7 @@ function stepInstallerSettings(): Node[] {
   if (system === "windows") {
     blocks.push(
       optionRow(t("wizard.winBypassTitle"), t("wizard.winBypassNote"), winBypass, toggleWinBypass),
+      optionRow(t("wizard.privacyTitle"), t("wizard.privacyNote"), privacy, togglePrivacy),
     );
   }
   if (snapshot.system?.firmware === "uefi") {
@@ -811,6 +821,9 @@ function stepSummary(): Node[] {
   }
   if (item && winBypass && systemOf(item) === "windows") {
     rows.push(["Windows 11", t("wizard.winBypassTitle")]);
+  }
+  if (item && privacy && systemOf(item) === "windows") {
+    rows.push([t("wizard.privacyShort"), "✓"]);
   }
   if (bootOnce && snapshot.system?.firmware === "uefi") {
     rows.push([t("wizard.bootOnceTitle"), "✓"]);
@@ -855,6 +868,7 @@ function update(): void {
     driverPlan,
     takeDrivers,
     winBypass,
+    privacy,
     bootOnce,
     answers.enabled,
   ]);
