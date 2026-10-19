@@ -1,0 +1,16 @@
+#!/bin/bash
+# * browser: abre Firefox dentro de la sesión del kiosco, ya configurado: solo navegar, con uBlock Origin y Dark
+# * Reader instalados y nada más (las reglas están en /usr/lib/firefox-esr/distribution/policies.json). Usa un
+# * perfil en /run (memoria): no deja rastro al apagar. Si ya hay una ventana abierta, no abre otra.
+# ! Lo lanza rebootera-shell cuando la interfaz lo pide; nunca recibe argumentos del exterior.
+set -u
+
+PROFILE="${XDG_RUNTIME_DIR:-/tmp}/rebootera-firefox"
+
+# * Con una sesión de Firefox ya en marcha, solo se avisa de que está abierta (labwc la trae al frente al pulsar Alt+Tab).
+if pgrep -u "$(id -u)" -f 'firefox-esr.*rebootera-firefox' >/dev/null; then
+	exit 0
+fi
+
+mkdir -p "$PROFILE"
+exec /usr/bin/firefox-esr --no-remote --profile "$PROFILE" about:blank

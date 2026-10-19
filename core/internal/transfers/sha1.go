@@ -1,3 +1,4 @@
+// * SHA-1 de un archivo: solo para comprobar las copias del Internet Archive, que publica ese tipo de suma.
 package transfers
 
 import (

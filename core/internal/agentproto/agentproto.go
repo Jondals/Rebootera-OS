@@ -27,6 +27,8 @@ const (
 	// * Montan o desmontan en solo lectura una partición para importar imágenes.
 	OpMediaMount   = "media.mount"
 	OpMediaUnmount = "media.unmount"
+	// * Abre en solo lectura las particiones que parecen traer drivers y devuelve las que dejó abiertas.
+	OpDriversScan = "drivers.scan"
 	// * Wi-Fi: estado del adaptador, búsqueda de redes, conexión y desconexión.
 	// * Arranque UEFI de una sola vez: USB el último del orden y BootNext; restauración.
 	OpBootOnce       = "boot.once"
@@ -38,11 +40,35 @@ const (
 	// * Teclado del kiosco: consultar la distribución y cambiarla (reinicia la interfaz).
 	OpKeyboardGet = "keyboard.get"
 	OpKeyboardSet = "keyboard.set"
+	// * Puntero y panel táctil del kiosco: consultar los ajustes y cambiarlos (reinicia la interfaz).
+	OpInputGet = "input.get"
+	OpInputSet = "input.set"
 	// * Gestor de particiones: mínimos de un sistema de archivos, empezar una operación y ver su estado.
 	OpPartInfo   = "part.info"
 	OpPartApply  = "part.apply"
 	OpPartStatus = "part.status"
 )
+
+// InputSettings son los ajustes del puntero y del panel táctil del kiosco.
+type InputSettings struct {
+	// Speed es la sensibilidad del puntero, de 0 (lenta) a 100 (rápida); 50 es la normal.
+	Speed int `json:"speed"`
+	// Tap activa el toque para hacer clic en el panel táctil.
+	Tap bool `json:"tap"`
+	// Natural invierte el sentido del desplazamiento con dos dedos.
+	Natural bool `json:"natural"`
+}
+
+// DefaultInput son los ajustes con los que arranca el kiosco: velocidad normal y toque para clic activado.
+var DefaultInput = InputSettings{Speed: 50, Tap: true, Natural: false}
+
+// * Validate comprueba que la velocidad esté en su rango.
+func (i InputSettings) Validate() error {
+	if i.Speed < 0 || i.Speed > 100 {
+		return fmt.Errorf("sensibilidad fuera de rango: %d", i.Speed)
+	}
+	return nil
+}
 
 // DefaultKeyboard es la distribución con la que arranca la interfaz.
 const DefaultKeyboard = "es"
@@ -77,6 +103,8 @@ type Request struct {
 	Confirm   string      `json:"confirm,omitempty"`
 	// Layout solo lo usa keyboard.set y el agente lo valida contra KeyboardLayouts.
 	Layout string `json:"layout,omitempty"`
+	// Input solo lo usa input.set y el agente lo valida (Validate).
+	Input *InputSettings `json:"input,omitempty"`
 }
 
 // Response es la respuesta del agente. Lines solo se rellena en las
@@ -132,6 +160,9 @@ func Deadline(op string) time.Duration {
 	// * Calcular los mínimos de un sistema de archivos grande y validar una operación llevan unos segundos.
 	case OpPartInfo, OpPartApply:
 		return 3 * time.Minute
+	// * Abrir varias particiones NTFS en solo lectura puede tardar.
+	case OpDriversScan:
+		return 90 * time.Second
 	}
 	return 30 * time.Second
 }

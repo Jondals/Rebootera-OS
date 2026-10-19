@@ -116,6 +116,3 @@ export const LOGOS: Record<string, Logo> = {
 };
 
 /** Devuelve el logo de una familia o el genérico. */
-export function logoOf(family: string): Logo {
-  return LOGOS[family] ?? LOGOS.generic;
-}

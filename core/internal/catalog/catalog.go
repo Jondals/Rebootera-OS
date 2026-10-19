@@ -75,7 +75,7 @@ func Families() ([]Family, error) {
 }
 
 // BootCompat es la compatibilidad de arranque desde el menú del USB de
-// Rebootera, comprobada en máquina virtual (scripts/compat-matrix.sh).
+// Rebootera, comprobada en máquina virtual (scripts/test/compat-matrix.sh).
 type BootCompat struct {
 	// Status es "verified", "incompatible" o "untested".
 	Status string            `json:"status"`
@@ -431,53 +431,64 @@ type archiveFile struct {
 // ArchiveBase es la dirección del Internet Archive; se cambia en las pruebas.
 var ArchiveBase = "https://archive.org"
 
-// * resolveArchive elige un archivo de un elemento del Internet Archive (Index es su identificador y
-// * Pattern el nombre del archivo). El Archive publica SHA-1, no SHA-256: se descarga con esa suma.
-func resolveArchive(r Resolver) (Resolved, error) {
-	text, err := fetchText(ArchiveBase + "/metadata/" + url.PathEscape(r.Index))
+// * archiveFiles lee la lista de archivos de un elemento del Internet Archive.
+func archiveFiles(id string) ([]archiveFile, error) {
+	text, err := fetchText(ArchiveBase + "/metadata/" + url.PathEscape(id))
 	if err != nil {
-		return Resolved{}, err
+		return nil, err
 	}
 	var item struct {
 		Files []archiveFile `json:"files"`
 	}
 	if err := json.Unmarshal([]byte(text), &item); err != nil {
-		return Resolved{}, fmt.Errorf("respuesta del Internet Archive no válida: %w", err)
+		return nil, fmt.Errorf("respuesta del Internet Archive no válida: %w", err)
+	}
+	return item.Files, nil
+}
+
+// * archiveCandidate construye la dirección de descarga de un archivo de un elemento del Archive.
+func archiveCandidate(id string, file archiveFile) Candidate {
+	size, _ := strconv.ParseInt(file.Size, 10, 64)
+	// * El nombre puede llevar subcarpetas: cada tramo se escapa por separado.
+	parts := strings.Split(file.Name, "/")
+	for i, part := range parts {
+		parts[i] = url.PathEscape(part)
+	}
+	return Candidate{
+		Name:      path.Base(file.Name),
+		URL:       ArchiveBase + "/download/" + url.PathEscape(id) + "/" + strings.Join(parts, "/"),
+		SizeBytes: size,
+		SHA1:      strings.ToLower(file.SHA1),
+	}
+}
+
+// * resolveArchive elige un archivo de un elemento del Internet Archive (Index es su identificador y
+// * Pattern el nombre del archivo). El Archive publica SHA-1, no SHA-256: se descarga con esa suma.
+func resolveArchive(r Resolver) (Resolved, error) {
+	files, err := archiveFiles(r.Index)
+	if err != nil {
+		return Resolved{}, err
 	}
 	pattern, err := regexp.Compile(r.Pattern)
 	if err != nil {
 		return Resolved{}, err
 	}
-	sums := map[string]string{}
-	found := map[string]Resolved{}
-	for _, file := range item.Files {
+	name := ""
+	found := map[string]Candidate{}
+	for _, file := range files {
 		if file.Source != "original" || !pattern.MatchString(file.Name) || len(file.SHA1) != 40 {
 			continue
 		}
-		size, _ := strconv.ParseInt(file.Size, 10, 64)
-		// * El nombre puede llevar subcarpetas: cada tramo se escapa por separado.
-		parts := strings.Split(file.Name, "/")
-		for i, part := range parts {
-			parts[i] = url.PathEscape(part)
-		}
-		sums[file.Name] = strings.ToLower(file.SHA1)
-		found[file.Name] = Resolved{
-			URL:       ArchiveBase + "/download/" + url.PathEscape(r.Index) + "/" + strings.Join(parts, "/"),
-			FileName:  path.Base(file.Name),
-			SHA1:      strings.ToLower(file.SHA1),
-			SizeBytes: size,
-		}
-	}
-	name := ""
-	for candidate := range sums {
-		if name == "" || compareVersions(candidate, name) > 0 {
-			name = candidate
+		found[file.Name] = archiveCandidate(r.Index, file)
+		if name == "" || compareVersions(file.Name, name) > 0 {
+			name = file.Name
 		}
 	}
 	if name == "" {
 		return Resolved{}, fmt.Errorf("%s: no hay ningún archivo %q con suma en el Internet Archive", r.Index, r.Pattern)
 	}
-	return found[name], nil
+	pick := found[name]
+	return Resolved{URL: pick.URL, FileName: pick.Name, SHA1: pick.SHA1, SizeBytes: pick.SizeBytes}, nil
 }
 
 // * resolveDirect sigue el enlace oficial del fabricante (por ejemplo, las ediciones de evaluación de

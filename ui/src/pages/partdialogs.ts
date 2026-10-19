@@ -200,129 +200,198 @@ function measureError(body: HTMLElement, error: unknown): void {
   body.replaceChildren(errorBox(new Error(message)));
 }
 
-/** Cambiar el tamaño de una partición por su final. */
+/** De dónde sale o a dónde va el espacio al cambiar el tamaño: libre, o compartido con una vecina. */
+interface SpaceMode {
+  /** "free", "left" o "right" (la vecina con la que se reparte). */
+  kind: "free" | "left" | "right";
+  other: Segment | null;
+}
+
+/** Modos posibles de una partición: el hueco libre de detrás y cada vecina pegada con la que se puede repartir. */
+function spaceModes(layout: Layout, segment: Segment): SpaceMode[] {
+  const modes: SpaceMode[] = [{ kind: "free", other: null }];
+  const right = neighbour(layout, segment, "right");
+  const left = neighbour(layout, segment, "left");
+  if (right && right.resizable && segment.resizable) {
+    modes.push({ kind: "right", other: right });
+  }
+  if (left && left.resizable && segment.resizable) {
+    modes.push({ kind: "left", other: left });
+  }
+  return modes;
+}
+
+/**
+ * Cambiar el tamaño de una partición. Un solo deslizador con el tamaño nuevo y, si tiene vecinas, un
+ * selector de qué pasa con la diferencia: queda libre (cambia el final) o se reparte con la vecina (se mueve
+ * el límite entre las dos: una gana lo que la otra cede).
+ */
 export async function openResize(layout: Layout, segment: Segment, done: Done): Promise<void> {
   const body = el("div", { class: "pm-dialog" }, [
     el("p", { class: "muted" }, [t("pm.measuring")]),
   ]);
   const dialog = openModal(t("pm.resizeTitle", { name: nameOf(segment) }), [body], "modal-wide");
-  let floor: number;
+  const modes = spaceModes(layout, segment);
+  const floors = new Map<number, number>();
   try {
-    floor = await minimumMiB(layout.disk, segment.number);
+    floors.set(segment.number, await minimumMiB(layout.disk, segment.number));
   } catch (error) {
     measureError(body, error);
     return;
   }
-  const current = mib(segment);
-  const ceiling = current + freeAfter(layout, segment);
-  const op = newOp("resize", layout.disk);
-  op.part = segment.number;
+  let mode = modes[0];
+  let value = mib(segment);
   const preview = el("div", {});
   const info = el("p", { class: "muted" });
-  function draw(value: number): void {
-    op.sizeMiB = value;
-    preview.replaceChildren(
-      previewBar([
+  const slider = el("div", {});
+  const choices = el("div", { class: "pm-modes", role: "radiogroup" });
+
+  /** Límites del deslizador en el modo actual (MiB de la partición elegida). */
+  function limits(): [number, number] {
+    const floor = floors.get(segment.number) ?? 1;
+    if (mode.kind === "free") {
+      return [floor, Math.max(mib(segment) + freeAfter(layout, segment), floor)];
+    }
+    const otherFloor = floors.get((mode.other as Segment).number) ?? 1;
+    return [floor, Math.max(mib(segment) + mib(mode.other as Segment) - otherFloor, floor)];
+  }
+
+  /** Operación que corresponde al modo y al tamaño elegidos. */
+  function buildOp(): Op {
+    if (mode.kind === "free") {
+      const op = newOp("resize", layout.disk);
+      op.part = segment.number;
+      op.sizeMiB = value;
+      return op;
+    }
+    const other = mode.other as Segment;
+    const op = newOp("boundary", layout.disk);
+    const total = mib(segment) + mib(other);
+    // * boundary mide el tamaño de la partición de la izquierda.
+    if (mode.kind === "right") {
+      op.part = segment.number;
+      op.other = other.number;
+      op.sizeMiB = value;
+    } else {
+      op.part = other.number;
+      op.other = segment.number;
+      op.sizeMiB = total - value;
+    }
+    return op;
+  }
+
+  /** Redibuja la barra de vista previa y el texto con el tamaño elegido. */
+  function draw(next: number): void {
+    value = next;
+    const delta = value - mib(segment);
+    let pieces: Piece[];
+    if (mode.kind === "free") {
+      const ceiling = mib(segment) + freeAfter(layout, segment);
+      pieces = [
         { label: nameOf(segment), mib: value, tone: toneOf(segment) },
         { label: t("pm.free"), mib: Math.max(ceiling - value, 0), tone: "free" },
-      ]),
-    );
-    const delta = value - current;
-    info.textContent =
-      delta === 0
-        ? t("pm.noChange")
-        : delta > 0
+      ];
+    } else {
+      const other = mode.other as Segment;
+      const total = mib(segment) + mib(other);
+      const mine = { label: nameOf(segment), mib: value, tone: toneOf(segment) };
+      const theirs = { label: nameOf(other), mib: total - value, tone: toneOf(other) };
+      pieces = mode.kind === "right" ? [mine, theirs] : [theirs, mine];
+    }
+    preview.replaceChildren(previewBar(pieces));
+    if (delta === 0) {
+      info.textContent = t("pm.noChange");
+    } else if (mode.kind === "free") {
+      info.textContent =
+        delta > 0
           ? t("pm.grows", { size: fmt.bytes(mibBytes(delta)) })
           : t("pm.shrinks", { size: fmt.bytes(mibBytes(-delta)) });
+    } else {
+      const other = mode.other as Segment;
+      const moved =
+        mode.kind === "right"
+          ? delta > 0
+            ? mib(other) - delta
+            : mib(other)
+          : mib(segment) + delta;
+      info.textContent = t("pm.shareInfo", {
+        to: delta > 0 ? nameOf(segment) : nameOf(other),
+        from: delta > 0 ? nameOf(other) : nameOf(segment),
+        size: fmt.bytes(mibBytes(Math.abs(delta))),
+        move: copyTime(mibBytes(Math.max(moved, 0))),
+      });
+    }
   }
-  const size = sizeInput(floor, Math.max(ceiling, floor), current, draw);
-  const next = button(
-    t("pm.continue"),
-    function go(): void {
-      review(dialog, body, op, done);
-    },
-    { variant: "primary" },
-  );
-  body.replaceChildren(
-    el("p", { class: "muted" }, [
-      t("pm.resizeText", { min: fmt.bytes(mibBytes(floor)), max: fmt.bytes(mibBytes(ceiling)) }),
-    ]),
-    preview,
-    size,
-    info,
-    el("div", { class: "modal-actions" }, [next]),
-  );
-  draw(current);
-}
 
-/** Mover el límite entre dos particiones vecinas. */
-export async function openBoundary(
-  layout: Layout,
-  left: Segment,
-  right: Segment,
-  done: Done,
-): Promise<void> {
-  const body = el("div", { class: "pm-dialog" }, [
-    el("p", { class: "muted" }, [t("pm.measuring")]),
-  ]);
-  const dialog = openModal(
-    t("pm.boundaryTitle", { a: nameOf(left), b: nameOf(right) }),
-    [body],
-    "modal-wide",
-  );
-  let minLeft: number;
-  let minRight: number;
-  try {
-    [minLeft, minRight] = await Promise.all([
-      minimumMiB(layout.disk, left.number),
-      minimumMiB(layout.disk, right.number),
-    ]);
-  } catch (error) {
-    measureError(body, error);
-    return;
+  /** Dibuja el deslizador con los límites del modo actual. */
+  function drawSlider(): void {
+    const [low, high] = limits();
+    value = Math.min(Math.max(value, low), high);
+    slider.replaceChildren(sizeInput(low, high, value, draw));
+    draw(value);
   }
-  const total = mib(left) + mib(right);
-  const op = newOp("boundary", layout.disk);
-  op.part = left.number;
-  op.other = right.number;
-  const preview = el("div", {});
-  const info = el("p", { class: "muted" });
-  function draw(value: number): void {
-    op.sizeMiB = value;
-    preview.replaceChildren(
-      previewBar([
-        { label: nameOf(left), mib: value, tone: toneOf(left) },
-        { label: nameOf(right), mib: total - value, tone: toneOf(right) },
-      ]),
+
+  /** Cambia de modo (midiendo antes el mínimo de la vecina si hace falta). */
+  async function chooseMode(next: SpaceMode): Promise<void> {
+    if (next.other && !floors.has(next.other.number)) {
+      try {
+        floors.set(next.other.number, await minimumMiB(layout.disk, next.other.number));
+      } catch (error) {
+        measureError(body, error);
+        return;
+      }
+    }
+    mode = next;
+    value = mib(segment);
+    drawChoices();
+    drawSlider();
+  }
+
+  /** Dibuja las opciones de qué hacer con el espacio (solo si hay más de una). */
+  function drawChoices(): void {
+    choices.replaceChildren(
+      ...modes.map(function choice(candidate) {
+        const label =
+          candidate.kind === "free"
+            ? t("pm.spaceFree")
+            : t("pm.spaceShared", { name: nameOf(candidate.other as Segment) });
+        const node = el(
+          "button",
+          {
+            class: "pm-mode",
+            type: "button",
+            role: "radio",
+            "aria-checked": String(candidate === mode),
+          },
+          [label],
+        );
+        node.addEventListener("click", function pick(): void {
+          void chooseMode(candidate);
+        });
+        return node;
+      }),
     );
-    const delta = value - mib(left);
-    const moved = delta > 0 ? mibBytes(total - value) : mibBytes(mib(right));
-    info.textContent =
-      delta === 0
-        ? t("pm.noChange")
-        : t("pm.boundaryInfo", {
-            to: delta > 0 ? nameOf(left) : nameOf(right),
-            from: delta > 0 ? nameOf(right) : nameOf(left),
-            size: fmt.bytes(mibBytes(Math.abs(delta))),
-            move: copyTime(moved),
-          });
   }
-  const size = sizeInput(minLeft, Math.max(total - minRight, minLeft), mib(left), draw);
+
   const next = button(
     t("pm.continue"),
     function go(): void {
-      review(dialog, body, op, done);
+      review(dialog, body, buildOp(), done);
     },
     { variant: "primary" },
   );
   body.replaceChildren(
-    el("p", { class: "muted" }, [t("pm.boundaryText", { a: nameOf(left), b: nameOf(right) })]),
+    el("p", { class: "muted" }, [t("pm.resizeIntro")]),
+    ...(modes.length > 1
+      ? [el("strong", { class: "pm-modes-title" }, [t("pm.spaceTitle")]), choices]
+      : []),
     preview,
-    size,
+    slider,
     info,
     el("div", { class: "modal-actions" }, [next]),
   );
-  draw(mib(left));
+  drawChoices();
+  drawSlider();
 }
 
 /** Fusionar dos particiones vecinas en una. */

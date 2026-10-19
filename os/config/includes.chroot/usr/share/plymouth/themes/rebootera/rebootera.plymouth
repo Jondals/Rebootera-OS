@@ -1,6 +1,6 @@
 # * Tema de arranque de Rebootera OS (módulo script de Plymouth). Los
 # * gráficos (logo.png, glow.png, wordmark.png, bar-*.png) los genera
-# * scripts/build.sh a partir de branding/logo.svg.
+# * scripts/build/build.sh a partir de branding/logo.svg.
 [Plymouth Theme]
 Name=Rebootera
 Description=Rebootera OS boot splash

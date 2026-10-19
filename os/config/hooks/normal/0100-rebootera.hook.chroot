@@ -49,7 +49,7 @@ systemctl enable rebootera-agent.service rebootera-vault.service rebootera-core.
 systemctl set-default graphical.target
 
 # * Imagen de pruebas: consola root sin contraseña en el puerto serie, solo si
-# * scripts/build.sh dejó la marca de depuración.
+# * scripts/build/build.sh dejó la marca de depuración.
 if [ -e /etc/rebootera/debug ]; then
 	mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d
 	cat >/etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf <<'EOF'

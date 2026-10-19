@@ -1,19 +1,17 @@
 // * Página "Crear USB" de Rebootera Desktop: la única forma de escribir un USB.
-// * Un pendrive nuevo se borra y se convierte en un USB de Rebootera (Windows);
-// * a un USB que ya tiene cosas (por ejemplo uno hecho con Rufus) se le añade
-// * Rebootera sin borrar nada; un USB de Rebootera que ya tienes se actualiza. En los dos
-// * casos puedes meter ya, en el mismo paso, imágenes (por ejemplo tu ISO de
-// * Windows 11 LTSC) y carpetas de drivers: salen dentro del USB sin mover nada a mano.
-// ! Borrar un disco exige elegirlo entre los USB que no son de sistema y escribir
-// ! el texto exacto de confirmación. Actualizar un USB de Rebootera no borra nada.
+// * Cada pendrive sale una sola vez. Al elegirlo se ofrece lo que se puede hacer con él: si ya es un USB de
+// * Rebootera, actualizarlo (sin borrar nada); si tiene cosas (por ejemplo, hecho con Rufus), añadirle Rebootera
+// * sin borrarlas; y siempre, borrarlo para empezar limpio. Después se elige de dónde sale Rebootera: la última
+// * versión (se descarga y se comprueba) o una ISO propia de Rebootera.
+// ! Borrar o cambiar un disco exige elegirlo entre los USB que no son de sistema y escribir el texto exacto de
+// ! confirmación. Actualizar un USB de Rebootera no borra nada.
 
 import { getJSON, postJSON } from "../api.js";
-import { button, emptyState, errorBox, more, pageHeader, panel, progress } from "../components.js";
+import { button, emptyState, errorBox, pageHeader, panel, progress } from "../components.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
-import { guessCategory } from "../importer.js";
 import { appMode } from "../mode.js";
 import { navigate, type Page } from "../router.js";
 import { refreshVault } from "../state.js";
@@ -49,17 +47,15 @@ interface Drive {
   version: string;
 }
 
-/** Imagen que se copia al USB. */
-interface ImageChoice {
-  path: string;
-  category: string;
+/** Un USB tal como se enseña: el disco físico y, si ya es de Rebootera, su unidad. */
+interface Device {
+  key: string;
+  name: string;
+  sizeBytes: number;
+  usedBytes: number;
+  disk: USBDisk | null;
+  drive: Drive | null;
 }
-
-/** A partir de este tamaño, un disco USB parece un disco externo y no un pendrive (256 GB). */
-const LARGE_DISK = 256e9;
-
-/** Categorías de isos/ donde se pueden dejar imágenes. */
-const CATEGORIES = ["windows", "linux", "tools"];
 
 /** Estado de la creación o actualización de /api/desktop/create. */
 interface CreateStatus {
@@ -72,57 +68,65 @@ interface CreateStatus {
   drive?: string;
 }
 
-/** Qué se va a hacer: borrar un disco, añadirle Rebootera sin borrar, o actualizar un USB de Rebootera. */
-type Target =
-  | { kind: "erase"; disk: number }
-  | { kind: "adopt"; disk: number }
-  | { kind: "keep"; root: string }
-  | null;
+/** Lo que se hace con el USB elegido. */
+type Action = "update" | "adopt" | "erase";
 
-/** De dónde sale Rebootera OS. */
-type Source = "download" | "file" | "keep";
+/** De dónde sale Rebootera OS: la última versión publicada o una ISO propia. */
+type Source = "download" | "file";
+
+/** A partir de este tamaño, un disco USB parece un disco externo y no un pendrive (256 GB). */
+const LARGE_DISK = 256e9;
 
 let body: HTMLElement | null = null;
-let disks: USBDisk[] = [];
-let drives: Drive[] = [];
-let target: Target = null;
+let devices: Device[] = [];
+let selectedKey = "";
+let action: Action = "update";
 let source: Source = "download";
 let iso = "";
-let images: ImageChoice[] = [];
-let driverDirs: string[] = [];
 let typed = "";
 let status: CreateStatus | null = null;
 let acknowledged = false;
 let selectedAfter = false;
 let timer = 0;
 
+/** El USB elegido, si hay alguno. */
+function selected(): Device | null {
+  return (
+    devices.find(function isSelected(device) {
+      return device.key === selectedKey;
+    }) ?? null
+  );
+}
+
+/** Acciones posibles con un USB: actualizar si ya es de Rebootera, añadir si tiene cosas, y borrar siempre. */
+function actionsFor(device: Device): Action[] {
+  const list: Action[] = [];
+  if (device.drive !== null) {
+    list.push("update");
+  } else if (device.disk?.adoptable) {
+    list.push("adopt");
+  }
+  if (device.disk !== null) {
+    list.push("erase");
+  }
+  return list;
+}
+
 /** Texto que hay que escribir para confirmar el borrado o el cambio del disco. */
-function confirmText(): string {
-  if (target?.kind === "erase") {
-    return "ERASE DISK " + target.disk;
+function confirmText(device: Device): string {
+  if (device.disk === null) {
+    return "";
   }
-  return target?.kind === "adopt" ? "ADD TO DISK " + target.disk : "";
-}
-
-/** Indica si ya está claro de dónde sale Rebootera OS. */
-function sourceReady(): boolean {
-  return source !== "file" || iso !== "";
-}
-
-/** Indica si hay algo que hacer (al actualizar un USB hace falta cambiar algo). */
-function hasWork(): boolean {
-  if (target?.kind === "keep") {
-    return source !== "keep" || images.length > 0 || driverDirs.length > 0;
-  }
-  return true;
+  return (action === "erase" ? "ERASE DISK " : "ADD TO DISK ") + device.disk.number;
 }
 
 /** Indica si el botón final puede pulsarse. */
 function canGo(): boolean {
-  if (target === null || !sourceReady() || !hasWork()) {
+  const device = selected();
+  if (device === null || (source === "file" && iso === "")) {
     return false;
   }
-  return target.kind === "keep" || typed === confirmText();
+  return action === "update" || typed === confirmText(device);
 }
 
 /** Dibuja la página. */
@@ -135,26 +139,70 @@ function render(root: HTMLElement): void {
     ]),
   );
   acknowledged = false;
-  loadTargets();
+  void loadTargets();
   window.clearInterval(timer);
   timer = window.setInterval(pollStatus, 1000);
+}
+
+/** Junta cada disco USB con su unidad de Rebootera (si la tiene) para que salga una sola vez. */
+function mergeDevices(disks: USBDisk[], drives: Drive[]): Device[] {
+  const used = new Set<string>();
+  const list: Device[] = disks.map(function fromDisk(disk) {
+    const drive =
+      drives.find(function sameDisk(item) {
+        return disk.volumes.some(function sameLetter(volume) {
+          return volume.letter.toUpperCase() === item.root.charAt(0).toUpperCase();
+        });
+      }) ?? null;
+    if (drive !== null) {
+      used.add(drive.root);
+    }
+    return {
+      key: "disk:" + disk.number,
+      name: disk.friendlyName,
+      sizeBytes: disk.sizeBytes,
+      usedBytes: disk.usedBytes,
+      disk,
+      drive,
+    };
+  });
+  for (const drive of drives) {
+    if (!used.has(drive.root)) {
+      list.push({
+        key: "drive:" + drive.root,
+        name: (drive.label || "Rebootera") + " (" + drive.root + ")",
+        sizeBytes: drive.sizeBytes,
+        usedBytes: Math.max(0, drive.sizeBytes - drive.freeBytes),
+        disk: null,
+        drive,
+      });
+    }
+  }
+  return list;
 }
 
 /** Lee los discos USB (solo Windows) y los USB de Rebootera ya creados. */
 async function loadTargets(): Promise<void> {
   try {
-    drives = (await getJSON<Drive[]>("/api/desktop/drives")).filter(function isRebootera(drive) {
-      return drive.rebootera;
-    });
-    disks = appMode.platform === "windows" ? await getJSON<USBDisk[]>("/api/desktop/disks") : [];
+    const drives = (await getJSON<Drive[]>("/api/desktop/drives")).filter(
+      function isRebootera(drive) {
+        return drive.rebootera;
+      },
+    );
+    const disks =
+      appMode.platform === "windows" ? await getJSON<USBDisk[]>("/api/desktop/disks") : [];
+    devices = mergeDevices(disks, drives);
   } catch (error) {
     body?.replaceChildren(errorBox(error));
     return;
   }
-  // * Un único USB de Rebootera conectado se propone solo: lo normal es actualizarlo.
-  if (target === null && drives.length === 1 && disks.length === 0) {
-    target = { kind: "keep", root: drives[0].root };
-    source = "keep";
+  // * Un único USB conectado se propone solo, con la primera acción posible.
+  if (selected() === null) {
+    selectedKey = "";
+    if (devices.length === 1) {
+      choose(devices[0].key);
+      return;
+    }
   }
   draw();
 }
@@ -188,7 +236,7 @@ async function useCreatedDrive(root: string): Promise<void> {
     appMode.usb = root;
     await refreshVault();
   } catch {
-    // * No es grave: se puede elegir después en el Resumen.
+    // * No es grave: se puede elegir después en Inicio.
   }
 }
 
@@ -207,98 +255,30 @@ async function pickIso(): Promise<void> {
   }
 }
 
-/** Añade imágenes del equipo (varias a la vez) con el diálogo nativo. */
-async function pickImages(): Promise<void> {
-  try {
-    const picked = await postJSON<{ paths: string[] }>("/api/desktop/pick-files", {
-      title: t("desktop.addImages"),
-    });
-    for (const path of picked.paths) {
-      const known = images.some(function sameImage(image) {
-        return image.path === path;
-      });
-      if (!known) {
-        images.push({ path, category: guessCategory(baseName(path)) });
-      }
-    }
-    draw();
-  } catch (error) {
-    body?.prepend(errorBox(error));
-  }
-}
-
-/** Añade una carpeta de drivers con el diálogo nativo. */
-async function pickDrivers(): Promise<void> {
-  try {
-    const picked = await postJSON<{ path: string }>("/api/desktop/pick-folder", {
-      title: t("desktop.addDrivers"),
-    });
-    if (picked.path && !driverDirs.includes(picked.path)) {
-      driverDirs.push(picked.path);
-      draw();
-    }
-  } catch (error) {
-    body?.prepend(errorBox(error));
-  }
-}
-
-/** Último componente de una ruta de Windows o Linux. */
-function baseName(path: string): string {
-  return path.split(/[\\/]/).pop() ?? path;
-}
-
-/** Quita la imagen de la fila pulsada. */
-function removeImage(event: MouseEvent): void {
-  const path = (event.currentTarget as HTMLElement).dataset.path;
-  images = images.filter(function other(image) {
-    return image.path !== path;
-  });
-  draw();
-}
-
-/** Quita la carpeta de drivers de la fila pulsada. */
-function removeDrivers(event: MouseEvent): void {
-  const path = (event.currentTarget as HTMLElement).dataset.path;
-  driverDirs = driverDirs.filter(function other(dir) {
-    return dir !== path;
-  });
-  draw();
-}
-
-/** Cambia la categoría de una imagen. */
-function changeCategory(event: Event): void {
-  const select = event.currentTarget as HTMLSelectElement;
-  const image = images.find(function same(item) {
-    return item.path === select.dataset.path;
-  });
-  if (image) {
-    image.category = select.value;
-  }
-}
-
-/** Elige el origen de Rebootera OS. */
-function chooseSource(event: Event): void {
-  source = (event.currentTarget as HTMLInputElement).value as Source;
+/** Elige un USB y su primera acción posible. */
+function choose(key: string): void {
+  selectedKey = key;
+  const device = selected();
+  action = device ? actionsFor(device)[0] : "update";
   typed = "";
   draw();
 }
 
-/** Elige el USB: "erase:3" borra el disco 3; "keep:E:\" actualiza esa unidad. */
-function chooseTarget(event: Event): void {
-  const value = (event.currentTarget as HTMLInputElement).value;
-  const [kind, rest] = [value.slice(0, value.indexOf(":")), value.slice(value.indexOf(":") + 1)];
-  const next: Exclude<Target, null> =
-    kind === "erase" || kind === "adopt"
-      ? { kind, disk: Number(rest) }
-      : { kind: "keep", root: rest };
-  target = next;
-  if (next.kind !== "keep" && source === "keep") {
-    source = "download";
-  }
-  if (next.kind === "keep" && source === "download" && iso === "") {
-    source = "keep";
-  }
+/** Atiende el clic en la tarjeta de un USB. */
+function onDevice(event: MouseEvent): void {
+  choose((event.currentTarget as HTMLElement).dataset.key ?? "");
+}
+
+/** Atiende el clic en una acción. */
+function onAction(event: MouseEvent): void {
+  action = (event.currentTarget as HTMLElement).dataset.value as Action;
   typed = "";
+  draw();
+}
+
+/** Atiende el clic en el origen de Rebootera. */
+function onSource(event: MouseEvent): void {
+  source = (event.currentTarget as HTMLElement).dataset.value as Source;
   draw();
 }
 
@@ -313,31 +293,32 @@ function typeConfirm(event: Event): void {
 
 /** Empieza la creación o la actualización. */
 async function start(): Promise<void> {
-  if (target === null) {
+  const device = selected();
+  if (device === null) {
     return;
   }
   acknowledged = false;
   selectedAfter = false;
-  const extras = { images, driverDirs };
+  const extras = { images: [], driverDirs: [] };
   try {
-    if (target.kind === "erase" || target.kind === "adopt") {
-      // * ISO vacía: Core descarga y verifica la última versión publicada.
-      await postJSON("/api/desktop/create", {
-        disk: target.disk,
-        iso: source === "file" ? iso : "",
-        mode: target.kind === "adopt" ? "keep" : "erase",
-        confirm: typed,
-        ...extras,
-      });
-    } else {
+    if (action === "update" && device.drive !== null) {
       await postJSON("/api/desktop/apply", {
-        root: target.root,
+        root: device.drive.root,
         system: source,
         iso: source === "file" ? iso : "",
         ...extras,
       });
+    } else if (device.disk !== null) {
+      // * ISO vacía: Core descarga y verifica la última versión publicada.
+      await postJSON("/api/desktop/create", {
+        disk: device.disk.number,
+        iso: source === "file" ? iso : "",
+        mode: action === "adopt" ? "keep" : "erase",
+        confirm: typed,
+        ...extras,
+      });
     }
-    pollStatus();
+    void pollStatus();
   } catch (error) {
     body?.prepend(errorBox(error));
   }
@@ -346,47 +327,16 @@ async function start(): Promise<void> {
 /** Vuelve al formulario con todo vacío tras terminar. */
 function startOver(): void {
   acknowledged = true;
-  images = [];
-  driverDirs = [];
   typed = "";
-  target = null;
+  selectedKey = "";
   source = "download";
   iso = "";
-  loadTargets();
+  void loadTargets();
 }
 
-/** Abre el Resumen. */
-function openOverview(): void {
+/** Abre Inicio. */
+function openHome(): void {
   navigate("overview");
-}
-
-/** Tarjeta seleccionable con un botón de opción. */
-function choiceCard(options: {
-  name: string;
-  value: string;
-  selected: boolean;
-  iconPaths: string;
-  title: string;
-  hint: string;
-  lines?: (Node | null)[];
-  onChange: (event: Event) => void;
-}): HTMLElement {
-  const input = el("input", {
-    type: "radio",
-    name: options.name,
-    value: options.value,
-    checked: options.selected,
-  });
-  input.addEventListener("change", options.onChange);
-  return el("label", { class: "target-card" + (options.selected ? " target-selected" : "") }, [
-    input,
-    el("span", { class: "disk-icon" }, [icon(options.iconPaths)]),
-    el("div", { class: "disk-title" }, [
-      el("strong", {}, [options.title]),
-      el("span", { class: "mono-small muted" }, [options.hint]),
-      ...(options.lines ?? []),
-    ]),
-  ]);
 }
 
 /** Aviso con icono dentro de una tarjeta. */
@@ -397,232 +347,158 @@ function warning(text: string, soft = false): HTMLElement {
   ]);
 }
 
-/** Tarjeta de un USB de Rebootera que ya existe (se actualiza sin borrarlo). */
-function keepCard(drive: Drive): HTMLElement {
-  const used = Math.max(0, drive.sizeBytes - drive.freeBytes);
-  return choiceCard({
-    name: "target",
-    value: "keep:" + drive.root,
-    selected: target?.kind === "keep" && target.root === drive.root,
-    iconPaths: icons.usb,
-    title: (drive.label || "Rebootera") + " (" + drive.root + ")",
-    hint:
-      fmt.bytes(drive.sizeBytes) +
-      " · " +
-      t("desktop.volumeUsed", { used: fmt.bytes(used), size: fmt.bytes(drive.sizeBytes) }),
-    lines: [
+/** Tarjeta de un USB: nombre, tamaño, lo que ocupa y si ya es de Rebootera. */
+function deviceCard(device: Device): HTMLElement {
+  const isSelected = device.key === selectedKey;
+  const lines: HTMLElement[] = [
+    el("span", { class: "mono-small muted" }, [
+      fmt.bytes(device.sizeBytes) +
+        " · " +
+        t("desktop.volumeUsed", {
+          used: fmt.bytes(device.usedBytes),
+          size: fmt.bytes(device.sizeBytes),
+        }),
+    ]),
+  ];
+  if (device.drive !== null) {
+    lines.push(
       el("span", { class: "mono-small muted" }, [
-        t("desktop.version") + ": " + (drive.version || t("common.unknown")),
+        t("desktop.version") + ": " + (device.drive.version || t("common.unknown")),
+      ]),
+    );
+  }
+  const card = el(
+    "button",
+    {
+      class: "target-card" + (isSelected ? " target-selected" : ""),
+      type: "button",
+      "aria-pressed": String(isSelected),
+      "data-key": device.key,
+    },
+    [
+      el("span", { class: "disk-icon" }, [icon(icons.usb)]),
+      el("div", { class: "disk-title" }, [
+        el("strong", {}, [device.name]),
+        ...lines,
+        device.drive !== null ? warning(t("desktop.isRebootera"), true) : null,
       ]),
     ],
-    onChange: chooseTarget,
-  });
-}
-
-/** Tarjeta de un disco USB que se borraría para crear un USB nuevo. */
-function eraseCard(item: USBDisk): HTMLElement {
-  const lines: (Node | null)[] = item.volumes.map(function volumeLine(volume) {
-    const used = Math.max(0, volume.sizeBytes - volume.freeBytes);
-    return el("span", { class: "mono-small muted" }, [
-      volume.letter +
-        ": " +
-        (volume.label || "—") +
-        " · " +
-        t("desktop.volumeUsed", { used: fmt.bytes(used), size: fmt.bytes(volume.sizeBytes) }),
-    ]);
-  });
-  // ! Avisos visibles antes de borrar: datos dentro, disco grande o USB de Rebootera.
-  if (item.usedBytes > 0) {
-    lines.push(warning(t("desktop.hasData", { used: fmt.bytes(item.usedBytes) })));
-  }
-  if (item.sizeBytes >= LARGE_DISK) {
-    lines.push(warning(t("desktop.largeDisk")));
-  }
-  if (item.rebootera) {
-    lines.push(warning(t("desktop.isRebootera"), true));
-  }
-  return choiceCard({
-    name: "target",
-    value: "erase:" + item.number,
-    selected: target?.kind === "erase" && target.disk === item.number,
-    iconPaths: icons.usb,
-    title: item.friendlyName,
-    hint: "#" + item.number + " · " + fmt.bytes(item.sizeBytes),
-    lines,
-    onChange: chooseTarget,
-  });
-}
-
-/** Tarjeta para añadir Rebootera a un disco que ya tiene cosas, sin borrarlas. */
-function adoptCard(item: USBDisk): HTMLElement {
-  const first = item.volumes[0];
-  return choiceCard({
-    name: "target",
-    value: "adopt:" + item.number,
-    selected: target?.kind === "adopt" && target.disk === item.number,
-    iconPaths: icons.usb,
-    title: t("desktop.adoptTitle", { name: item.friendlyName }),
-    hint: t("desktop.adoptHint", { fs: first.fileSystem, used: fmt.bytes(item.usedBytes) }),
-    lines: [warning(t("desktop.adoptNote"), true)],
-    onChange: chooseTarget,
-  });
+  );
+  card.addEventListener("click", onDevice);
+  return card;
 }
 
 /** Panel 1: qué USB. */
 function usbPanel(): HTMLElement {
   const refresh = button(t("common.refresh"), loadTargets, { iconPaths: icons.refresh });
   refresh.classList.add("btn-small");
-  const parts: (Node | null)[] = [];
-  if (drives.length > 0) {
-    parts.push(
-      el("p", { class: "group-title" }, [t("desktop.groupKeep")]),
-      el("p", { class: "muted small-note" }, [t("desktop.groupKeepHint")]),
-      ...drives.map(keepCard),
-    );
-  }
-  if (appMode.platform === "windows") {
-    const adoptable = disks.filter(function canAdopt(item) {
-      return item.adoptable;
-    });
-    if (adoptable.length > 0) {
-      parts.push(
-        el("p", { class: "group-title" }, [t("desktop.groupAdopt")]),
-        el("p", { class: "muted small-note" }, [t("desktop.groupAdoptHint")]),
-        ...adoptable.map(adoptCard),
-      );
-    }
-    parts.push(
-      el("p", { class: "group-title" }, [t("desktop.groupErase")]),
-      ...(disks.length > 0
-        ? disks.map(eraseCard)
-        : [el("p", { class: "muted" }, [t("desktop.noDisks")])]),
-    );
-  } else if (drives.length === 0) {
-    parts.push(el("p", { class: "muted" }, [t("desktop.onlyWindows")]));
-  }
+  const parts: HTMLElement[] =
+    devices.length > 0
+      ? devices.map(deviceCard)
+      : [
+          el("p", { class: "muted" }, [
+            appMode.platform === "windows" ? t("desktop.noDisks") : t("desktop.onlyWindows"),
+          ]),
+        ];
   return panel(t("desktop.stepUsb"), parts, { iconPaths: icons.usb, action: refresh });
 }
 
-/** Panel 2: de dónde sale Rebootera OS. */
-function systemPanel(): HTMLElement {
-  const cards: HTMLElement[] = [];
-  if (target?.kind === "keep") {
-    cards.push(
-      choiceCard({
-        name: "source",
-        value: "keep",
-        selected: source === "keep",
-        iconPaths: icons.check,
-        title: t("desktop.sourceKeep"),
-        hint: t("desktop.sourceKeepHint"),
-        onChange: chooseSource,
-      }),
-    );
-  }
-  cards.push(
-    choiceCard({
-      name: "source",
-      value: "download",
-      selected: source === "download",
-      iconPaths: icons.download,
-      title: t("desktop.sourceDownload"),
-      hint: t("desktop.sourceDownloadHint"),
-      onChange: chooseSource,
-    }),
-    choiceCard({
-      name: "source",
-      value: "file",
-      selected: source === "file",
-      iconPaths: icons.library,
-      title: t("desktop.sourceFile"),
-      hint: t("desktop.sourceFileHint"),
-      lines: [
-        source === "file"
-          ? button(iso ? iso : t("desktop.chooseIso"), pickIso, { iconPaths: icons.library })
-          : null,
-      ],
-      onChange: chooseSource,
-    }),
-  );
-  const label =
-    source === "keep"
-      ? t("desktop.sourceKeep")
-      : source === "file"
-        ? t("desktop.sourceFile")
-        : t("desktop.sourceDownload");
-  return more(t("desktop.stepSystem") + ": " + label, cards, "create-system");
-}
-
-/** Fila de una imagen elegida, con su categoría y el botón de quitarla. */
-function imageRow(image: ImageChoice): HTMLElement {
-  const select = el("select", {
-    class: "category-select",
-    "aria-label": t("importer.category"),
-    "data-path": image.path,
-  });
-  for (const category of CATEGORIES) {
-    const option = el("option", { value: category }, [t("library.categories." + category)]);
-    option.selected = category === image.category;
-    select.append(option);
-  }
-  select.addEventListener("change", changeCategory);
-  const remove = button("", removeImage, { iconPaths: icons.x });
-  remove.classList.add("btn-small");
-  remove.title = t("desktop.remove");
-  remove.dataset.path = image.path;
-  return el("div", { class: "browse-row browse-image" }, [
-    icon(icons.library),
-    el("div", { class: "device-main" }, [
-      el("strong", {}, [baseName(image.path)]),
-      el("span", { class: "muted mono-small" }, [image.path]),
-    ]),
-    select,
-    remove,
-  ]);
-}
-
-/** Fila de una carpeta de drivers elegida. */
-function driversRow(dir: string): HTMLElement {
-  const remove = button("", removeDrivers, { iconPaths: icons.x });
-  remove.classList.add("btn-small");
-  remove.title = t("desktop.remove");
-  remove.dataset.path = dir;
-  return el("div", { class: "browse-row browse-image" }, [
-    icon(icons.drivers),
-    el("div", { class: "device-main" }, [
-      el("strong", {}, [baseName(dir)]),
-      el("span", { class: "muted mono-small" }, [dir]),
-    ]),
-    remove,
-  ]);
-}
-
-/** Panel 3: imágenes y drivers que salen ya dentro del USB. */
-function extrasPanel(): HTMLElement {
-  const addImages = button(t("desktop.addImages"), pickImages, {
-    variant: "primary",
-    iconPaths: icons.library,
-  });
-  const addDrivers = button(t("desktop.addDrivers"), pickDrivers, { iconPaths: icons.drivers });
-  return more(
-    t("desktop.stepAdd"),
+/** Una opción grande con título y explicación (acción u origen). */
+function optionCard(
+  value: string,
+  chosen: boolean,
+  iconPaths: string,
+  title: string,
+  hint: string,
+  onPick: (event: MouseEvent) => void,
+  extra: Node | null = null,
+): HTMLElement {
+  const card = el(
+    "button",
+    {
+      class: "target-card" + (chosen ? " target-selected" : ""),
+      type: "button",
+      "aria-pressed": String(chosen),
+      "data-value": value,
+    },
     [
-      el("p", { class: "muted small-note" }, [t("desktop.addHint")]),
-      el("div", { class: "image-actions" }, [addImages, addDrivers]),
-      ...images.map(imageRow),
-      ...driverDirs.map(driversRow),
+      el("span", { class: "disk-icon" }, [icon(iconPaths)]),
+      el("div", { class: "disk-title" }, [
+        el("strong", {}, [title]),
+        el("span", { class: "mono-small muted" }, [hint]),
+        extra,
+      ]),
     ],
-    "create-extras",
+  );
+  card.addEventListener("click", onPick);
+  return card;
+}
+
+/** Panel 2: qué hacer con el USB elegido. */
+function actionPanel(device: Device): HTMLElement {
+  const cards = actionsFor(device).map(function actionCard(item) {
+    const erase = item === "erase";
+    const hint =
+      item === "update"
+        ? t("desktop.actUpdateHint")
+        : item === "adopt"
+          ? t("desktop.adoptNote")
+          : t("desktop.actEraseHint");
+    const extra =
+      erase && action === "erase" && device.usedBytes > 0
+        ? warning(t("desktop.hasData", { used: fmt.bytes(device.usedBytes) }))
+        : null;
+    return optionCard(
+      item,
+      action === item,
+      erase ? icons.alert : item === "update" ? icons.refresh : icons.check,
+      t("desktop.act" + item.charAt(0).toUpperCase() + item.slice(1)),
+      hint,
+      onAction,
+      extra,
+    );
+  });
+  return panel(t("desktop.actionTitle"), cards, { iconPaths: icons.sparkle });
+}
+
+/** Panel 3: de dónde sale Rebootera OS. La opción por defecto es la última versión. */
+function systemPanel(device: Device): HTMLElement {
+  const updating = device.drive !== null && action === "update";
+  const fileButton =
+    source === "file"
+      ? button(iso ? iso : t("desktop.chooseIso"), pickIso, { iconPaths: icons.library })
+      : null;
+  return panel(
+    t("desktop.stepSystem"),
+    [
+      optionCard(
+        "download",
+        source === "download",
+        icons.download,
+        updating ? t("desktop.srcUpdate") : t("desktop.srcDownload"),
+        t("desktop.sourceDownloadHint"),
+        onSource,
+      ),
+      optionCard(
+        "file",
+        source === "file",
+        icons.library,
+        t("desktop.srcMine"),
+        t("desktop.sourceFileHint"),
+        onSource,
+        fileButton,
+      ),
+    ],
+    { iconPaths: icons.download },
   );
 }
 
 /** Panel 4: confirmación y botón final. */
-function goPanel(): HTMLElement {
-  const erasing = target?.kind === "erase";
-  const adopting = target?.kind === "adopt";
+function goPanel(device: Device): HTMLElement {
+  const erasing = action === "erase";
   const goLabel = erasing
     ? t("desktop.createButton")
-    : adopting
+    : action === "adopt"
       ? t("desktop.adoptButton")
       : t("desktop.updateButton");
   const go = button(goLabel, start, {
@@ -632,39 +508,35 @@ function goPanel(): HTMLElement {
   go.classList.add("create-go");
   go.disabled = !canGo();
   const parts: (Node | null)[] = [];
-  if (erasing || adopting) {
+  if (action === "update") {
+    parts.push(
+      el("div", { class: "notice" }, [icon(icons.shield), el("span", {}, [t("desktop.keepNote")])]),
+    );
+  } else {
     const confirmInput = el("input", {
       class: "text-input",
       type: "text",
-      placeholder: confirmText(),
+      placeholder: confirmText(device),
     });
     confirmInput.value = typed;
     confirmInput.addEventListener("input", typeConfirm);
     parts.push(
-      adopting
-        ? el("div", { class: "notice" }, [
-            icon(icons.shield),
-            el("span", {}, [t("desktop.adoptWarn")]),
-          ])
-        : el("div", { class: "error-box" }, [
+      erasing
+        ? el("div", { class: "error-box" }, [
             icon(icons.alert),
             el("span", {}, [t("desktop.createWarn")]),
+          ])
+        : el("div", { class: "notice" }, [
+            icon(icons.shield),
+            el("span", {}, [t("desktop.adoptWarn")]),
           ]),
+      device.sizeBytes >= LARGE_DISK ? warning(t("desktop.largeDisk")) : null,
       el("label", { class: "confirm-field" }, [
-        el("span", {}, [t("desktop.confirmHint", { text: confirmText() })]),
+        el("span", {}, [t("desktop.confirmHint", { text: confirmText(device) })]),
         confirmInput,
       ]),
       el("p", { class: "muted small-note" }, [t("desktop.needsAdmin")]),
     );
-  } else if (target?.kind === "keep") {
-    parts.push(
-      el("div", { class: "notice" }, [icon(icons.shield), el("span", {}, [t("desktop.keepNote")])]),
-    );
-    if (!hasWork()) {
-      parts.push(el("p", { class: "muted small-note" }, [t("desktop.nothingToDo")]));
-    }
-  } else {
-    parts.push(el("p", { class: "muted" }, [t("desktop.chooseUsbFirst")]));
   }
   parts.push(el("div", { class: "deploy-actions" }, [go]));
   return panel(t("desktop.stepGo"), parts, { iconPaths: icons.shield });
@@ -678,10 +550,7 @@ function drawStatus(current: CreateStatus): HTMLElement {
       [
         el("p", {}, [t("desktop.createdText", { drive: current.drive ?? "" })]),
         el("div", { class: "image-actions" }, [
-          button(t("nav.overview"), openOverview, {
-            variant: "primary",
-            iconPaths: icons.overview,
-          }),
+          button(t("nav.overview"), openHome, { variant: "primary", iconPaths: icons.overview }),
           button(t("desktop.startOver"), startOver, { iconPaths: icons.refresh }),
         ]),
       ],
@@ -712,18 +581,24 @@ function draw(): void {
     body.replaceChildren(drawStatus(status));
     return;
   }
-  if (disks.length === 0 && drives.length === 0 && appMode.platform !== "windows") {
+  if (devices.length === 0 && appMode.platform !== "windows") {
     body.replaceChildren(
       emptyState(icons.info, t("desktop.createTitle"), t("desktop.onlyWindows")),
     );
     return;
   }
-  body.replaceChildren(
-    status?.error && !status.running ? errorBox(new Error(status.error)) : el("span"),
+  const device = selected();
+  const parts: (HTMLElement | null)[] = [
+    status?.error && !status.running ? errorBox(new Error(status.error)) : null,
     usbPanel(),
-    systemPanel(),
-    extrasPanel(),
-    goPanel(),
+  ];
+  if (device !== null) {
+    parts.push(actionPanel(device), systemPanel(device), goPanel(device));
+  }
+  body.replaceChildren(
+    ...parts.filter(function present(node): node is HTMLElement {
+      return node !== null;
+    }),
   );
 }
 

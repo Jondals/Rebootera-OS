@@ -239,7 +239,7 @@ func readPartition(diskBase, name string, mounts []mount) Partition {
 		Sectors:     readUint(filepath.Join(base, "size")),
 		TypeCode:    strings.ToLower(props["ID_PART_ENTRY_TYPE"]),
 		FSType:      props["ID_FS_TYPE"],
-		Label:       firstNonEmpty(props["ID_FS_LABEL"], props["ID_PART_ENTRY_NAME"]),
+		Label:       friendlyLabel(firstNonEmpty(props["ID_FS_LABEL"], props["ID_PART_ENTRY_NAME"])),
 	}
 	part.Role = partitionRole(props)
 	// * Con Ventoy, el medio live (la ISO mapeada) y el Vault están en la misma
@@ -325,10 +325,50 @@ func udevProps(majMin string) map[string]string {
 		}
 		key, value, found := strings.Cut(line, "=")
 		if found && !strings.Contains(key, "SERIAL") && !strings.Contains(key, "WWN") {
-			props[key] = value
+			props[key] = unescapeUdev(value)
 		}
 	}
 	return props
+}
+
+// * unescapeUdev deshace el escapado de udev: los espacios y otros caracteres llegan como \x20, \x2f...
+// * ("basic\x20data\x20partition" es "basic data partition"). Los códigos mal formados se dejan tal cual.
+func unescapeUdev(value string) string {
+	if !strings.Contains(value, `\x`) {
+		return value
+	}
+	var out strings.Builder
+	for i := 0; i < len(value); i++ {
+		if value[i] == '\\' && i+3 < len(value) && value[i+1] == 'x' {
+			if code, err := strconv.ParseUint(value[i+2:i+4], 16, 8); err == nil {
+				out.WriteByte(byte(code))
+				i += 3
+				continue
+			}
+		}
+		out.WriteByte(value[i])
+	}
+	return out.String()
+}
+
+// genericNames son los nombres que Windows y Linux ponen a las particiones GPT sin nombre propio: no dicen
+// nada al usuario, así que se descartan y la interfaz enseña el sistema de archivos en su lugar.
+var genericNames = map[string]bool{
+	"basic data partition":         true,
+	"linux filesystem":             true,
+	"linux":                        true,
+	"microsoft basic data":         true,
+	"primary":                      true,
+	"efi system partition":         true,
+	"microsoft reserved partition": true,
+}
+
+// * friendlyLabel devuelve el nombre de una partición, o "" si es uno de los genéricos.
+func friendlyLabel(label string) string {
+	if genericNames[strings.ToLower(strings.TrimSpace(label))] {
+		return ""
+	}
+	return label
 }
 
 // * readMounts devuelve los montajes del sistema con su dispositivo.

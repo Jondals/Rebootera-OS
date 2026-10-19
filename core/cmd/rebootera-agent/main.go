@@ -134,6 +134,12 @@ func (a *agent) handle(req agentproto.Request) ([]string, error) {
 		return nil, mountMedia(req.Device, a.clientUser)
 	case agentproto.OpMediaUnmount:
 		return nil, unmountMedia(req.Device)
+	case agentproto.OpInputGet:
+		return inputGet()
+	case agentproto.OpInputSet:
+		return nil, inputSet(req.Input)
+	case agentproto.OpDriversScan:
+		return scanDriverPartitions(a.clientUser)
 	case agentproto.OpBootOnce:
 		return bootOnce()
 	case agentproto.OpBootRestore:
@@ -166,7 +172,7 @@ func (a *agent) handle(req agentproto.Request) ([]string, error) {
 // * isStateChanging indica si una operación cambia el sistema y debe quedar
 // * registrada. Las consultas periódicas no se registran para no llenar el diario.
 func isStateChanging(op string) bool {
-	return op != agentproto.OpPing && op != agentproto.OpKernelLog && op != agentproto.OpWifiStatus && op != agentproto.OpWifiScan && op != agentproto.OpKeyboardGet && op != agentproto.OpPartStatus && op != agentproto.OpPartInfo
+	return op != agentproto.OpPing && op != agentproto.OpKernelLog && op != agentproto.OpWifiStatus && op != agentproto.OpWifiScan && op != agentproto.OpKeyboardGet && op != agentproto.OpInputGet && op != agentproto.OpPartStatus && op != agentproto.OpPartInfo
 }
 
 // * kernelLog devuelve las últimas líneas del registro del kernel de este

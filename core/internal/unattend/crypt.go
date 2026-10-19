@@ -1,3 +1,4 @@
+// * Contraseñas para las respuestas automáticas de los instaladores: SHA-512 crypt, el formato de preseed y kickstart.
 package unattend
 
 import (

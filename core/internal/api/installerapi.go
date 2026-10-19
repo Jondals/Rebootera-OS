@@ -1,3 +1,5 @@
+// * Endpoints de las carpetas de instalador: cualquier instalación hecha con cualquier herramienta (Rufus, Ventoy,
+// * una carpeta extraída). Inspeccionar la carpeta y convertirla en una ISO arrancable dentro de la biblioteca.
 package api
 
 import (

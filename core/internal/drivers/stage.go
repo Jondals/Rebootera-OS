@@ -1,3 +1,5 @@
+// * Copia de los paquetes de drivers que casan a la carpeta que ve el instalador de Windows, sin seguir enlaces
+// * simbólicos ni salir de la carpeta de origen.
 package drivers
 
 import (
@@ -36,7 +38,12 @@ func Stage(root string, packages []*Package, dest string) ([]string, error) {
 		}
 		// * Un INF suelto en la raíz de drivers/ no arrastra el resto de la raíz.
 		c.recursive = pkg.Dir != "."
-		c.source = filepath.Join(root, filepath.FromSlash(pkg.Dir))
+		// * Cada paquete se copia desde la raíz de su origen (el USB o una partición del equipo).
+		base := root
+		if pkg.Root != "" {
+			base = pkg.Root
+		}
+		c.source = filepath.Join(base, filepath.FromSlash(pkg.Dir))
 		if err := filepath.WalkDir(c.source, c.visit); err != nil {
 			return nil, err
 		}

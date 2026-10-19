@@ -8,8 +8,8 @@ systemd-timesyncd
 plymouth
 plymouth-themes
 
-# Interfaz: compositor kiosco y ventana WebKit
-cage
+# Interfaz: compositor (labwc: kiosco, panel táctil configurable) y ventana WebKit
+labwc
 python3
 python3-gi
 gir1.2-gtk-4.0
@@ -54,3 +54,7 @@ intel-microcode
 
 # Idioma
 locales
+
+# Navegador del sistema (Firefox ESR ya configurado: solo navegar, con uBlock Origin y Dark Reader)
+firefox-esr
+firefox-esr-l10n-es-es

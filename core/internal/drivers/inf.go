@@ -26,15 +26,18 @@ type Package struct {
 	// Dir es la carpeta del INF, relativa a la raíz de drivers.
 	Dir string `json:"dir"`
 	// INF es la ruta del archivo, relativa a la raíz de drivers.
-	INF       string  `json:"inf"`
-	Provider  string  `json:"provider"`
-	Class     string  `json:"class"`
-	Version   string  `json:"version"`
-	Date      string  `json:"date"`
-	Amd64     bool    `json:"amd64"`
-	Catalog   string  `json:"catalog"`
-	Signature string  `json:"signature"`
-	Models    []Model `json:"-"`
+	INF       string `json:"inf"`
+	Provider  string `json:"provider"`
+	Class     string `json:"class"`
+	Version   string `json:"version"`
+	Date      string `json:"date"`
+	Amd64     bool   `json:"amd64"`
+	Catalog   string `json:"catalog"`
+	Signature string `json:"signature"`
+	// SourceID es el origen del paquete (ver Source); Root, la carpeta de ese origen que contiene Dir.
+	SourceID string  `json:"sourceId"`
+	Root     string  `json:"-"`
+	Models   []Model `json:"-"`
 	// ids es el índice de Hardware ID (en mayúsculas) del paquete.
 	ids map[string]string
 }

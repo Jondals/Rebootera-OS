@@ -1,0 +1,49 @@
+{
+  "policies": {
+    "DisableAppUpdate": true,
+    "DisableSystemAddonUpdate": true,
+    "DisableTelemetry": true,
+    "DisableFirefoxStudies": true,
+    "DisablePocket": true,
+    "DisableFirefoxAccounts": true,
+    "DisableProfileImport": true,
+    "DisableDeveloperTools": true,
+    "BlockAboutConfig": true,
+    "BlockAboutProfiles": true,
+    "BlockAboutSupport": true,
+    "DontCheckDefaultBrowser": true,
+    "NoDefaultBookmarks": true,
+    "OfferToSaveLogins": false,
+    "PasswordManagerEnabled": false,
+    "DisableFormHistory": true,
+    "OverrideFirstRunPage": "",
+    "OverridePostUpdatePage": "",
+    "NewTabPage": false,
+    "Homepage": { "URL": "about:blank", "StartPage": "homepage" },
+    "SearchEngines": { "Default": "DuckDuckGo" },
+    "UserMessaging": {
+      "WhatsNew": false,
+      "ExtensionRecommendations": false,
+      "FeatureRecommendations": false,
+      "UrlbarInterventions": false,
+      "SkipOnboarding": true,
+      "MoreFromMozilla": false
+    },
+    "ExtensionSettings": {
+      "*": {
+        "installation_mode": "blocked",
+        "blocked_install_message": "Rebootera OS solo lleva uBlock Origin y Dark Reader."
+      },
+      "uBlock0@raymondhill.net": {
+        "installation_mode": "force_installed",
+        "install_url": "file:///usr/share/rebootera/browser/ublock-origin.xpi",
+        "default_area": "navbar"
+      },
+      "addon@darkreader.org": {
+        "installation_mode": "force_installed",
+        "install_url": "file:///usr/share/rebootera/browser/dark-reader.xpi",
+        "default_area": "navbar"
+      }
+    }
+  }
+}

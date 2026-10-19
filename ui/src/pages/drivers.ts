@@ -1,11 +1,18 @@
 // * Página "Asistente de drivers": inventario real de dispositivos PCI y USB
 // * con el driver que usa Linux y sus Hardware ID de Windows. Filtra por
 // * dispositivos necesarios para instalar y por dispositivos sin driver.
-// * También casa esos Hardware ID con los paquetes INF de la carpeta drivers/
-// * del USB de Rebootera (los que el asistente puede llevar al instalador de Windows).
+// * También casa esos Hardware ID con los paquetes INF que Rebootera encuentra solo al arrancar (el USB, las
+// * particiones del equipo con drivers de fábrica, un Windows instalado) y dice de dónde sale cada uno.
 
-import { getJSON, type Device, type DriverMatch, type DriverPlan } from "../api.js";
-import { badge, button, emptyState, more, pageHeader } from "../components.js";
+import {
+  getJSON,
+  postJSON,
+  type Device,
+  type DriverMatch,
+  type DriverPlan,
+  type DriverSource,
+} from "../api.js";
+import { badge, button, emptyState, pageHeader, panel } from "../components.js";
 import { el, icon } from "../dom.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
@@ -45,6 +52,45 @@ async function loadPlan(): Promise<void> {
   drawUsb();
 }
 
+/** Nombre legible de un origen de drivers. */
+function sourceName(source: DriverSource): string {
+  if (source.kind === "usb") {
+    return t("drivers.sourceUsb");
+  }
+  const where = (source.device ?? "") + (source.folder ? " / " + source.folder : "");
+  return t(source.kind === "windows" ? "drivers.sourceWindows" : "drivers.sourcePartition", {
+    where,
+  });
+}
+
+/** Origen de un paquete, por su identificador. */
+function sourceOf(id: string): DriverSource | undefined {
+  return plan?.sources.find(function same(source) {
+    return source.id === id;
+  });
+}
+
+/** Fila de un origen de drivers con cuántos paquetes aportó. */
+function sourceRow(source: DriverSource): HTMLElement {
+  const sourceIcon =
+    source.kind === "usb" ? icons.usb : source.kind === "windows" ? icons.monitor : icons.disk;
+  return el("div", { class: "driver-source" }, [
+    icon(sourceIcon),
+    el("span", {}, [sourceName(source)]),
+    badge(t("drivers.sourcePackages", { n: source.packages }), "muted"),
+  ]);
+}
+
+/** Vuelve a buscar drivers en las particiones del equipo. */
+async function searchAgain(): Promise<void> {
+  try {
+    await postJSON("/api/drivers/scan", {});
+  } catch {
+    // * Si la búsqueda falla, se enseña lo que ya había.
+  }
+  await loadPlan();
+}
+
 /** Fila de un dispositivo con su paquete de drivers. */
 function packageRow(match: DriverMatch): HTMLElement {
   const pack = match.package;
@@ -57,6 +103,11 @@ function packageRow(match: DriverMatch): HTMLElement {
       el("div", { class: "mono-small muted" }, [
         t("drivers.usbMatchedBy", { id: match.hardwareId }),
       ]),
+      pack && sourceOf(pack.sourceId)
+        ? el("div", { class: "mono-small muted" }, [
+            t("drivers.from", { source: sourceName(sourceOf(pack.sourceId) as DriverSource) }),
+          ])
+        : null,
     ]),
     pack
       ? badge(
@@ -83,10 +134,17 @@ function drawUsb(): void {
   const body: (Node | null)[] = [];
   if (plan === null) {
     body.push(el("p", { class: "muted" }, [t("common.loading")]));
-  } else if (!plan.available) {
+  } else if (!plan.available && plan.sources.length === 0) {
     body.push(el("p", { class: "muted" }, [t("drivers.usbNoVault")]));
   } else {
     body.push(
+      el("p", { class: "muted small-note" }, [t("drivers.autoText")]),
+      ...(plan.sources.length > 0
+        ? plan.sources.map(sourceRow)
+        : [el("p", { class: "muted" }, [t("drivers.noSources")])]),
+      el("div", { class: "more-actions" }, [
+        button(t("drivers.searchAgain"), searchAgain, { iconPaths: icons.refresh }),
+      ]),
       el("p", { class: "muted small-note" }, [t("drivers.usbPackages", { n: plan.packages })]),
     );
     if (plan.matches.length > 0) {
@@ -101,7 +159,7 @@ function drawUsb(): void {
       );
     }
   }
-  usbBox.replaceChildren(more(t("drivers.usbTitle"), body));
+  usbBox.replaceChildren(panel(t("drivers.usbTitle"), body, { iconPaths: icons.drivers }));
 }
 
 /** Vuelve a analizar el hardware. */

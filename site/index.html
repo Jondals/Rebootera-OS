@@ -6,28 +6,63 @@
     <title>Rebootera OS</title>
     <meta
       name="description"
-      content="Install, recover and manage operating systems from a single USB drive. Download Rebootera Desktop for Windows or the Rebootera OS image."
+      content="Install, recover and manage operating systems from a single USB drive. Download Rebootera Desktop for Windows, Linux or macOS, or the Rebootera OS image."
     />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <link rel="icon" href="logo.svg" type="image/svg+xml" />
     <style>
+      /* * Mismos tipos y colores que la aplicación: negro cálido con latón (Obsidiana) y, si el sistema pide tema claro, Marfil. */
+      @font-face {
+        font-family: "Inter";
+        src: url("fonts/inter.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Fraunces";
+        src: url("fonts/fraunces.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
       :root {
-        --bg: #070b10;
-        --panel: #0e151c;
-        --panel-2: #121b23;
-        --border: #1b2630;
-        --border-strong: #273541;
-        --text: #e6edf3;
-        --muted: #8b9aa8;
-        --dim: #5b6977;
-        --teal: #2dd4bf;
-        --teal-strong: #14b8a6;
-        --violet: #a78bfa;
-        --ok: #34d399;
-        --warn: #fbbf24;
-        --radius: 16px;
+        --bg: #0b0d11;
+        --panel: #14181f;
+        --panel-2: #1a1f28;
+        --border: rgba(255, 255, 255, 0.09);
+        --border-strong: rgba(255, 255, 255, 0.18);
+        --text: #ece7db;
+        --muted: #a39e8f;
+        --dim: #6f6b60;
+        --accent: #d8ae62;
+        --accent-soft: rgba(216, 174, 98, 0.12);
+        --accent-border: rgba(216, 174, 98, 0.45);
+        --on-accent: #1c1406;
+        --ok: #84cf9b;
+        --warn: #e5b567;
+        --orbit: rgba(216, 174, 98, 0.22);
+        --radius: 12px;
         --font: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
-        --mono: "JetBrains Mono", "Cascadia Mono", ui-monospace, "SFMono-Regular", monospace;
+        --display: "Fraunces", Georgia, "Times New Roman", serif;
+        --mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, monospace;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f6f1e6;
+          --panel: #fbf8f1;
+          --panel-2: #efe8d8;
+          --border: rgba(35, 29, 18, 0.12);
+          --border-strong: rgba(35, 29, 18, 0.24);
+          --text: #231d12;
+          --muted: #685e4b;
+          --dim: #978d77;
+          --accent: #8c6220;
+          --accent-soft: rgba(140, 98, 32, 0.1);
+          --accent-border: rgba(140, 98, 32, 0.45);
+          --on-accent: #fff;
+          --ok: #2f7d4a;
+          --warn: #8a5a10;
+          --orbit: rgba(140, 98, 32, 0.2);
+        }
       }
       * {
         box-sizing: border-box;
@@ -39,18 +74,71 @@
         margin: 0;
         font-family: var(--font);
         color: var(--text);
-        background:
-          radial-gradient(900px 600px at 10% -10%, rgba(45, 212, 191, 0.12), transparent 60%),
-          radial-gradient(800px 600px at 100% 0%, rgba(139, 92, 246, 0.1), transparent 60%), var(--bg);
+        background: var(--bg);
         line-height: 1.55;
+        overflow-x: hidden;
       }
       a {
         color: inherit;
       }
       .wrap {
+        position: relative;
+        z-index: 1;
         width: min(1080px, 100% - 32px);
         margin-inline: auto;
       }
+
+      /* * Fondo: dos órbitas que giran despacio (solo transform) y un halo fijo. */
+      .orbits {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        pointer-events: none;
+        background: radial-gradient(900px 600px at 15% -10%, var(--accent-soft), transparent 65%);
+      }
+      .orbit {
+        position: absolute;
+        border: 1px solid var(--orbit);
+        border-radius: 50%;
+        animation: spin 90s linear infinite;
+      }
+      .orbit::after {
+        content: "";
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.7;
+      }
+      .orbit-a {
+        width: 900px;
+        height: 900px;
+        right: -300px;
+        top: -260px;
+      }
+      .orbit-b {
+        width: 620px;
+        height: 620px;
+        left: -240px;
+        bottom: -200px;
+        animation-duration: 140s;
+        animation-direction: reverse;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .orbit {
+          animation: none;
+        }
+      }
+
       header.top {
         display: flex;
         align-items: center;
@@ -63,17 +151,13 @@
         align-items: center;
         gap: 12px;
         text-decoration: none;
-        font-weight: 700;
-        font-size: 18px;
+        font-family: var(--display);
+        font-size: 20px;
+        font-weight: 500;
       }
       .brand img {
         width: 34px;
         height: 34px;
-        border-radius: 9px;
-        box-shadow: 0 0 18px rgba(45, 212, 191, 0.3);
-      }
-      .brand .accent {
-        color: var(--teal);
       }
       nav.links {
         display: flex;
@@ -83,7 +167,7 @@
       nav.links a,
       .lang {
         padding: 8px 12px;
-        border-radius: 10px;
+        border-radius: 9px;
         text-decoration: none;
         color: var(--muted);
         font-size: 14px;
@@ -98,31 +182,33 @@
         background: var(--panel);
       }
       .lang {
-        font-family: var(--mono);
         font-weight: 600;
         border: 1px solid var(--border);
       }
+
       .hero {
-        padding: 56px 0 40px;
+        padding: 60px 0 30px;
         text-align: center;
       }
       .hero img.mark {
-        width: 96px;
-        height: 96px;
-        border-radius: 24px;
-        box-shadow: 0 0 60px rgba(45, 212, 191, 0.35);
+        width: 104px;
+        height: 104px;
       }
       h1 {
-        margin: 22px 0 14px;
-        font-size: clamp(32px, 6vw, 56px);
-        line-height: 1.08;
-        letter-spacing: -0.02em;
+        margin: 24px auto 14px;
+        max-width: 820px;
+        font-family: var(--display);
+        font-weight: 400;
+        font-size: clamp(34px, 6vw, 62px);
+        line-height: 1.06;
+        letter-spacing: -0.03em;
       }
       h1 .accent {
-        color: var(--teal);
+        color: var(--accent);
+        font-style: italic;
       }
       .lead {
-        max-width: 680px;
+        max-width: 660px;
         margin: 0 auto;
         color: var(--muted);
         font-size: clamp(16px, 2.4vw, 19px);
@@ -131,7 +217,7 @@
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 14px;
+        gap: 12px;
         margin: 34px 0 14px;
       }
       .btn {
@@ -139,9 +225,9 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 2px;
-        min-width: 260px;
-        padding: 14px 22px;
-        border-radius: 14px;
+        min-width: 250px;
+        padding: 13px 20px;
+        border-radius: 10px;
         text-decoration: none;
         border: 1px solid var(--border-strong);
         background: var(--panel);
@@ -151,34 +237,34 @@
       }
       .btn:hover {
         transform: translateY(-2px);
-        border-color: var(--teal);
+        border-color: var(--accent-border);
       }
       .btn strong {
-        font-size: 17px;
+        font-size: 16px;
       }
       .btn span {
-        font-size: 13px;
+        font-size: 12.5px;
         color: var(--muted);
         font-family: var(--mono);
       }
       .btn.primary {
-        background: linear-gradient(135deg, var(--teal), var(--teal-strong));
+        background: var(--accent);
         border-color: transparent;
-        color: #04211d;
-        box-shadow: 0 8px 30px rgba(45, 212, 191, 0.25);
+        color: var(--on-accent);
       }
       .btn.primary span {
-        color: rgba(4, 33, 29, 0.75);
+        color: inherit;
+        opacity: 0.75;
       }
       .build {
         display: inline-flex;
         flex-wrap: wrap;
         justify-content: center;
         gap: 6px 16px;
-        padding: 8px 16px;
-        border-radius: 999px;
+        padding: 7px 16px;
+        border-radius: 9px;
         border: 1px solid var(--border);
-        background: rgba(14, 21, 28, 0.7);
+        background: var(--panel);
         font-family: var(--mono);
         font-size: 12.5px;
         color: var(--muted);
@@ -195,22 +281,27 @@
         color: var(--dim);
         word-break: break-all;
       }
+
       section {
-        padding: 44px 0;
+        padding: 42px 0;
       }
       h2 {
         margin: 0 0 8px;
-        font-size: clamp(24px, 4vw, 32px);
-        letter-spacing: -0.01em;
+        font-family: var(--display);
+        font-weight: 400;
+        font-size: clamp(26px, 4vw, 36px);
+        letter-spacing: -0.02em;
       }
       .sub {
         margin: 0 0 26px;
         color: var(--muted);
       }
-      .steps {
+      .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+      }
+      .steps {
         counter-reset: step;
       }
       .card {
@@ -221,7 +312,9 @@
       }
       .card h3 {
         margin: 0 0 6px;
-        font-size: 17px;
+        font-family: var(--display);
+        font-weight: 500;
+        font-size: 19px;
       }
       .card p {
         margin: 0;
@@ -236,22 +329,33 @@
         width: 30px;
         height: 30px;
         margin-bottom: 14px;
-        border-radius: 50%;
-        background: rgba(45, 212, 191, 0.12);
-        border: 1px solid rgba(45, 212, 191, 0.4);
-        color: var(--teal);
-        font-family: var(--mono);
+        border-radius: 8px;
+        background: var(--accent-soft);
+        border: 1px solid var(--accent-border);
+        color: var(--accent);
         font-weight: 700;
       }
-      .features {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 16px;
+      .downloads .card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
       }
-      .shots {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 16px;
+      .downloads .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        padding: 7px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-strong);
+        text-decoration: none;
+        font-size: 13.5px;
+        font-weight: 600;
+      }
+      .chip:hover {
+        border-color: var(--accent-border);
+        color: var(--accent);
       }
       .shots figure {
         margin: 0;
@@ -264,7 +368,7 @@
         display: block;
         width: 100%;
         height: auto;
-        border-radius: 10px;
+        border-radius: 8px;
       }
       .shots figcaption {
         padding: 10px 4px 2px;
@@ -274,8 +378,8 @@
       .note {
         padding: 18px 22px;
         border-radius: var(--radius);
-        border: 1px solid rgba(251, 191, 36, 0.35);
-        background: rgba(251, 191, 36, 0.06);
+        border: 1px solid var(--accent-border);
+        background: var(--accent-soft);
         color: var(--muted);
         font-size: 15px;
       }
@@ -310,18 +414,14 @@
     </style>
   </head>
   <body data-lang="en">
+    <div class="orbits" aria-hidden="true"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div></div>
     <div class="wrap">
       <header class="top">
-        <a class="brand" href="#top"
-          ><img src="logo.svg" alt="" /><span>Rebootera <span class="accent">OS</span></span></a
-        >
+        <a class="brand" href="#top"><img src="logo.svg" alt="" /><span>Rebootera OS</span></a>
         <nav class="links" aria-label="Main">
-          <a class="hide-sm" href="#how"
-            ><span class="en">How it works</span><span class="es">Cómo funciona</span></a
-          >
-          <a class="hide-sm" href="#features"
-            ><span class="en">Features</span><span class="es">Funciones</span></a
-          >
+          <a class="hide-sm" href="#download"><span class="en">Download</span><span class="es">Descargar</span></a>
+          <a class="hide-sm" href="#how"><span class="en">How it works</span><span class="es">Cómo funciona</span></a>
+          <a class="hide-sm" href="#features"><span class="en">Features</span><span class="es">Funciones</span></a>
           <button class="lang" id="lang" type="button" aria-label="Language">ES</button>
         </nav>
       </header>
@@ -335,22 +435,20 @@
           </h1>
           <p class="lead">
             <span class="en"
-              >Rebootera OS is a bootable environment with a full-screen interface: download official images,
-              install Windows or Linux, check the hardware and its drivers and look after your disks. Rebootera Desktop
-              for Windows creates the USB for you.</span
+              >Rebootera OS is a bootable environment with a calm full-screen interface: download official images,
+              install Windows or Linux, find the drivers by itself, resize your partitions and browse the web safely.
+              Rebootera Desktop makes the USB for you.</span
             ><span class="es"
-              >Rebootera OS es un entorno de arranque con una interfaz a pantalla completa: descarga imágenes oficiales,
-              instala Windows o Linux, revisa el hardware y sus drivers y cuida tus discos. Rebootera Desktop para
-              Windows te crea el USB.</span
+              >Rebootera OS es un entorno de arranque con una interfaz tranquila a pantalla completa: descarga imágenes
+              oficiales, instala Windows o Linux, encuentra los drivers solo, cambia el tamaño de tus particiones y
+              navega por la web con seguridad. Rebootera Desktop te crea el USB.</span
             >
           </p>
 
           <div class="cta">
-            <a class="btn primary" id="dl-exe" href="https://github.com/Jondals/Rebootera-OS-downloads/releases/download/latest/Rebootera-Desktop.exe">
-              <strong
-                ><span class="en">Download for Windows</span><span class="es">Descargar para Windows</span></strong
-              >
-              <span id="exe-meta">Rebootera Desktop · .exe</span>
+            <a class="btn primary" id="dl-main" href="#download">
+              <strong id="dl-main-title"><span class="en">Download Rebootera Desktop</span><span class="es">Descargar Rebootera Desktop</span></strong>
+              <span id="dl-main-meta">Windows · Linux · macOS</span>
             </a>
             <a class="btn" id="dl-iso" href="https://github.com/Jondals/Rebootera-OS-downloads/releases/download/latest/rebootera-os-amd64.iso">
               <strong><span class="en">Download the ISO</span><span class="es">Descargar la ISO</span></strong>
@@ -363,22 +461,55 @@
           <p class="hash" id="hash"></p>
         </div>
 
+        <section id="download" class="downloads">
+          <h2><span class="en">Download</span><span class="es">Descargar</span></h2>
+          <p class="sub">
+            <span class="en">The same app for every system. Each build is checked with its SHA-256.</span
+            ><span class="es">La misma aplicación para cada sistema. Cada compilación lleva su SHA-256.</span>
+          </p>
+          <div class="grid">
+            <div class="card">
+              <h3>Windows</h3>
+              <p><span class="en">One file, no installation. Creates, updates and manages the USB.</span><span class="es">Un archivo, sin instalar. Crea, actualiza y gestiona el USB.</span></p>
+              <div class="row"><a class="chip" data-asset="Rebootera-Desktop.exe" href="#">Rebootera-Desktop.exe</a></div>
+            </div>
+            <div class="card">
+              <h3>Linux</h3>
+              <p><span class="en">A single binary, no dependencies. Downloads, library and drives.</span><span class="es">Un solo binario, sin dependencias. Descargas, biblioteca y unidades.</span></p>
+              <div class="row">
+                <a class="chip" data-asset="rebootera-desktop-linux-amd64.tar.gz" href="#">x64</a>
+                <a class="chip" data-asset="rebootera-desktop-linux-arm64.tar.gz" href="#">arm64</a>
+              </div>
+            </div>
+            <div class="card">
+              <h3>macOS</h3>
+              <p><span class="en">A single binary for Intel and Apple silicon.</span><span class="es">Un solo binario para Intel y Apple silicon.</span></p>
+              <div class="row">
+                <a class="chip" data-asset="rebootera-desktop-darwin-arm64.tar.gz" href="#">Apple silicon</a>
+                <a class="chip" data-asset="rebootera-desktop-darwin-amd64.tar.gz" href="#">Intel</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="how">
           <h2><span class="en">How it works</span><span class="es">Cómo funciona</span></h2>
           <p class="sub">
             <span class="en">Three steps, no technical knowledge needed.</span
             ><span class="es">Tres pasos, sin conocimientos técnicos.</span>
           </p>
-          <div class="steps">
+          <div class="grid steps">
             <div class="card">
               <h3><span class="en">Create the USB</span><span class="es">Crea el USB</span></h3>
               <p>
                 <span class="en"
-                  >Run Rebootera Desktop, open <b>Create USB</b>, pick a drive and confirm. It downloads the latest
-                  Rebootera OS, checks it and prepares the drive.</span
+                  >Open Rebootera Desktop on Windows, choose <b>Make USB</b>, pick your drive and what to do with it.
+                  The latest Rebootera is downloaded, checked and written; if the drive already has your files they can
+                  stay.</span
                 ><span class="es"
-                  >Abre Rebootera Desktop, entra en <b>Crear USB</b>, elige una unidad y confirma. Descarga la última
-                  versión de Rebootera OS, la comprueba y prepara la unidad.</span
+                  >Abre Rebootera Desktop en Windows, elige <b>Crear USB</b>, escoge tu unidad y qué hacer con ella. Se
+                  descarga, comprueba y escribe la última versión de Rebootera; si la unidad ya tiene tus archivos,
+                  pueden quedarse.</span
                 >
               </p>
             </div>
@@ -398,11 +529,11 @@
               <h3><span class="en">Install what you need</span><span class="es">Instala lo que necesites</span></h3>
               <p>
                 <span class="en"
-                  >Download Windows or Linux images, let the wizard check your hardware and drivers, and start the
-                  original installer.</span
+                  >Search, download or add an image, let the wizard check your hardware and start the original
+                  installer. The drivers are found for you.</span
                 ><span class="es"
-                  >Descarga imágenes de Windows o Linux, deja que el asistente revise tu hardware y tus drivers e
-                  inicia el instalador original.</span
+                  >Busca, descarga o añade una imagen, deja que el asistente revise tu hardware e inicia el instalador
+                  original. Los drivers se encuentran solos.</span
                 >
               </p>
             </div>
@@ -415,86 +546,96 @@
             <span class="en">Everything runs from the USB. Nothing touches your disks until you confirm.</span
             ><span class="es">Todo funciona desde el USB. Nada toca tus discos hasta que lo confirmas.</span>
           </p>
-          <div class="features">
+          <div class="grid">
             <div class="card">
               <h3><span class="en">Official downloads</span><span class="es">Descargas oficiales</span></h3>
               <p>
                 <span class="en"
-                  >Ubuntu, Debian, Fedora, Arch and Alpine, checked against the official SHA-256 and, where the project
-                  signs it, its GPG signature.</span
+                  >Dozens of systems with their logo, checked against the official SHA-256 and, where the project signs
+                  it, its GPG signature. Or paste a link to any other image.</span
                 ><span class="es"
-                  >Ubuntu, Debian, Fedora, Arch y Alpine, comprobadas con el SHA-256 oficial y, cuando el proyecto la
-                  firma, con su firma GPG.</span
+                  >Decenas de sistemas con su logotipo, comprobados con el SHA-256 oficial y, cuando el proyecto la
+                  firma, con su firma GPG. O pega un enlace a cualquier otra imagen.</span
                 >
               </p>
             </div>
             <div class="card">
-              <h3><span class="en">Guided installation</span><span class="es">Instalación guiada</span></h3>
+              <h3><span class="en">Any installation media</span><span class="es">Cualquier medio de instalación</span></h3>
               <p>
                 <span class="en"
-                  >Requirement check, critical drivers, optional automatic answers for language, time zone and
-                  account. You always choose the disk.</span
+                  >Add an installation made with Rufus, Ventoy, a folder or a plain ISO; it keeps what the tool
+                  added, such as answer files and privacy settings.</span
                 ><span class="es"
-                  >Comprobación de requisitos, drivers críticos y respuestas automáticas opcionales de idioma, zona
-                  horaria y cuenta. El disco siempre lo eliges tú.</span
+                  >Añade una instalación hecha con Rufus, Ventoy, una carpeta o una ISO; conserva lo que añadió la
+                  herramienta, como archivos de respuestas y ajustes de privacidad.</span
                 >
               </p>
             </div>
             <div class="card">
-              <h3><span class="en">Windows drivers</span><span class="es">Drivers de Windows</span></h3>
+              <h3><span class="en">Drivers, by themselves</span><span class="es">Drivers, solos</span></h3>
               <p>
                 <span class="en"
-                  >Matches the drivers you keep on the USB with this computer's hardware and takes them to the
-                  Windows installer.</span
+                  >At every start it looks on the USB, in the driver folders manufacturers leave on a laptop and in an
+                  installed Windows, and tells you where each one came from.</span
                 ><span class="es"
-                  >Casa los drivers que guardas en el USB con el hardware del equipo y los lleva al instalador de
-                  Windows.</span
+                  >En cada arranque busca en el USB, en las carpetas de drivers que dejan los fabricantes en un
+                  portátil y en un Windows instalado, y te dice de dónde sale cada uno.</span
                 >
               </p>
             </div>
             <div class="card">
-              <h3><span class="en">Safe by default</span><span class="es">Seguro por defecto</span></h3>
+              <h3><span class="en">Partitions made simple</span><span class="es">Particiones sencillas</span></h3>
               <p>
                 <span class="en"
-                  >Internal disks and the USB are protected and only read. The interface has no privileges, and Wi-Fi
-                  passwords never appear on a command line.</span
+                  >Create or resize, merge into a neighbour, delete. Every change shows its exact steps first and
+                  files are checked afterwards.</span
                 ><span class="es"
-                  >Los discos internos y el USB están protegidos y solo se leen. La interfaz no tiene privilegios y
-                  las contraseñas de Wi-Fi nunca salen en una línea de órdenes.</span
+                  >Crear o cambiar el tamaño, unir con una vecina, borrar. Cada cambio enseña antes sus pasos exactos y
+                  los archivos se comprueban después.</span
                 >
               </p>
             </div>
             <div class="card">
-              <h3><span class="en">Boots anywhere</span><span class="es">Arranca en cualquier equipo</span></h3>
+              <h3><span class="en">A safe browser</span><span class="es">Un navegador seguro</span></h3>
               <p>
-                <span class="en">BIOS and UEFI, with Secure Boot, in virtual machines and on real hardware.</span
-                ><span class="es">BIOS y UEFI, con Secure Boot, en máquinas virtuales y en equipos reales.</span>
+                <span class="en"
+                  >Firefox inside Rebootera OS, only to browse, with uBlock Origin and Dark Reader locked in. No
+                  extension store, no sync, no telemetry.</span
+                ><span class="es"
+                  >Firefox dentro de Rebootera OS, solo para navegar, con uBlock Origin y Dark Reader fijos. Sin tienda
+                  de extensiones, sin sincronización, sin telemetría.</span
+                >
               </p>
             </div>
             <div class="card">
-              <h3><span class="en">English and Spanish</span><span class="es">Español e inglés</span></h3>
+              <h3><span class="en">Made to feel good</span><span class="es">Hecho para gustar</span></h3>
               <p>
-                <span class="en">The whole interface, the boot menu and these pages in two languages.</span
-                ><span class="es">Toda la interfaz, el menú de arranque y estas páginas en dos idiomas.</span>
+                <span class="en"
+                  >Three themes, an animated background you can turn off, adjustable size, pointer speed and tap to
+                  click, in English and Spanish. It adapts to modest computers by itself.</span
+                ><span class="es"
+                  >Tres temas, un fondo animado que puedes apagar, tamaño ajustable, velocidad del puntero y toque para
+                  clic, en inglés y español. Se adapta solo a los equipos modestos.</span
+                >
               </p>
             </div>
           </div>
         </section>
 
-        <section id="shots">
+        <section id="shots" class="shots">
           <h2><span class="en">A look</span><span class="es">Así se ve</span></h2>
           <p class="sub">
-            <span class="en">Real screenshots from virtual machines and from Windows.</span
-            ><span class="es">Capturas reales de máquinas virtuales y de Windows.</span>
+            <span class="en">Screenshots of the real interface.</span
+            ><span class="es">Capturas de la interfaz real.</span>
           </p>
-          <div class="shots">
+          <div class="grid">
             <figure>
-              <img src="images/overview.png" alt="Overview" loading="lazy" />
-              <figcaption><span class="en">Overview</span><span class="es">Resumen</span></figcaption>
+              <img src="images/overview.png" alt="Home" loading="lazy" />
+              <figcaption><span class="en">Home</span><span class="es">Inicio</span></figcaption>
             </figure>
             <figure>
-              <img src="images/downloads.png" alt="Download Center" loading="lazy" />
-              <figcaption><span class="en">Download Center</span><span class="es">Centro de descargas</span></figcaption>
+              <img src="images/downloads.png" alt="Download" loading="lazy" />
+              <figcaption><span class="en">Download</span><span class="es">Descargar</span></figcaption>
             </figure>
             <figure>
               <img src="images/boot-menu.png" alt="Boot menu" loading="lazy" />
@@ -514,12 +655,14 @@
                 ><strong>Secure Boot:</strong> the first time you start a computer with Secure Boot from the USB you
                 have to enroll the boot menu key (a blue screen explains it). After that, that computer will also
                 start images without a verified signature, so enroll it only on computers you trust. Rebootera has
-                been tested in virtual machines; real hardware may differ.</span
+                been tested in virtual machines; real hardware may differ. Creating the USB from the app is only
+                available on Windows for now.</span
               ><span class="es"
                 ><strong>Secure Boot:</strong> la primera vez que arrancas desde el USB un equipo con Secure Boot hay
                 que inscribir la clave del menú de arranque (una pantalla azul lo explica). Después, ese equipo también
                 arrancará imágenes sin firma comprobada, así que inscríbela solo en equipos de confianza. Rebootera se
-                ha probado en máquinas virtuales; en equipos reales puede haber diferencias.</span
+                ha probado en máquinas virtuales; en equipos reales puede haber diferencias. Crear el USB desde la
+                aplicación solo está disponible en Windows por ahora.</span
               >
             </p>
           </div>
@@ -538,7 +681,9 @@
       (function () {
         "use strict";
         var REPO = "Jondals/Rebootera-OS-downloads";
+        var BASE = "https://github.com/" + REPO + "/releases/download/latest/";
         var body = document.body;
+        var lastRelease = null;
 
         // * Idioma: el guardado, o el del navegador.
         function currentLanguage() {
@@ -553,12 +698,14 @@
           return (navigator.language || "en").toLowerCase().indexOf("es") === 0 ? "es" : "en";
         }
 
+        // * Aplica el idioma al documento y al botón.
         function applyLanguage(language) {
           body.setAttribute("data-lang", language);
           document.documentElement.lang = language;
           document.getElementById("lang").textContent = language === "en" ? "ES" : "EN";
         }
 
+        // * Cambia de idioma y lo recuerda.
         function toggleLanguage() {
           var next = body.getAttribute("data-lang") === "en" ? "es" : "en";
           applyLanguage(next);
@@ -570,13 +717,41 @@
           showBuild(lastRelease);
         }
 
+        // * Tamaño legible.
         function megabytes(bytes) {
           return bytes >= 1e9 ? (bytes / 1e9).toFixed(1) + " GB" : Math.round(bytes / 1e6) + " MB";
         }
 
-        var lastRelease = null;
+        // * Sistema del visitante: decide qué descarga se destaca.
+        function detectPlatform() {
+          var agent = (navigator.userAgent || "").toLowerCase();
+          if (agent.indexOf("windows") >= 0) {
+            return { name: "Windows", asset: "Rebootera-Desktop.exe" };
+          }
+          if (agent.indexOf("mac") >= 0) {
+            return { name: "macOS", asset: "rebootera-desktop-darwin-arm64.tar.gz" };
+          }
+          if (agent.indexOf("linux") >= 0 && agent.indexOf("android") < 0) {
+            return { name: "Linux", asset: "rebootera-desktop-linux-amd64.tar.gz" };
+          }
+          return null;
+        }
 
-        // * Muestra versión, fecha y tamaños de la última compilación.
+        // * Pone los enlaces de cada archivo y destaca el del sistema del visitante.
+        function wireDownloads() {
+          var chips = document.querySelectorAll("[data-asset]");
+          for (var i = 0; i < chips.length; i++) {
+            chips[i].setAttribute("href", BASE + chips[i].getAttribute("data-asset"));
+          }
+          var platform = detectPlatform();
+          if (platform) {
+            var main = document.getElementById("dl-main");
+            main.setAttribute("href", BASE + platform.asset);
+            document.getElementById("dl-main-meta").textContent = "Rebootera Desktop · " + platform.name;
+          }
+        }
+
+        // * Muestra versión, fecha y cambio de la última compilación.
         function showBuild(release) {
           var box = document.getElementById("build");
           var es = body.getAttribute("data-lang") === "es";
@@ -630,8 +805,6 @@
             data.assets.forEach(function (asset) {
               if (/\.iso$/.test(asset.name)) {
                 document.getElementById("iso-meta").textContent = "Rebootera OS " + version + " · " + megabytes(asset.size);
-              } else if (/\.exe$/.test(asset.name)) {
-                document.getElementById("exe-meta").textContent = "Rebootera Desktop " + version + " · " + megabytes(asset.size);
               }
             });
             if (sha) {
@@ -647,6 +820,7 @@
 
         document.getElementById("lang").addEventListener("click", toggleLanguage);
         applyLanguage(currentLanguage());
+        wireDownloads();
         loadRelease();
       })();
     </script>

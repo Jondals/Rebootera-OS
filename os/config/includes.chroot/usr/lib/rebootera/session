@@ -1,0 +1,8 @@
+#!/bin/bash
+# * session: lo que labwc ejecuta al arrancar la sesión del kiosco. Mantiene abierta la interfaz de Rebootera
+# * (rebootera-shell): si se cierra o falla, se vuelve a abrir al segundo. El navegador (que la interfaz abre con
+# * /usr/lib/rebootera/browser) es otra ventana de la misma sesión; al cerrarlo se vuelve a la interfaz.
+while true; do
+	/usr/bin/rebootera-shell
+	sleep 1
+done

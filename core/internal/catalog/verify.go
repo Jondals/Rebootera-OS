@@ -1,3 +1,5 @@
+// * Verificación OpenPGP de las listas de sumas de los proyectos: las claves están fijadas por su huella y una firma
+// * que no case con ellas se rechaza antes de descargar nada.
 package catalog
 
 import (

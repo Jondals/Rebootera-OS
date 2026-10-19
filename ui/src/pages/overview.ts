@@ -1,10 +1,11 @@
-// * Página "Inicio" de Rebootera OS: una pregunta ("¿qué quieres hacer?") y cinco tarjetas grandes.
-// * Lo técnico (procesador, discos, firmware) queda plegado en "Sobre este equipo".
+// * Página "Inicio" de Rebootera OS: una pregunta ("¿qué quieres hacer?"), una barra de búsqueda y la lista de
+// * acciones (ver launcher.ts). Lo técnico (procesador, discos, firmware) queda plegado en "Sobre este equipo".
 // ! Todos los valores salen de state.ts; si un dato no existe en este equipo se dice, nunca se
 // ! rellena con un ejemplo.
 
 import type { Disk, SystemInfo } from "../api.js";
-import { badge, button, more, progress, tile } from "../components.js";
+import { badge, button, more, progress } from "../components.js";
+import { browserAvailable, openBrowser } from "../bridge.js";
 import { openKernelLog } from "../dialogs.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
@@ -13,6 +14,7 @@ import { icons } from "../icons.js";
 import { internalDisks, liveMedia, onlineInterface, vault } from "../insights.js";
 import { navigate, type Page } from "../router.js";
 import { scanHardware, snapshot } from "../state.js";
+import { launcher, type LauncherAction } from "./launcher.js";
 
 /** Contenedores que se refrescan con cada actualización de datos. */
 let refs: { status: HTMLElement; profile: HTMLElement } | null = null;
@@ -47,6 +49,77 @@ function rescan(): void {
   scanHardware();
 }
 
+/** Abre los ajustes. */
+function openSettings(): void {
+  navigate("settings");
+}
+
+/** Acciones de la portada de Rebootera OS (el navegador solo si la sesión lo permite). */
+function actions(): LauncherAction[] {
+  const list: LauncherAction[] = [
+    {
+      icon: icons.install,
+      title: t("home.install"),
+      text: t("home.installText"),
+      keywords: "windows linux instalar install",
+      primary: true,
+      run: openInstall,
+    },
+    {
+      icon: icons.download,
+      title: t("home.download"),
+      text: t("home.downloadText"),
+      keywords: "iso descargar download",
+      run: openDownloads,
+    },
+    {
+      icon: icons.library,
+      title: t("home.library"),
+      text: t("home.libraryText"),
+      keywords: "iso imagenes images",
+      run: openLibrary,
+    },
+    {
+      icon: icons.fileDisc,
+      title: t("home.media"),
+      text: t("home.mediaText"),
+      keywords: "rufus usb carpeta folder ventoy medio",
+      run: openLibrary,
+    },
+    {
+      icon: icons.disk,
+      title: t("home.disks"),
+      text: t("home.disksText"),
+      keywords: "particiones partitions disco disk",
+      run: openDisks,
+    },
+    {
+      icon: icons.drivers,
+      title: t("home.drivers"),
+      text: t("home.driversText"),
+      keywords: "controladores hardware",
+      run: openDrivers,
+    },
+  ];
+  if (browserAvailable()) {
+    list.push({
+      icon: icons.browser,
+      title: t("home.browser"),
+      text: t("home.browserText"),
+      keywords: "firefox internet web navegar",
+      run: openBrowser,
+    });
+  }
+  list.push({
+    icon: icons.settings,
+    title: t("nav.settings"),
+    text: t("home.settingsText"),
+    keywords: "ajustes tema idioma teclado wifi raton",
+    run: openSettings,
+  });
+  return list;
+}
+
 /** Dibuja la estructura fija de la página. */
 function render(root: HTMLElement): void {
   const status = el("div", { class: "home-status" });
@@ -55,30 +128,20 @@ function render(root: HTMLElement): void {
 
   const rescanButton = button(t("common.rescan"), rescan, { iconPaths: icons.refresh });
   rescanButton.classList.add("btn-small");
-  const driversButton = button(t("home.drivers"), openDrivers, { iconPaths: icons.drivers });
-  driversButton.classList.add("btn-small");
   const logButton = button(t("overview.kernelTitle"), openKernelLog, { iconPaths: icons.terminal });
   logButton.classList.add("btn-small");
 
   root.append(
     el("div", { class: "page home" }, [
-      el("header", { class: "home-head" }, [
-        el("h1", { class: "home-title" }, [t("home.title")]),
-        el("p", { class: "home-subtitle" }, [t("home.subtitle")]),
+      launcher({
+        title: t("home.title"),
+        subtitle: t("home.subtitle"),
+        actions: actions(),
         status,
-      ]),
-      el("div", { class: "tile-grid tile-grid-2" }, [
-        tile(icons.install, t("home.install"), t("home.installText"), openInstall, {
-          primary: true,
-        }),
-        tile(icons.download, t("home.download"), t("home.downloadText"), openDownloads),
-        tile(icons.library, t("home.library"), t("home.libraryText"), openLibrary),
-        tile(icons.usb, t("home.disks"), t("home.disksText"), openDisks),
-        tile(icons.library, t("home.rufus"), t("home.rufusText"), openLibrary),
-      ]),
+      }),
       more(t("home.thisComputer"), [
         profile,
-        el("div", { class: "more-actions" }, [rescanButton, driversButton, logButton]),
+        el("div", { class: "more-actions" }, [rescanButton, logButton]),
       ]),
     ]),
   );

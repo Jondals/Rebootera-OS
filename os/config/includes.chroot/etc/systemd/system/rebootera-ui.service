@@ -1,5 +1,5 @@
-# * Rebootera UI: sesión kiosco en tty1. cage ejecuta una única aplicación a
-# * pantalla completa (rebootera-shell) como el usuario sin privilegios
+# * Rebootera UI: sesión kiosco en tty1. labwc ejecuta la interfaz a pantalla completa
+# * (rebootera-shell) y, si el usuario lo pide, el navegador, como el usuario sin privilegios
 # * "rebootera". Si se cierra, systemd la vuelve a abrir.
 [Unit]
 Description=Rebootera UI (kiosco)
@@ -35,8 +35,8 @@ Environment=WLR_RENDERER_ALLOW_SOFTWARE=1
 ExecStartPre=-/usr/bin/plymouth quit --retain-splash
 # pam_systemd concede CAP_WAKE_ALARM como capacidad ambiental a las sesiones de
 # usuario, y bubblewrap (el sandbox de WebKitGTK) se niega a ejecutarse si el
-# proceso tiene cualquier capacidad. setpriv la retira antes de lanzar cage.
-# start-kiosk lanza cage probando varios niveles de renderizado (ver el script).
+# proceso tiene cualquier capacidad. setpriv la retira antes de lanzar labwc.
+# start-kiosk lanza labwc probando varios niveles de renderizado (ver el script).
 ExecStart=/usr/bin/setpriv --ambient-caps=-all --inh-caps=-all -- /usr/lib/rebootera/start-kiosk
 Restart=always
 RestartSec=2

@@ -1,3 +1,4 @@
+// * Decide si Rebootera puede añadirse a un disco USB que ya tiene cosas, sin borrarlo (por ejemplo, uno hecho con Rufus).
 package desktop
 
 import "strings"

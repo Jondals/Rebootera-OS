@@ -5,6 +5,7 @@
 // * (modo escritorio), con secciones distintas en cada modo.
 
 import { getJSON, postJSON } from "./api.js";
+import { miniTheme } from "./components.js";
 import { openPowerDialog } from "./dialogs.js";
 import { el, icon } from "./dom.js";
 import { t, translateStatic } from "./i18n.js";
@@ -51,8 +52,8 @@ const NAV_ICONS: Record<string, string> = {
   install: icons.install,
   drivers: icons.drivers,
   downloads: icons.download,
-  storage: icons.usb,
-  create: icons.sparkle,
+  storage: icons.disk,
+  create: icons.usb,
 };
 
 /** Clave de traducción del nombre de una ruta del menú. */
@@ -65,9 +66,8 @@ function byId(id: string): HTMLElement {
   return document.getElementById(id) as HTMLElement;
 }
 
-/** Navega a la ruta del enlace pulsado sin recargar. */
+/** Navega a la ruta del botón pulsado sin recargar. */
 function onNavClick(event: MouseEvent): void {
-  event.preventDefault();
   navigate((event.currentTarget as HTMLElement).dataset.route as Route);
 }
 
@@ -77,11 +77,12 @@ function renderNav(): void {
   nav.replaceChildren(
     ...routes.map(function navItem(route) {
       const active = activeRoute() === route;
+      // * Botones y no enlaces: sin href, WebView2 no enseña la dirección abajo a la izquierda al pasar el ratón.
       const link = el(
-        "a",
+        "button",
         {
           class: "nav-item" + (active ? " nav-active" : ""),
-          href: "#/" + route,
+          type: "button",
           "data-route": route,
           "aria-current": active ? "page" : "false",
         },
@@ -137,27 +138,84 @@ function relabel(): void {
   drawThemeSwitch();
 }
 
-/** Dibuja los tres puntos de color de la barra superior para cambiar de tema. */
+/** Indica si el selector de tema está desplegado. */
+let themeOpen = false;
+
+/**
+ * Dibuja el selector de tema de la barra superior: un botón con la miniatura del tema actual que despliega
+ * las tres opciones, cada una con su vista previa y su nombre.
+ */
 function drawThemeSwitch(): void {
-  byId("theme-switch").replaceChildren(
-    ...THEMES.map(function themeDot(name) {
-      const dot = el("button", {
-        class: "theme-dot theme-dot-" + name,
-        type: "button",
-        title: t("theme." + name),
-        "aria-label": t("theme." + name),
-        "aria-pressed": String(prefs.theme === name),
-        "data-theme": name,
-      });
-      dot.addEventListener("click", pickTheme);
-      return dot;
-    }),
+  const current = el(
+    "button",
+    {
+      class: "theme-current",
+      type: "button",
+      title: t("theme.title"),
+      "aria-haspopup": "true",
+      "aria-expanded": String(themeOpen),
+    },
+    [miniTheme(prefs.theme, true), icon(icons.chevronRight, "icon theme-caret")],
   );
+  current.addEventListener("click", toggleThemeMenu);
+  const parts: HTMLElement[] = [current];
+  if (themeOpen) {
+    parts.push(
+      el(
+        "div",
+        { class: "theme-popover", role: "menu" },
+        THEMES.map(function themeOption(name) {
+          const option = el(
+            "button",
+            {
+              class: "theme-option",
+              type: "button",
+              role: "menuitemradio",
+              "aria-checked": String(prefs.theme === name),
+              "data-theme": name,
+            },
+            [
+              miniTheme(name),
+              el("span", { class: "theme-option-text" }, [
+                el("strong", {}, [t("theme." + name)]),
+                el("span", {}, [t("theme." + name + "Hint")]),
+              ]),
+            ],
+          );
+          option.addEventListener("click", pickTheme);
+          return option;
+        }),
+      ),
+    );
+  }
+  byId("theme-switch").replaceChildren(...parts);
 }
 
-/** Aplica el tema del punto pulsado y lo recuerda. */
+/** Despliega o recoge el selector de tema. */
+function toggleThemeMenu(): void {
+  themeOpen = !themeOpen;
+  drawThemeSwitch();
+}
+
+/** Recoge el selector al pulsar fuera de él o Escape. */
+function closeThemeMenu(event: Event): void {
+  if (!themeOpen) {
+    return;
+  }
+  if (event instanceof KeyboardEvent && event.key !== "Escape") {
+    return;
+  }
+  if (event instanceof MouseEvent && byId("theme-switch").contains(event.target as Node)) {
+    return;
+  }
+  themeOpen = false;
+  drawThemeSwitch();
+}
+
+/** Aplica el tema de la opción pulsada y lo recuerda. */
 function pickTheme(event: MouseEvent): void {
   prefs.theme = (event.currentTarget as HTMLElement).dataset.theme as Theme;
+  themeOpen = false;
   savePrefs();
   drawThemeSwitch();
   document.dispatchEvent(new CustomEvent("rebootera:theme"));
@@ -237,6 +295,10 @@ async function init(): Promise<void> {
   byId("lang-button").addEventListener("click", toggleLanguage);
   document.addEventListener("rebootera:language", relabel);
   document.addEventListener("rebootera:theme", drawThemeSwitch);
+  document.addEventListener("click", closeThemeMenu);
+  document.addEventListener("keydown", closeThemeMenu);
+  byId("settings-icon").innerHTML = icons.settings;
+  byId("power-icon").innerHTML = icons.power;
   drawThemeSwitch();
   // * El kiosco no ofrece menú contextual: no hay nada útil que mostrar en él.
   document.addEventListener("contextmenu", preventDefault);

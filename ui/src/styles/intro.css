@@ -51,25 +51,6 @@
   filter: none;
 }
 
-.intro-logo .logo-tile {
-  fill: var(--surface-solid, #14181f);
-  stroke: var(--accent);
-  stroke-width: 4;
-}
-
-.intro-logo .logo-arc,
-.intro-logo .logo-r {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 14;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.intro-logo .logo-arrow {
-  fill: var(--accent);
-}
-
 .intro-wordmark {
   display: flex;
   gap: 0.28em;

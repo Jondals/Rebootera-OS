@@ -1,10 +1,10 @@
 // * Pantalla de arranque de Rebootera OS (lenguaje de script de Plymouth).
-// * Fondo oscuro, halo turquesa que respira detrás del logotipo, logotipo que
+// * Fondo oscuro, halo de latón que respira detrás del logotipo, logotipo que
 // * aparece con un fundido, nombre del sistema y barra con el progreso real
 // * del arranque. Enlaza visualmente con la intro de la interfaz.
 
-Window.SetBackgroundTopColor(0.016, 0.027, 0.043);
-Window.SetBackgroundBottomColor(0.016, 0.027, 0.043);
+Window.SetBackgroundTopColor(0.043, 0.051, 0.067);
+Window.SetBackgroundBottomColor(0.043, 0.051, 0.067);
 
 screen_w = Window.GetWidth();
 screen_h = Window.GetHeight();

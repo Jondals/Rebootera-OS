@@ -1,3 +1,4 @@
+// * Recorrido de una carpeta en busca de paquetes INF x64 y casado de esos paquetes con el hardware de este equipo.
 package drivers
 
 import (

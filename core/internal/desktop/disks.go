@@ -1,3 +1,4 @@
+// * Tipos de los discos USB que Rebootera Desktop enseña en Crear USB (disco, volúmenes y qué se puede hacer con él).
 package desktop
 
 // USBDisk es un disco físico conectado por USB.

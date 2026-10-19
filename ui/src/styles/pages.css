@@ -54,25 +54,6 @@
   margin-bottom: 14px;
 }
 
-.tag-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 11px;
-  border-radius: 8px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-family: var(--mono);
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-}
-
-.tag-pill .pulse-dot {
-  background: var(--accent);
-}
-
 .hero-version {
   font-family: var(--mono);
   font-size: 12px;
@@ -125,132 +106,6 @@
   font-size: 12px;
 }
 
-/* Resumen: tarjeta de instalación */
-
-.install-card {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  padding: 26px 28px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--accent-border);
-  background:
-    radial-gradient(600px 220px at 0% 0%, var(--accent-glow), transparent 70%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.03), transparent), var(--panel);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
-    0 18px 50px -20px var(--accent-glow);
-  overflow: hidden;
-}
-
-.install-icon {
-  width: 58px;
-  height: 58px;
-  display: grid;
-  place-items: center;
-  border-radius: 16px;
-  border: 1px solid var(--accent-border);
-  background: var(--accent-soft);
-  color: var(--accent);
-  flex: none;
-}
-
-.install-icon .icon {
-  width: 28px;
-  height: 28px;
-}
-
-.install-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.install-badges {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.install-text h2 {
-  font-size: 22px;
-}
-
-.install-text p {
-  margin-top: 6px;
-  color: var(--text-muted);
-  max-width: 620px;
-}
-
-.install-actions {
-  display: flex;
-  gap: 10px;
-  flex: none;
-}
-
-/* Resumen: accesos a secciones */
-
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.feature-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 20px;
-  min-height: 210px;
-  text-align: left;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--panel);
-  transition:
-    border-color 160ms ease,
-    background 160ms ease,
-    transform 160ms ease;
-}
-
-.feature-card:hover {
-  border-color: var(--accent-border);
-  background: var(--panel-2);
-  transform: translateY(-2px);
-}
-
-.feature-icon {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  border: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
-  color: var(--text);
-  margin-bottom: 6px;
-}
-
-.feature-title {
-  font-weight: 650;
-  font-size: 15.5px;
-}
-
-.feature-text {
-  color: var(--text-muted);
-  font-size: 13.5px;
-  flex: 1;
-}
-
-.feature-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-  color: var(--text-muted);
-}
-
 /* Resumen: perfil de hardware */
 
 .profile-grid {
@@ -296,109 +151,6 @@
   color: var(--text-muted);
   font-size: 13px;
   overflow-wrap: anywhere;
-}
-
-/* Resumen: widgets */
-
-.widget-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.widget {
-  display: flex;
-  flex-direction: column;
-}
-
-.widget .panel-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.widget-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
-}
-
-.widget-headline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.widget-caption {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.widget-stats {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 12.5px;
-  font-family: var(--mono);
-}
-
-.widget-empty {
-  color: var(--text-muted);
-  font-size: 13.5px;
-  margin: auto 0;
-}
-
-.widget-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
-}
-
-.chart {
-  width: 100%;
-  height: 90px;
-  display: block;
-}
-
-.chart-stroke {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-}
-
-.chart-area {
-  fill: url(#spark-fill);
-}
-
-.chart-stop-top {
-  stop-color: var(--accent);
-  stop-opacity: 0.35;
-}
-
-.chart-stop-bottom {
-  stop-color: var(--accent);
-  stop-opacity: 0;
-}
-
-.chart-dot {
-  fill: var(--accent);
-  filter: drop-shadow(0 0 6px var(--accent));
-}
-
-.chart-base {
-  stroke: var(--border-strong);
-  stroke-dasharray: 4 4;
-}
-
-.chart-bar {
-  fill: var(--border-strong);
-}
-
-.chart-bar-current {
-  fill: var(--accent);
-  filter: drop-shadow(0 0 6px var(--accent-glow));
 }
 
 .log-preview {
@@ -526,44 +278,6 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-}
-
-.part-table {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.part-row {
-  display: grid;
-  grid-template-columns: 10px minmax(0, 1.6fr) minmax(0, 1.1fr) 70px 80px minmax(0, 1.8fr);
-  align-items: center;
-  gap: 14px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--bg-elevated);
-}
-
-.part-swatch {
-  width: 10px;
-  height: 28px;
-  border-radius: 3px;
-}
-
-.part-name {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.part-size {
-  text-align: right;
-}
-
-.part-usage {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
 }
 
 /* Asistente */
@@ -776,12 +490,8 @@
 /* Adaptación a pantallas medianas */
 
 @media (max-width: 1180px) {
-  .feature-grid,
   .profile-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .install-card {
-    flex-wrap: wrap;
   }
   .stepper {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -789,7 +499,6 @@
 }
 
 @media (max-width: 1000px) {
-  .widget-grid,
   .settings-grid {
     grid-template-columns: 1fr;
   }
@@ -801,14 +510,6 @@
   }
   .device-meta,
   .device-id {
-    display: none;
-  }
-  .part-row {
-    grid-template-columns: 10px minmax(0, 1fr) auto auto;
-  }
-  .part-row > .mono-small:not(.part-size),
-  .part-usage,
-  .part-row > .muted {
     display: none;
   }
 }
@@ -1200,25 +901,6 @@ select.text-input {
   border-bottom: 0;
 }
 
-/* Títulos de grupo dentro de un panel (Crear USB: tu USB / USB nuevo). */
-.group-title {
-  margin: 18px 0 4px;
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.group-title:first-child {
-  margin-top: 0;
-}
-
-.group-title + .small-note {
-  margin: 0 0 10px;
-}
-
 /* Descargar sistemas: tarjetas por familia */
 
 .dl-page {
@@ -1282,7 +964,7 @@ select.text-input {
   align-items: center;
   gap: 8px;
   padding: 7px 14px;
-  border-radius: 999px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);

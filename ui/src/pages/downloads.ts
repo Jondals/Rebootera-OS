@@ -23,6 +23,7 @@ import { icons } from "../icons.js";
 import { appMode } from "../mode.js";
 import { navigate, type Page } from "../router.js";
 import { refreshVault, snapshot } from "../state.js";
+import { linkPanel } from "./linkpanel.js";
 
 /** Pestañas de la lista. */
 const TABS = ["all", "windows", "linux", "servers", "rescue", "other"] as const;
@@ -66,6 +67,8 @@ let families: Family[] | null = null;
 let catalog: CatalogEntry[] | null = null;
 let tab: Tab = "all";
 let query = "";
+/** Familia cuyo selector de versión está desplegado, si hay alguna. */
+let openPicker = "";
 let drive: Drive | null = null;
 let lastQueue = "";
 let doneCount = -1;
@@ -73,6 +76,11 @@ const picked = new Map<string, string>();
 const resolved = new Map<string, Resolved | "error">();
 const resolveQueue: string[] = [];
 let resolving = 0;
+
+/** Deja escrita la búsqueda con la que se abrirá la página (la usa el lanzador de la portada). */
+export function presetSearch(text: string): void {
+  query = text.trim().toLowerCase();
+}
 
 /** Dibuja la estructura y carga el catálogo. */
 function render(root: HTMLElement): void {
@@ -104,10 +112,13 @@ function render(root: HTMLElement): void {
     message,
     el("div", { class: "dl-tools" }, [search, tabsBody]),
     listBody,
+    linkPanel(),
     barBody,
   ]);
   root.append(page);
   lastQueue = "";
+  openPicker = "";
+  document.addEventListener("click", closePicker);
   drawTabs();
   loadAll();
   update();
@@ -159,11 +170,32 @@ function chooseTab(event: MouseEvent): void {
   renderList();
 }
 
-/** Elige la versión de una familia. */
-function chooseVersion(event: Event): void {
-  const input = event.currentTarget as HTMLInputElement;
-  picked.set(input.dataset.family ?? "", input.value);
+/** Elige la versión de una familia y cierra el selector. */
+function chooseVersion(event: MouseEvent): void {
+  const node = event.currentTarget as HTMLElement;
+  picked.set(node.dataset.family ?? "", node.dataset.value ?? "");
+  openPicker = "";
   renderList();
+}
+
+/** Despliega o recoge el selector de versión de una familia. */
+function togglePicker(event: MouseEvent): void {
+  event.stopPropagation();
+  const family = (event.currentTarget as HTMLElement).dataset.family ?? "";
+  openPicker = openPicker === family ? "" : family;
+  renderList();
+}
+
+/** Recoge el selector al pulsar fuera de él (y deja de escuchar si la página ya no está). */
+function closePicker(): void {
+  if (page === null || !page.isConnected) {
+    document.removeEventListener("click", closePicker);
+    return;
+  }
+  if (openPicker !== "") {
+    openPicker = "";
+    renderList();
+  }
 }
 
 /** Pone en cola la consulta de la última versión de una entrada. */
@@ -344,28 +376,64 @@ function activeJob(entry: CatalogEntry): Job | undefined {
   });
 }
 
-/** Texto de una versión en el desplegable: edición y, si se sabe, tamaño. */
+/** Texto de una versión en el selector: edición y, si se sabe, tamaño. */
 function versionLabel(entry: CatalogEntry): string {
   const size = sizeText(entry, false);
   return entry.edition + (size && size !== "—" ? " · " + size : "");
 }
 
-/** Desplegable con las versiones de una familia (solo si hay más de una). */
+/** Una opción de la lista de versiones. */
+function versionOption(entry: CatalogEntry, chosen: CatalogEntry): HTMLElement {
+  const node = el(
+    "button",
+    {
+      class: "ver-option",
+      type: "button",
+      role: "option",
+      "aria-selected": String(entry.id === chosen.id),
+      "data-family": entry.family,
+      "data-value": entry.id,
+    },
+    [
+      el("span", {}, [entry.edition]),
+      el("small", {}, [sizeText(entry, false)]),
+      entry.tags.includes("recommended") ? badge(t("downloads.tags.recommended"), "accent") : null,
+    ],
+  );
+  node.addEventListener("click", chooseVersion);
+  return node;
+}
+
+/** Selector de versión de una familia (solo si hay más de una): un botón que despliega la lista. */
 function versionSelect(entries: CatalogEntry[], chosen: CatalogEntry): HTMLElement {
   if (entries.length < 2) {
     return el("span", { class: "fam-edition" }, [chosen.edition]);
   }
-  const select = el(
-    "select",
-    { class: "text-input fam-select", "data-family": chosen.family, "aria-label": chosen.name },
-    entries.map(function option(entry) {
-      const node = el("option", { value: entry.id }, [versionLabel(entry)]);
-      node.selected = entry.id === chosen.id;
-      return node;
-    }),
+  const open = openPicker === chosen.family;
+  const trigger = el(
+    "button",
+    {
+      class: "ver-trigger",
+      type: "button",
+      "aria-haspopup": "listbox",
+      "aria-expanded": String(open),
+      "aria-label": chosen.name,
+      "data-family": chosen.family,
+    },
+    [el("span", {}, [versionLabel(chosen)]), icon(icons.chevronRight, "icon ver-caret")],
   );
-  select.addEventListener("change", chooseVersion);
-  return select;
+  trigger.addEventListener("click", togglePicker);
+  const parts: HTMLElement[] = [trigger];
+  if (open) {
+    parts.push(
+      el("div", { class: "ver-list", role: "listbox" }, [
+        ...entries.map(function option(entry) {
+          return versionOption(entry, chosen);
+        }),
+      ]),
+    );
+  }
+  return el("div", { class: "ver-picker" }, parts);
 }
 
 /** Abre la ventana con los detalles de una versión: verificación, arranque y SHA-256. */

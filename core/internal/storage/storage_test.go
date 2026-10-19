@@ -153,3 +153,22 @@ func TestUnescapeMount(t *testing.T) {
 		t.Fatalf("obtuve %q", got)
 	}
 }
+
+// * TestUnescapeUdev: udev escapa los espacios y otros caracteres como \xNN.
+func TestUnescapeUdev(t *testing.T) {
+	cases := map[string]string{
+		`basic\x20data\x20partition`: "basic data partition",
+		`Mis\x2fDatos`:               "Mis/Datos",
+		`sin escapes`:                "sin escapes",
+		`mal\xZZ`:                    `mal\xZZ`,
+		`corto\x2`:                   `corto\x2`,
+	}
+	for in, want := range cases {
+		if got := unescapeUdev(in); got != want {
+			t.Fatalf("%q: quería %q y salió %q", in, want, got)
+		}
+	}
+	if friendlyLabel("Basic data partition") != "" || friendlyLabel("Windows") != "Windows" {
+		t.Fatal("los nombres genéricos se descartan y los propios se conservan")
+	}
+}

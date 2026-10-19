@@ -1,3 +1,4 @@
+// * Trabajo de la cola que convierte la carpeta de un instalador en una ISO dentro de la biblioteca, con avance y SHA-256.
 package transfers
 
 import (

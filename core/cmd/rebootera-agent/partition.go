@@ -160,6 +160,9 @@ func fsMinimum(device, fs string) (uint64, error) {
 		out, err := exec.Command("ntfsresize", "--info", "--force", device).CombinedOutput()
 		found := ntfsMinPattern.FindSubmatch(out)
 		if found == nil {
+			if hint := ntfsHint(out); hint != "" {
+				return 0, errors.New(hint)
+			}
 			if err != nil {
 				return 0, fmt.Errorf("ntfsresize --info: %s", lastLine(out))
 			}
@@ -169,6 +172,21 @@ func fsMinimum(device, fs string) (uint64, error) {
 		return size + margin, nil
 	}
 	return 0, fmt.Errorf("no se puede cambiar el tamaño de %q", fs)
+}
+
+// * ntfsHint traduce los motivos habituales por los que ntfsresize se niega a medir un volumen de Windows a
+// * algo que el usuario pueda arreglar: casi siempre es el inicio rápido (hibernación) o un chkdsk pendiente.
+func ntfsHint(out []byte) string {
+	text := strings.ToLower(string(out))
+	switch {
+	case strings.Contains(text, "hibernat") || strings.Contains(text, "fast restart") || strings.Contains(text, "fast start"):
+		return "Windows dejó este disco hibernado (inicio rápido). Arranca Windows, desactiva el inicio rápido y apágalo del todo (Mayús + Apagar); después vuelve aquí."
+	case strings.Contains(text, "inconsistent") || strings.Contains(text, "dirty") || strings.Contains(text, "scheduled for check") || strings.Contains(text, "chkdsk"):
+		return "El volumen NTFS tiene errores pendientes. Arranca Windows y ejecuta «chkdsk /f» en esa unidad; después vuelve aquí."
+	case strings.Contains(text, "bitlocker") || strings.Contains(text, "encrypted"):
+		return "Esta unidad está cifrada con BitLocker: descífrala desde Windows antes de cambiar su tamaño."
+	}
+	return ""
 }
 
 // * lastLine devuelve la última línea no vacía de la salida de una herramienta.

@@ -1,6 +1,6 @@
-/* * Tokens del sistema de diseño "Obsidian Aurora": colores, tipografía,
-   * radios y sombras. El acento cambia con data-accent en <html>
-   * (aurora = turquesa, nebula = violeta). */
+/* * Tokens del sistema de diseño base: colores, tipografía,
+   * radios y sombras. El tema cambia con data-theme en <html>
+   * (los temas están en lux.css). */
 
 :root {
   /* Superficies */
@@ -47,13 +47,4 @@
   --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 
   color-scheme: dark;
-}
-
-:root[data-accent="nebula"] {
-  --accent: var(--violet);
-  --accent-strong: var(--violet-strong);
-  --accent-soft: rgba(167, 139, 250, 0.1);
-  --accent-border: rgba(167, 139, 250, 0.38);
-  --accent-glow: rgba(139, 92, 246, 0.3);
-  --accent-contrast: #1a0b3a;
 }

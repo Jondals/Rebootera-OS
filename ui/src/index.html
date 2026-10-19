@@ -15,35 +15,88 @@
     <script type="module" src="js/main.js"></script>
   </head>
   <body>
+    <!-- * Logotipo: se define una vez y se usa en el menú y en la intro. Sus colores salen del tema
+         (variables --logo-*), así que cambia con él. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="lg-tile" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" class="lg-tile-a" />
+          <stop offset="1" class="lg-tile-b" />
+        </linearGradient>
+        <linearGradient id="lg-ring" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" class="lg-ring-a" />
+          <stop offset="1" class="lg-ring-b" />
+        </linearGradient>
+      </defs>
+      <symbol id="rbt-logo" viewBox="0 0 256 256">
+        <rect x="8" y="8" width="240" height="240" rx="58" fill="url(#lg-tile)" />
+        <rect
+          x="9.5"
+          y="9.5"
+          width="237"
+          height="237"
+          rx="56.5"
+          fill="none"
+          class="lg-edge"
+          stroke-width="3"
+        />
+        <circle cx="128" cy="128" r="70" fill="none" class="lg-halo" stroke-width="30" />
+        <path
+          d="M198 128a70 70 0 1 1-24.6-53.2"
+          fill="none"
+          stroke="url(#lg-ring)"
+          stroke-width="15"
+          stroke-linecap="round"
+        />
+        <path
+          d="M185.4 60.8 187.8 94 156.6 82.4Z"
+          fill="url(#lg-ring)"
+          stroke="url(#lg-ring)"
+          stroke-width="6"
+          stroke-linejoin="round"
+        />
+        <path
+          transform="translate(-6 0)"
+          d="M106 174V84h30a25 25 0 0 1 0 50h-30m30 0 26 40"
+          fill="none"
+          class="lg-ink"
+          stroke-width="15"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+    </svg>
+
     <!-- * Intro ligera: se elimina del documento al terminar (intro.ts). -->
     <div id="intro" class="intro" aria-hidden="true">
       <div class="intro-center">
-        <svg class="intro-logo" viewBox="0 0 256 256">
-          <rect class="logo-tile" x="8" y="8" width="240" height="240" rx="56" />
-          <path class="logo-arc" d="M200 128a72 72 0 1 1-25.7-55.2" />
-          <path class="logo-arrow" d="m157 87 28.5-34L198 92.5Z" />
-          <path class="logo-r" d="M104 172V86h30a24 24 0 0 1 0 48h-30m28 0 24 38" />
-        </svg>
+        <svg class="intro-logo"><use href="#rbt-logo" /></svg>
         <h1 class="intro-wordmark"></h1>
         <p class="intro-tagline" data-i18n="intro.tagline"></p>
         <div class="intro-progress"><span class="intro-progress-fill"></span></div>
       </div>
     </div>
 
-    <!-- * Fondo animado: luces que se desplazan muy despacio y motas de polvo. Solo mueven capas
-         (transform y opacity), así que cuesta casi nada. El grano y la viñeta son estáticos. -->
+    <!-- * Fondo animado: dos órbitas de anillos que giran despacio en sentidos opuestos y dos haces de luz que
+         cruzan la pantalla. Solo giran y desplazan capas (transform), así que cuesta muy poco; se apaga solo en
+         equipos modestos (ver prefs.ts) o desde Ajustes. El grano y la luz de fondo son estáticos. -->
     <div class="bg" aria-hidden="true">
-      <span class="bloom bloom-a"></span>
-      <span class="bloom bloom-b"></span>
-      <span class="bloom bloom-c"></span>
-      <span class="mote"></span>
-      <span class="mote"></span>
-      <span class="mote"></span>
-      <span class="mote"></span>
-      <span class="mote"></span>
-      <span class="mote"></span>
-      <span class="mote"></span>
-      <span class="mote"></span>
+      <span class="bg-glow"></span>
+      <svg class="orbit orbit-a" viewBox="0 0 400 400">
+        <circle cx="200" cy="200" r="196" />
+        <circle cx="200" cy="200" r="150" class="dashed" />
+        <circle cx="200" cy="200" r="104" />
+        <circle cx="200" cy="4" r="4" class="dot" />
+        <circle cx="38" cy="296" r="3" class="dot" />
+      </svg>
+      <svg class="orbit orbit-b" viewBox="0 0 400 400">
+        <circle cx="200" cy="200" r="190" class="dashed" />
+        <circle cx="200" cy="200" r="132" />
+        <circle cx="396" cy="200" r="4" class="dot" />
+        <circle cx="130" cy="330" r="3" class="dot" />
+      </svg>
+      <span class="beam beam-a"></span>
+      <span class="beam beam-b"></span>
       <span class="bg-grain"></span>
     </div>
 
@@ -52,7 +105,7 @@
         <nav id="nav" class="nav" data-i18n-label="nav.section"></nav>
         <div class="drive-card" id="drive-card"></div>
         <div class="brand">
-          <img src="logo.svg" alt="" width="34" height="34" />
+          <svg class="brand-logo" width="36" height="36"><use href="#rbt-logo" /></svg>
           <div class="brand-text">
             <span class="brand-name">Rebootera <span class="accent">OS</span></span>
             <span class="brand-version" id="version"></span>
@@ -64,7 +117,7 @@
         <header class="topbar">
           <span id="status-chip"></span>
           <div class="topbar-right">
-            <div class="theme-switch" id="theme-switch" role="group"></div>
+            <div class="theme-switch" id="theme-switch"></div>
             <button
               class="icon-button"
               id="lang-button"
@@ -79,12 +132,7 @@
               type="button"
               data-i18n-label="topbar.settings"
             >
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="3" />
-                <path
-                  d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"
-                />
-              </svg>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" id="settings-icon"></svg>
             </button>
             <button
               class="icon-button icon-button-danger"
@@ -92,10 +140,7 @@
               type="button"
               data-i18n-label="topbar.power"
             >
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 3v9" />
-                <path d="M6.3 7.2a8 8 0 1 0 11.4 0" />
-              </svg>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" id="power-icon"></svg>
             </button>
           </div>
         </header>
@@ -104,7 +149,7 @@
     </div>
 
     <div class="overlay" id="overlay" hidden>
-      <img src="logo.svg" alt="" width="96" height="96" />
+      <svg width="96" height="96"><use href="#rbt-logo" /></svg>
       <p id="overlay-text"></p>
     </div>
   </body>

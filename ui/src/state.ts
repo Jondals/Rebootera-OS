@@ -70,11 +70,6 @@ export function subscribe(listener: Listener): void {
   listeners.add(listener);
 }
 
-/** Cancela una suscripción. */
-export function unsubscribe(listener: Listener): void {
-  listeners.delete(listener);
-}
-
 /** Avisa a todos los suscriptores. */
 function notify(): void {
   for (const listener of listeners) {
@@ -178,7 +173,7 @@ export async function scanHardware(): Promise<void> {
 }
 
 /** Fuerza una lectura completa inmediata. */
-export async function refreshAll(): Promise<void> {
+async function refreshAll(): Promise<void> {
   await Promise.all([pollFast(), pollSlow(), pollVault(), scanHardware()]);
 }
 
@@ -187,19 +182,27 @@ export async function refreshVault(): Promise<void> {
   await pollVault();
 }
 
+/** Ejecuta un sondeo solo si la ventana se ve: minimizada u oculta no gasta CPU ni red. */
+function whenVisible(poll: () => Promise<void>): void {
+  if (!document.hidden) {
+    void poll();
+  }
+}
+
 /** Arranca el sondeo periódico y hace la primera lectura completa. */
 export async function start(desktop = false): Promise<void> {
   // * En el escritorio solo cambian el USB, la biblioteca y las descargas: no se sondean
   // * ni sensores, ni discos, ni registro del kernel, ni hardware (no existen en Windows).
   if (desktop) {
-    window.setInterval(pollVault, DESKTOP_MS);
+    window.setInterval(whenVisible, DESKTOP_MS, pollVault);
     await pollVault();
     return;
   }
-  const fast = isLite() ? 5000 : 3000;
-  const slow = isLite() ? 15000 : 10000;
-  window.setInterval(pollFast, fast);
-  window.setInterval(pollVault, fast);
-  window.setInterval(pollSlow, slow);
+  // * Equipos modestos: sondeos más espaciados. Con la ventana oculta no se sondea nada (ver whenVisible).
+  const fast = isLite() ? 6000 : 4000;
+  const slow = isLite() ? 30000 : 20000;
+  window.setInterval(whenVisible, fast, pollFast);
+  window.setInterval(whenVisible, isLite() ? 4000 : 2500, pollVault);
+  window.setInterval(whenVisible, slow, pollSlow);
   await refreshAll();
 }

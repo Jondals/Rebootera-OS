@@ -1,5 +1,6 @@
 //go:build windows
 
+// * Ayuda de Windows para lanzar programas sin abrir una ventana de consola.
 package desktop
 
 import (

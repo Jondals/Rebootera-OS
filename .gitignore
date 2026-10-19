@@ -3,7 +3,7 @@ ui/node_modules/
 ui/dist/
 __pycache__/
 
-# Recursos de Windows generados por scripts/build-desktop.sh
+# Recursos de Windows generados por scripts/build/build-desktop.sh
 core/cmd/rebootera-desktop/*.syso
 
 # Imágenes de la landing: las copia el workflow de Pages desde docs/images

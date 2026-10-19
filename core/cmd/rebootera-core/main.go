@@ -73,6 +73,13 @@ func main() {
 		}
 	}
 
+	// * Lo mismo con el puntero y el panel táctil (sensibilidad, toque para clic, desplazamiento).
+	if saved := api.LoadInput(); saved != nil && *saved != agentproto.DefaultInput {
+		if _, err := (api.SocketAgent{}).Send(agentproto.Request{Op: agentproto.OpInputSet, Input: saved}); err != nil {
+			log.Printf("puntero: no se pudieron aplicar los ajustes: %v", err)
+		}
+	}
+
 	lib := library.New()
 	queue := transfers.New(lib)
 	go queue.Run()

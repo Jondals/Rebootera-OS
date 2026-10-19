@@ -1,3 +1,5 @@
+// * Estado compartido de la creación o actualización de un USB: fase, progreso y error, que la interfaz consulta
+// * cada segundo.
 package desktop
 
 import "sync"

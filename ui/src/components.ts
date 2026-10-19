@@ -46,10 +46,6 @@ export function badge(text: string, tone: Tone = "accent"): HTMLElement {
 }
 
 /** Etiqueta en mayúsculas y monoespaciada, como en el diseño. */
-export function monoLabel(text: string): HTMLElement {
-  return el("span", { class: "mono-label" }, [text]);
-}
-
 /** Barra de progreso de 0 a 1. */
 export function progress(fraction: number, tone: Tone = "accent"): HTMLElement {
   const bar = el("span", { class: "progress-fill progress-" + tone });
@@ -102,30 +98,6 @@ export function button(
 }
 
 /** Tarjeta grande y pulsable: icono, título y una frase. Es la pieza de las portadas. */
-export function tile(
-  iconPaths: string,
-  title: string,
-  text: string,
-  onClick: () => void,
-  options: { primary?: boolean; badge?: Node | null } = {},
-): HTMLElement {
-  const card = el(
-    "button",
-    { class: "tile" + (options.primary ? " tile-primary" : ""), type: "button" },
-    [
-      el("span", { class: "tile-icon" }, [icon(iconPaths)]),
-      el("span", { class: "tile-body" }, [
-        el("strong", { class: "tile-title" }, [title]),
-        el("span", { class: "tile-text" }, [text]),
-      ]),
-      options.badge ?? null,
-      icon(icons.chevronRight, "icon tile-arrow"),
-    ],
-  );
-  card.addEventListener("click", onClick);
-  return card;
-}
-
 /** Secciones plegables abiertas por el usuario (sobreviven a que la página se redibuje). */
 const openSections = new Set<string>();
 
@@ -191,4 +163,17 @@ export function logoTile(family: string, name: string): HTMLElement {
     svg.append(text);
   }
   return el("span", { class: "logo-tile" }, [svg]);
+}
+
+/**
+ * Miniatura de un tema: una ventana en pequeño con su menú, dos tarjetas y un botón con sus colores. Sirve de
+ * vista previa en el selector de la barra superior y en Ajustes; cada tema define sus propios colores (.mini-*).
+ */
+export function miniTheme(name: string, small = false): HTMLElement {
+  return el("span", { class: "mini mini-" + name + (small ? " mini-sm" : "") }, [
+    el("i", { class: "mini-side" }),
+    el("i", { class: "mini-card" }),
+    el("i", { class: "mini-card mini-card-b" }),
+    el("i", { class: "mini-btn" }),
+  ]);
 }

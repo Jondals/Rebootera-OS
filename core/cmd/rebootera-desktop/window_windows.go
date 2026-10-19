@@ -10,14 +10,16 @@ import (
 	"log"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"syscall"
 	"unsafe"
 
 	webview2 "github.com/jchv/go-webview2"
+	"github.com/jchv/go-webview2/pkg/edge"
 )
 
 // * iconResourceID es el grupo de iconos del ejecutable: rsrc da el ID 1 al
-// * manifiesto y el 2 al grupo de iconos (ver scripts/build-desktop.sh).
+// * manifiesto y el 2 al grupo de iconos (ver scripts/build/build-desktop.sh).
 const iconResourceID = 2
 
 // Atributos de ventana de DWM (Windows 10 2004+ y Windows 11).
@@ -87,9 +89,38 @@ func openWindow(url string) {
 		select {}
 	}
 	defer view.Destroy()
+	hideStatusBar(view)
 	darkTitleBar(uintptr(view.Window()))
 	view.Navigate(url)
 	view.Run()
+}
+
+// * hideStatusBar quita la barra de estado de WebView2 (el rótulo con la dirección que sale abajo a la izquierda
+// * al pasar el ratón por un enlace). La biblioteca no ofrece ese ajuste, así que se alcanza el objeto
+// * del navegador que guarda en un campo privado; si algo cambia en una versión futura, no se hace nada.
+func hideStatusBar(view webview2.WebView) {
+	defer recoverStatusBar()
+	field := reflect.ValueOf(view).Elem().FieldByName("chromium")
+	if !field.IsValid() {
+		return
+	}
+	chromium, ok := reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface().(*edge.Chromium)
+	if !ok || chromium == nil {
+		return
+	}
+	settings, err := chromium.GetSettings()
+	if err != nil || settings == nil {
+		return
+	}
+	settings.PutIsStatusBarEnabled(false)
+}
+
+// * recoverStatusBar absorbe un fallo de hideStatusBar: ocultar el rótulo es un detalle estético y no debe
+// * impedir que la aplicación abra.
+func recoverStatusBar() {
+	if recover() != nil {
+		log.Printf("no se pudo ocultar la barra de estado de WebView2")
+	}
 }
 
 // * darkTitleBar pide a Windows una barra de título oscura del color de la

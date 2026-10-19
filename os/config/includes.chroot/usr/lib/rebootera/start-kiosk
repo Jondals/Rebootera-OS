@@ -1,15 +1,16 @@
 #!/bin/bash
-# * start-kiosk: arranca cage con la interfaz probando, de más a menos
-# * aceleración, hasta que el compositor y la ventana arrancan de verdad.
+# * start-kiosk: arranca la sesión gráfica de Rebootera OS (labwc con la interfaz a pantalla completa) probando,
+# * de más a menos aceleración, hasta que el compositor y la ventana arrancan de verdad.
 # *   1. Como llegue: GPU real o la que Mesa elija.
 # *   2. Mesa por software (llvmpipe): GPU virtuales sin 3D, como VMware SVGA
 # *      en VirtualBox sin aceleración ("No 3D enabled").
 # *   3. wlroots con pixman y GTK con cairo: sin EGL de ningún tipo.
 # * El nivel que funciona se recuerda mientras dure la sesión para no repetir
 # * los intentos fallidos si el servicio se reinicia.
-# ! cage no sale cuando falla al crear el renderizador (se queda esperando a
-# ! su sesión PAM), así que no basta con mirar su código de salida: se da por
-# ! arrancado cuando existe su proceso hijo rebootera-shell.
+# * Antes de arrancar genera la configuración de labwc: teclado, sensibilidad del puntero, toque para clic y
+# * desplazamiento natural del panel táctil (los guarda el agente en /run/rebootera) y reglas de ventana (la ventana se pone a pantalla completa ella misma: una regla que alterne la pantalla completa la anularía).
+# ! labwc no sale cuando falla al crear el renderizador, así que no basta con mirar su código de salida: se da
+# ! por arrancado cuando existe el proceso rebootera-shell.
 set -u
 
 # * Distribución de teclado elegida en la interfaz (la escribe el agente).
@@ -19,12 +20,14 @@ case "$KEYBOARD" in
 es | us) export XKB_DEFAULT_LAYOUT="$KEYBOARD" ;;
 esac
 
-LEVEL_FILE="${XDG_RUNTIME_DIR:-/tmp}/rebootera-kiosk-level"
+RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
+LEVEL_FILE="$RUNTIME/rebootera-kiosk-level"
+CONFIG_DIR="$RUNTIME/rebootera-labwc"
 START_TIMEOUT=25
 
 # * Sin nodo de renderizado de GPU (/dev/dri/renderD*) Mesa dibuja por software
 # * aunque se pida el nivel 1: la interfaz lo sabe por REBOOTERA_LITE y deja de
-# * animar y desenfocar, porque cada fotograma costaría casi un núcleo entero.
+# * animar el fondo, porque cada fotograma costaría casi un núcleo entero.
 LITE=0
 ls /dev/dri/renderD* >/dev/null 2>&1 || LITE=1
 
@@ -33,24 +36,77 @@ level_env() {
 	case "$1" in
 	1) echo "REBOOTERA_KIOSK_LEVEL=1 REBOOTERA_LITE=$LITE" ;;
 	2) echo "REBOOTERA_KIOSK_LEVEL=2 REBOOTERA_LITE=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe" ;;
-	3) echo "REBOOTERA_KIOSK_LEVEL=3 REBOOTERA_LITE=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe WLR_RENDERER=pixman GSK_RENDERER=cairo WEBKIT_DISABLE_COMPOSITING_MODE=1" ;;
+	3) echo "REBOOTERA_KIOSK_LEVEL=3 REBOOTERA_LITE=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 GSK_RENDERER=cairo WEBKIT_DISABLE_COMPOSITING_MODE=1" ;;
 	esac
 }
 
-# * try_level lanza cage con un nivel y devuelve 0 si la interfaz arrancó
-# * (en ese caso se queda esperando a cage), 1 si no.
+# * input_value lee un ajuste de /run/rebootera/input.conf (speed, tap, natural) o devuelve el valor por defecto.
+# * Solo se aceptan números: el valor acaba dentro de un archivo XML.
+input_value() {
+	local key="$1" default="$2" value
+	value="$(sed -n "s/^$key=//p" /run/rebootera/input.conf 2>/dev/null | head -1)"
+	case "$value" in
+	'' | *[!0-9]*) echo "$default" ;;
+	*) echo "$value" ;;
+	esac
+}
+
+# * yes_no convierte 1 en yes y cualquier otra cosa en no (el formato que lee labwc).
+yes_no() {
+	[ "$1" = "1" ] && echo yes || echo no
+}
+
+# * write_config genera la configuración de labwc a partir de los ajustes guardados.
+write_config() {
+	local speed tap natural accel
+	speed="$(input_value speed 50)"
+	[ "$speed" -gt 100 ] && speed=100
+	tap="$(input_value tap 1)"
+	natural="$(input_value natural 0)"
+	# * 0..100 pasa al rango -1.0..1.0 de libinput (50 = 0.0).
+	accel="$(awk -v s="$speed" 'BEGIN { printf "%.2f", (s - 50) / 50 }')"
+	mkdir -p "$CONFIG_DIR"
+	cat >"$CONFIG_DIR/rc.xml" <<EOF
+<?xml version="1.0"?>
+<labwc_config>
+  <core><gap>0</gap></core>
+  <libinput>
+    <device category="default">
+      <tap>$(yes_no "$tap")</tap>
+      <tapAndDrag>yes</tapAndDrag>
+      <dragLock>no</dragLock>
+      <naturalScroll>$(yes_no "$natural")</naturalScroll>
+      <pointerSpeed>$accel</pointerSpeed>
+      <accelProfile>adaptive</accelProfile>
+      <disableWhileTyping>yes</disableWhileTyping>
+      <middleEmulation>no</middleEmulation>
+    </device>
+  </libinput>
+  <windowRules>
+    <windowRule identifier="os.rebootera.Shell" serverDecoration="no"/>
+    <windowRule identifier="firefox*">
+      <action name="Maximize"/>
+    </windowRule>
+  </windowRules>
+</labwc_config>
+EOF
+	printf '%s\n' '/usr/lib/rebootera/session &' >"$CONFIG_DIR/autostart"
+}
+
+# * try_level lanza labwc con un nivel y devuelve 0 si la interfaz arrancó
+# * (en ese caso se queda esperando a labwc), 1 si no.
 try_level() {
 	local level="$1" pid waited=0
 	echo "rebootera-kiosk: probando el nivel $level de renderizado" >&2
 	# shellcheck disable=SC2046
-	env $(level_env "$level") /usr/bin/cage -d -- /usr/bin/rebootera-shell &
+	env $(level_env "$level") /usr/bin/labwc -C "$CONFIG_DIR" &
 	pid=$!
 	while [ "$waited" -lt "$START_TIMEOUT" ]; do
 		if ! kill -0 "$pid" 2>/dev/null; then
-			echo "rebootera-kiosk: cage terminó con el nivel $level" >&2
+			echo "rebootera-kiosk: labwc terminó con el nivel $level" >&2
 			return 1
 		fi
-		if pgrep -P "$pid" -f rebootera-shell >/dev/null; then
+		if pgrep -f /usr/bin/rebootera-shell >/dev/null; then
 			echo "rebootera-kiosk: interfaz arrancada con el nivel $level" >&2
 			echo "$level" >"$LEVEL_FILE" 2>/dev/null
 			wait "$pid"
@@ -59,8 +115,9 @@ try_level() {
 		sleep 1
 		waited=$((waited + 1))
 	done
-	echo "rebootera-kiosk: cage no arrancó la interfaz con el nivel $level" >&2
-	pkill -KILL -P "$pid" 2>/dev/null
+	echo "rebootera-kiosk: labwc no arrancó la interfaz con el nivel $level" >&2
+	pkill -KILL -f /usr/lib/rebootera/session 2>/dev/null
+	pkill -KILL -f /usr/bin/rebootera-shell 2>/dev/null
 	kill -KILL "$pid" 2>/dev/null
 	wait "$pid" 2>/dev/null
 	return 1
@@ -69,6 +126,7 @@ try_level() {
 # * main prueba los niveles empezando por el último que funcionó.
 main() {
 	local first=1 level
+	write_config
 	if [ -r "$LEVEL_FILE" ]; then
 		first="$(cat "$LEVEL_FILE")"
 	fi

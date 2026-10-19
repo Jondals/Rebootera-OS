@@ -13,21 +13,23 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 | Area | What it does |
 | --- | --- |
 | **Boots anywhere** | BIOS and UEFI, with Secure Boot through Debian's signed shim. Own boot menu, boot splash and animated intro. |
-| **Overview** | Live hardware profile: computer, internal disks and their partitions, boot media, Secure Boot and TPM, temperatures, network throughput and kernel log. |
+| **Home** | A search bar and a short list of actions (install, download, my images, installation media, disks, drivers, browser, settings), all usable from the keyboard. The hardware profile (computer, internal disks, boot media, Secure Boot and TPM, temperatures, network, kernel log) is one click away. |
 | **OS Library** | Images stored on the USB, grouped by category, with SHA-256 integrity checks. A damaged image is never offered for installation. |
 | **Download Center** | Official images (Ubuntu, Debian, Fedora, Arch Linux, Alpine). The file and its checksum are resolved from the official checksum index over HTTPS; downloads resume after interruptions and only reach the library when the checksum matches. For Ubuntu, Debian and Fedora the checksum list is also verified with the project's official GPG key before anything is downloaded; for Arch Linux and Alpine, which sign each ISO, the image's own signature is verified once it is downloaded. |
-| **Add images** | From another USB or disk (opened read-only) or, from Windows, with Rebootera Desktop. Any `.iso` copied to the `isos` folder also appears. |
+| **Installation media** | Add an installation made with any tool (a Rufus or Ventoy USB, a folder, a plain `.iso`) from another USB or disk (opened read-only) or, from Windows, with Rebootera Desktop. Any `.iso` copied to the `isos` folder also appears. |
 | **Installation Wizard** | Requirement check (UEFI, Secure Boot, TPM 2.0, memory, disk), critical drivers and target disk, then starts the original installer through the boot menu. Optional: answer language, time zone and user account automatically (Windows and Debian; the disk is always chosen by you), take matching drivers to the Windows installer, skip the Windows 11 requirement check, and start the installer only once (UEFI). |
-| **Driver Assistant** | Every PCI and USB device, the Linux driver in use and the Windows hardware IDs, highlighting what the installer needs (storage and network). It also matches those hardware IDs against the Windows driver packages (`.inf`) in the `drivers/` folder of the USB. |
+| **Driver Assistant** | Every PCI and USB device, the Linux driver in use and the Windows hardware IDs, highlighting what the installer needs (storage and network). Windows driver packages (`.inf`) are found **by themselves** at every start (on the USB, in driver folders of this computer's partitions and in an installed Windows) and matched against those hardware IDs; the page says where each one comes from. |
+| **Browser** | Firefox inside Rebootera OS, only to browse, with uBlock Origin and Dark Reader installed and locked. |
+| **Pointer** | Pointer speed, tap to click and natural scrolling, saved on the USB. |
 | **Wi-Fi** | Connect the live session to a wireless network from Settings (WPA2/WPA3 and open networks, also hidden ones). |
 | **USB & Storage** | Disks and partitions with their role and usage. **Safe Disk Guard**: internal disks and the Rebootera USB are protected and only read. |
-| **Disks and partitions** | Every disk as a visual bar. Resize a partition, move the limit between two neighbors with a slider, merge, delete or create partitions (ext4 and NTFS can be resized without losing files). Each change shows the exact steps first and asks you to type the disk name; the USB Rebootera runs from is never touched. |
-| **Rebootera Desktop** | Windows app with a single **Create USB** option: it builds a new Rebootera USB or updates the one you have (without erasing it), downloading the latest Rebootera OS for you, and puts your images (for example a Windows 11 LTSC ISO) and driver folders on it in the same step, so nothing has to be moved by hand. Overview and Driver Assistant show and manage what the USB carries. It also downloads official images even without a USB: they are saved in the `Rebootera` folder of your user. |
-| **Languages** | English and Spanish. |
+| **Disks and partitions** | Every disk as a visual bar with three actions: create or resize a partition, merge it into a neighbour, delete it (ext4 and NTFS can be resized without losing files). Each change shows the exact steps first and asks you to type the disk name; the USB Rebootera runs from is never touched. |
+| **Rebootera Desktop** | Windows, Linux and macOS app. On Windows its **Create USB** option shows each USB once and offers what fits it: update Rebootera, add it keeping your files, or erase and start clean, with the latest Rebootera downloaded for you or your own ISO. It also downloads official images and manages the library without a USB (they are saved in the `Rebootera` folder of your user). On Linux and macOS creating the USB from the app is not available yet. |
+| **Look and feel** | Three themes (Obsidian, Ivory, Sapphire), an animated background that can be turned off, interface size, English and Spanish. |
 
 | | |
 | --- | --- |
-| ![Intro](docs/images/intro.png) | ![Boot menu](docs/images/boot-menu.png) |
+| ![Disks and partitions](docs/images/disks.png) | ![Boot menu](docs/images/boot-menu.png) |
 | ![Download Center](docs/images/downloads.png) | ![Rebootera Desktop](docs/images/desktop.png) |
 
 ## Getting a Rebootera USB
@@ -36,12 +38,12 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 
 **Channels:** `master` is the stable channel (release `latest`). The `beta` branch is created automatically from the first stable release and publishes the `beta` prerelease on every push to it: that is where changes are tried before merging them into `master`.
 
-**From Windows** — run `Rebootera Desktop.exe` and open **Create USB** (it is the first option). Choose where Rebootera OS comes from — *download the latest version* (recommended, checked against its published SHA-256 before anything is erased) or *use a Rebootera ISO from this PC* — then the USB drive, and type the confirmation. Windows asks for administrator permission to prepare the drive. Everything on the chosen drive is erased; disks that contain data are clearly marked. If your USB already has things (for example it was made with Rufus), choose **"keep the files"**: Rebootera is added next to them and nothing is erased. Before confirming you can **add images and driver folders** (your Windows 11 LTSC, a Linux, your network drivers): they are copied in the same step. If you already have a Rebootera USB, choose it in the list instead: nothing is erased, Rebootera OS can be updated and what you add is copied.
+**From Windows** — run `Rebootera Desktop.exe` and open **Create USB** (the first option). Each USB drive is listed once; pick yours and choose what to do with it: **update Rebootera** (if it already has it, nothing is erased), **add Rebootera and keep my files** (for a drive made with Rufus, for example) or **erase it and start clean**. Then choose where Rebootera OS comes from: the **latest version** (the default; downloaded and checked against its published SHA-256 before anything is erased) or **my Rebootera ISO**. Windows asks for administrator permission to prepare the drive, and erasing or changing a disk needs the exact confirmation text. Images and drivers are added later from Download, My images and Installation media; drivers need no adding, Rebootera finds them by itself.
 
 **From Linux** — as root:
 
 ```bash
-scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.10.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.11.0-amd64.iso
 ```
 
 The script refuses non-removable disks and the system disk.
@@ -82,8 +84,6 @@ REBOOTERA (exFAT)
 - The files that answer the installer (including an encoded password) live on the USB only until Rebootera starts again, and are then deleted.
 - The boot menu does not hide its security trade-off: with Secure Boot, enrolling Ventoy's key lets that computer start images without a verified signature (the interface and this README say so), and the Windows 11 requirement bypasses are off.
 
-Known limitations are listed in [docs/LIMITACIONES.md](docs/LIMITACIONES.md) (Spanish).
-
 ## Website and automatic builds
 
 - `site/` is the landing page (plain HTML, English and Spanish). `.github/workflows/pages.yml` publishes it to GitHub Pages; in the repository settings, **Pages → Source** must be set to *GitHub Actions* once.
@@ -107,7 +107,7 @@ The last six packages are only needed to run the virtual machine tests.
 ### 2. Build the ISO
 
 ```powershell
-wsl -d RebooteraBuild -u root --exec bash "/mnt/d/dev/Rebootera OS/scripts/build.sh"
+wsl -d RebooteraBuild -u root --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build.sh"
 ```
 
 It takes 10–20 minutes. The script runs the Go tests, builds `rebootera-core` and `rebootera-agent`, builds the interface with pnpm, generates the boot menu and splash art and runs live-build. The result is:
@@ -116,20 +116,21 @@ It takes 10–20 minutes. The script runs the Go tests, builds `rebootera-core` 
 
 For a test image with a root console on the serial port, add `--debug`. That image stays inside WSL in `/root/rebootera-build/out/` and never mixes with the final one.
 
-### 3. Build the Windows app
+### 3. Build the desktop app
 
 ```powershell
-wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build-desktop.sh"
+wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-desktop.sh"
 ```
 
 It takes about a minute. The script builds the interface, embeds it together with the files of a new Rebootera USB (boot menu settings and theme), adds the icon and the Windows manifest, and cross-compiles. The result is:
 
 - `out/Rebootera Desktop.exe`: a single file, no installation. It needs the Microsoft Edge WebView2 Runtime, which Windows 10 and 11 already include. Close the app before rebuilding it.
+- `out/rebootera-desktop-linux-amd64.tar.gz`, `-linux-arm64`, `-darwin-amd64` and `-darwin-arm64`: one binary each, with no dependencies. For a window of its own it uses a Chromium-based browser if one is installed; otherwise it opens your default browser.
 
 ### 4. Make a Rebootera USB
 
-- **Real USB drive**: open `Rebootera Desktop.exe` → **Create USB** and choose the ISO from step 2, or use `scripts/make-usb.sh --device` on Linux (see [Getting a Rebootera USB](#getting-a-rebootera-usb)).
-- **Disk image for virtual machines**: `wsl -d RebooteraBuild -u root --exec bash "/mnt/d/dev/Rebootera OS/scripts/make-usb.sh" --image /root/usb.img --iso "/mnt/d/dev/Rebootera OS/out/rebootera-os-<version>-amd64.iso"`.
+- **Real USB drive**: open `Rebootera Desktop.exe` → **Create USB** and choose the ISO from step 2, or use `scripts/usb/make-usb.sh --device` on Linux (see [Getting a Rebootera USB](#getting-a-rebootera-usb)).
+- **Disk image for virtual machines**: `wsl -d RebooteraBuild -u root --exec bash "/mnt/d/dev/Rebootera OS/scripts/usb/make-usb.sh" --image /root/usb.img --iso "/mnt/d/dev/Rebootera OS/out/rebootera-os-<version>-amd64.iso"`.
 
 ### Interface development (pnpm)
 
@@ -147,16 +148,16 @@ pnpm run build
 | --- | --- |
 | `go test ./...` (in `core/`) | API protections, storage and hardware inventory, catalog resolvers, downloads (resume, checksum mismatch), library, boot selection, desktop kit |
 | `go test -tags online ./internal/catalog/` | Every catalog entry against the real official sources |
-| `scripts/test-all.sh [--quick] [--no-build]` | **Everything at once**: builds both ISOs and runs every VM test in parallel (three 1.5 GB VMs at a time). About 8 minutes of tests; `--quick` boots the two ISOs in 1 minute |
-| `scripts/cpu-probe.py URL` | Idle CPU of each interface page with the same WebKitGTK as the image (catches endless animations) |
-| `scripts/vmtest.py MODE ISO OUT` | Boots the ISO in QEMU/KVM (`uefi`, `uefi-sb`, `bios`): services, isolation, permissions, Secure Boot, interface screenshots, power off from the interface |
-| `scripts/vmtest-usb.py MODE USB.img DISK.qcow2 OUT` | End-to-end Rebootera USB: Vault, real download, import from another disk, settings, boot of the chosen image and persistence after reboot |
-| `scripts/vmtest-v03.py USB.img OUT` | 0.3.0 features end to end: GPG-verified download, driver matching with real virtio-win INF files, Wi-Fi with simulated radios and a virtual access point, Debian preseed with boot-once, Windows preparation and cleanup |
-| `scripts/test-desktop-windows.ps1` | Windows only: runs the real `Rebootera Desktop.exe` against a **fake** USB (a temporary folder) and checks that the image and drivers are copied byte for byte, the system is untouched and bad requests are refused |
-| `scripts/make-partman-disk.sh OUT.qcow2` | Test disk for the partition manager: ext4 + NTFS with data and checksums (only image files and a loop device) |
+| `scripts/test/test-all.sh [--quick] [--no-build]` | **Everything at once**: builds both ISOs and runs every VM test in parallel (three 1.5 GB VMs at a time). About 8 minutes of tests; `--quick` boots the two ISOs in 1 minute |
+| `scripts/test/cpu-probe.py URL` | Idle CPU of each interface page with the same WebKitGTK as the image (catches endless animations) |
+| `scripts/test/vmtest.py MODE ISO OUT` | Boots the ISO in QEMU/KVM (`uefi`, `uefi-sb`, `bios`): services, isolation, permissions, Secure Boot, interface screenshots, power off from the interface |
+| `scripts/test/vmtest-usb.py MODE USB.img DISK.qcow2 OUT` | End-to-end Rebootera USB: Vault, real download, import from another disk, settings, boot of the chosen image and persistence after reboot |
+| `scripts/test/vmtest-v03.py USB.img OUT` | 0.3.0 features end to end: GPG-verified download, driver matching with real virtio-win INF files, Wi-Fi with simulated radios and a virtual access point, Debian preseed with boot-once, Windows preparation and cleanup |
+| `scripts/test/test-desktop-windows.ps1` | Windows only: runs the real `Rebootera Desktop.exe` against a **fake** USB (a temporary folder) and checks that the image and drivers are copied byte for byte, the system is untouched and bad requests are refused |
+| `scripts/test/make-partman-disk.sh OUT.qcow2` | Test disk for the partition manager: ext4 + NTFS with data and checksums (only image files and a loop device) |
 | `REBOOTERA_LOOP_TESTS=1 go test ./cmd/rebootera-agent -run TestLoop` | As root in WSL: runs the partition manager on real loop disks (resize, move a limit in both directions, merge, create, delete) and checks files by hash and file system health |
-| `scripts/vmtest-interactive.py MODE IMG OUT` | Drives a VM from outside (keys, clicks, screenshots), for example to walk through MokManager |
-| `scripts/ui-preview.py URL OUT` | Interface screenshots with the same WebKitGTK as the image |
+| `scripts/test/vmtest-interactive.py MODE IMG OUT` | Drives a VM from outside (keys, clicks, screenshots), for example to walk through MokManager |
+| `scripts/dev/ui-preview.py URL OUT` | Interface screenshots with the same WebKitGTK as the image |
 
 Results are recorded in [docs/PRUEBAS.md](docs/PRUEBAS.md) (Spanish).
 
@@ -167,10 +168,10 @@ Results are recorded in [docs/PRUEBAS.md](docs/PRUEBAS.md) (Spanish).
 | `branding/` | Logo |
 | `core/` | Go: `rebootera-core`, `rebootera-agent`, `rebootera-desktop` and their packages |
 | `ui/` | Rebootera UI (TypeScript, no runtime dependencies) |
-| `shell/` | Kiosk window (GTK4 + WebKitGTK) running inside `cage` |
-| `os/` | live-build configuration, services, boot menu and splash, Rebootera USB contents |
-| `scripts/` | Build, USB creation, boot art and test scripts |
-| `docs/` | Technical plan, test results and limitations (Spanish) |
+| `os/` | live-build configuration, services, boot menu and splash, Rebootera USB contents, and `os/shell` (the kiosk window: GTK4 + WebKitGTK inside `labwc`) |
+| `scripts/` | `build/` (ISO, desktop app, boot art), `usb/` (USB creation), `test/` (VM and Windows tests) and `dev/` (interface preview) |
+| `docs/` | Test results (Spanish) and the screenshots used here |
+| `site/` | The landing page |
 
 ## Third-party components
 

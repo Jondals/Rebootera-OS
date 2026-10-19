@@ -1,15 +1,16 @@
 // * Página "Ajustes": idioma, color de acento, intro al arrancar, movimiento
 // * reducido y datos del sistema (versión, kernel, tiempo encendido).
 
-import { more, pageHeader, panel } from "../components.js";
+import { miniTheme, more, pageHeader, panel } from "../components.js";
 import { el } from "../dom.js";
 import * as fmt from "../format.js";
 import { t, type Language } from "../i18n.js";
-import { prefs, savePrefs, THEMES, type Theme } from "../prefs.js";
+import { applyPrefs, prefs, savePrefs, THEMES, type Theme } from "../prefs.js";
 import { renderCurrent, type Page } from "../router.js";
 import { isDesktop } from "../mode.js";
 import { snapshot } from "../state.js";
 import { keyboardPanel } from "./keyboard.js";
+import { pointerPanel } from "./pointer.js";
 import { wifiPanel, wifiUpdate } from "./wifi.js";
 
 let about: HTMLElement | null = null;
@@ -83,6 +84,53 @@ function setMotion(checked: boolean): void {
   savePrefs();
 }
 
+/** Cambia el fondo animado (automático, siempre o nunca) y lo aplica al momento. */
+function setBackground(value: string): void {
+  prefs.background = value as typeof prefs.background;
+  savePrefs();
+  applyPrefs();
+}
+
+/** Cambia el tamaño de la interfaz y lo aplica al momento. */
+function setScale(value: string): void {
+  prefs.scale = Number(value);
+  savePrefs();
+  applyPrefs();
+}
+
+/** Panel de aspecto: fondo animado y tamaño de la interfaz. */
+function appearancePanel(): HTMLElement {
+  return panel(t("settings.appearance"), [
+    el("div", { class: "setting-block" }, [
+      el("span", {}, [t("settings.background")]),
+      choice(
+        t("settings.background"),
+        [
+          ["auto", t("settings.backgroundAuto")],
+          ["on", t("settings.backgroundOn")],
+          ["off", t("settings.backgroundOff")],
+        ],
+        prefs.background,
+        setBackground,
+      ),
+    ]),
+    el("div", { class: "setting-block" }, [
+      el("span", {}, [t("settings.size")]),
+      choice(
+        t("settings.size"),
+        [
+          ["90", "90%"],
+          ["100", "100%"],
+          ["115", "115%"],
+          ["130", "130%"],
+        ],
+        String(prefs.scale),
+        setScale,
+      ),
+    ]),
+  ]);
+}
+
 /** Cambia el tema, lo recuerda y avisa al marco para que actualice sus puntos. */
 function setTheme(event: MouseEvent): void {
   prefs.theme = (event.currentTarget as HTMLElement).dataset.theme as Theme;
@@ -107,7 +155,7 @@ function themePanel(): HTMLElement {
             "data-theme": name,
           },
           [
-            el("span", { class: "theme-swatch theme-swatch-" + name }),
+            miniTheme(name),
             el("strong", {}, [t("theme." + name)]),
             el("span", { class: "muted" }, [t("theme." + name + "Hint")]),
           ],
@@ -127,6 +175,7 @@ function render(root: HTMLElement): void {
       pageHeader(t("settings.title"), t("settings.subtitle")),
       el("div", { class: "settings-grid" }, [
         themePanel(),
+        appearancePanel(),
         panel(t("settings.language"), [
           choice(
             t("settings.language"),
@@ -138,6 +187,7 @@ function render(root: HTMLElement): void {
             setLanguage,
           ),
         ]),
+        isDesktop() ? null : pointerPanel(),
         isDesktop() ? null : keyboardPanel(),
         isDesktop() ? null : wifiPanel(),
         // * Lo que casi nadie toca queda plegado.

@@ -1,23 +1,26 @@
 # * Tema del menú de Ventoy en el USB de Rebootera (formato de tema de GRUB).
-# * background.png, select_*.png y las fuentes las copia scripts/make-usb.sh.
+# * background.png, menu_*.png, select_*.png y las fuentes inter-*.pf2 los copia
+# * scripts/usb/make-usb.sh (o build-desktop.sh) desde lo que genera scripts/build/make-boot-art.sh.
 desktop-image: "background.png"
-desktop-color: "#04070b"
+desktop-image-scale-method: "crop"
+desktop-color: "#0b0d11"
 title-text: ""
-message-font: "JetBrains Mono Regular 16"
-terminal-font: "JetBrains Mono Regular 16"
+message-font: "Inter Regular 18"
+terminal-font: "Inter Regular 18"
 
 + boot_menu {
-        left = 25%
-        width = 50%
-        top = 48%
-        height = 34%
-        item_color = "#8b9aa8"
-        item_font = "JetBrains Mono Regular 16"
-        selected_item_color = "#04211d"
-        selected_item_font = "JetBrains Mono Bold 16"
+        left = 27%
+        width = 46%
+        top = 54%
+        height = 30%
+        menu_pixmap_style = "menu_*.png"
+        item_color = "#a39e8f"
+        item_font = "Inter Regular 18"
+        selected_item_color = "#ffffff"
+        selected_item_font = "Inter Bold 18"
         selected_item_pixmap_style = "select_*.png"
-        item_height = 30
-        item_padding = 10
+        item_height = 40
+        item_padding = 16
         item_spacing = 6
         icon_width = 0
         icon_height = 0
@@ -28,23 +31,12 @@ terminal-font: "JetBrains Mono Regular 16"
 # * Cuenta atrás como texto: GRUB no respeta alturas pequeñas en progress_bar.
 + label {
         id = "__timeout__"
-        top = 86%
+        top = 87%
         left = 0
         width = 100%
         height = 20
         align = "center"
-        color = "#5eead4"
-        font = "JetBrains Mono Regular 12"
+        color = "#d8ae62"
+        font = "Inter Regular 13"
         text = "Starting in %d s"
-}
-
-+ label {
-        top = 100%-40
-        left = 0
-        width = 100%
-        height = 20
-        text = "ENTER  boot    F1  help    F4  local disk    F5  tools"
-        align = "center"
-        color = "#5b6977"
-        font = "JetBrains Mono Regular 12"
 }

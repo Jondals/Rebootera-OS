@@ -33,7 +33,7 @@ func fakeVault(t *testing.T) string {
 // * TestSiguienteYRestaurar elige una imagen y vuelve a Rebootera sin tocar el resto.
 func TestSiguienteYRestaurar(t *testing.T) {
 	root := fakeVault(t)
-	if err := SetNext("isos/linux/debian.iso"); err != nil {
+	if err := Prepare("isos/linux/debian.iso", Prep{}); err != nil {
 		t.Fatal(err)
 	}
 	if Next() != "/isos/linux/debian.iso" {
@@ -69,7 +69,7 @@ func TestSiguienteYRestaurar(t *testing.T) {
 func TestRutasNoValidas(t *testing.T) {
 	fakeVault(t)
 	for _, bad := range []string{"../rebootera/rebootera-os.iso", "isos/linux/no-existe.iso", "isos/linux"} {
-		if err := SetNext(bad); err == nil {
+		if err := Prepare(bad, Prep{}); err == nil {
 			t.Fatalf("%q debería rechazarse", bad)
 		}
 	}

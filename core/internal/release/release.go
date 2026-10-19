@@ -262,16 +262,6 @@ func finishFetch(part, final, expected string, hasher hash.Hash, progress Progre
 	return expected, nil
 }
 
-// * Size devuelve el tamaño anunciado de la ISO publicada (0 si no se sabe).
-func Size() int64 {
-	resp, err := get(BaseURL + ISOName)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	return resp.ContentLength
-}
-
 // * CacheDir es la carpeta donde se guarda la ISO descargada (nunca el USB).
 func CacheDir() string {
 	base, err := os.UserCacheDir()
@@ -279,9 +269,4 @@ func CacheDir() string {
 		base = os.TempDir()
 	}
 	return filepath.Join(base, "Rebootera", "downloads")
-}
-
-// * Describe devuelve un texto corto del tamaño en MB para registros.
-func Describe(bytes int64) string {
-	return strconv.FormatInt(bytes>>20, 10) + " MB"
 }

@@ -4,7 +4,8 @@
 // * el USB se hace solo desde "Crear USB".
 
 import { getJSON, postJSON } from "../api.js";
-import { badge, button, errorBox, more, progress, tile } from "../components.js";
+import { badge, button, errorBox, more, progress } from "../components.js";
+import { launcher, type LauncherAction } from "./launcher.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
@@ -37,16 +38,7 @@ function render(root: HTMLElement): void {
   body = el("div", { class: "usb-body" });
   message = el("div", { class: "page-message", "aria-live": "polite" });
   lastSignature = "";
-  root.append(
-    el("div", { class: "page home" }, [
-      el("header", { class: "home-head" }, [
-        el("h1", { class: "home-title" }, [t("home.title")]),
-        el("p", { class: "home-subtitle" }, [t("home.subtitle")]),
-      ]),
-      message,
-      body,
-    ]),
-  );
+  root.append(el("div", { class: "page home" }, [message, body]));
   window.clearInterval(timer);
   timer = window.setInterval(poll, 3000);
   poll();
@@ -157,6 +149,79 @@ function driveRow(drive: Drive): HTMLElement {
   ]);
 }
 
+/** Abre los ajustes. */
+function openSettings(): void {
+  navigate("settings");
+}
+
+/** Acciones de la portada de Rebootera Desktop: con USB de Rebootera o sin él. */
+function actions(hasUsb: boolean): LauncherAction[] {
+  if (!hasUsb) {
+    return [
+      {
+        icon: icons.usb,
+        title: t("home.noUsb"),
+        text: t("home.noUsbText"),
+        keywords: "crear usb conectar create",
+        primary: true,
+        run: openCreate,
+      },
+      {
+        icon: icons.settings,
+        title: t("nav.settings"),
+        text: t("home.settingsText"),
+        keywords: "ajustes tema idioma",
+        run: openSettings,
+      },
+    ];
+  }
+  return [
+    {
+      icon: icons.usb,
+      title: t("home.make"),
+      text: t("home.makeText"),
+      keywords: "crear actualizar usb create update",
+      primary: true,
+      run: openCreate,
+    },
+    {
+      icon: icons.download,
+      title: t("home.download"),
+      text: t("home.downloadText"),
+      keywords: "iso descargar download",
+      run: openDownloads,
+    },
+    {
+      icon: icons.library,
+      title: t("home.library"),
+      text: t("home.libraryText"),
+      keywords: "iso imagenes images",
+      run: openLibrary,
+    },
+    {
+      icon: icons.fileDisc,
+      title: t("home.media"),
+      text: t("home.mediaText"),
+      keywords: "rufus usb carpeta folder ventoy medio",
+      run: openLibrary,
+    },
+    {
+      icon: icons.drivers,
+      title: t("home.drivers"),
+      text: t("home.driversText"),
+      keywords: "controladores",
+      run: openDrivers,
+    },
+    {
+      icon: icons.settings,
+      title: t("nav.settings"),
+      text: t("home.settingsText"),
+      keywords: "ajustes tema idioma",
+      run: openSettings,
+    },
+  ];
+}
+
 /** Refresca la página si cambian los datos. */
 function update(): void {
   if (body === null || !body.isConnected) {
@@ -175,23 +240,15 @@ function update(): void {
   });
   const parts: HTMLElement[] = [];
   if (selected) {
-    parts.push(
-      usbCard(selected),
-      el("div", { class: "tile-grid tile-grid-2" }, [
-        tile(icons.sparkle, t("home.make"), t("home.makeText"), openCreate, { primary: true }),
-        tile(icons.download, t("home.download"), t("home.downloadText"), openDownloads),
-        tile(icons.library, t("home.library"), t("home.libraryText"), openLibrary),
-        tile(icons.drivers, t("home.drivers"), t("home.driversText"), openDrivers),
-        tile(icons.library, t("home.rufus"), t("home.rufusText"), openLibrary),
-      ]),
-    );
-  } else {
-    parts.push(
-      el("div", { class: "tile-grid" }, [
-        tile(icons.usb, t("home.noUsb"), t("home.noUsbText"), openCreate, { primary: true }),
-      ]),
-    );
+    parts.push(usbCard(selected));
   }
+  parts.push(
+    launcher({
+      title: t("home.title"),
+      subtitle: t("home.subtitle"),
+      actions: actions(selected !== undefined),
+    }),
+  );
   // * La lista solo hace falta si hay que elegir entre varios USB o ninguno está en uso.
   if (found.length > 1 || (found.length === 1 && !selected)) {
     parts.push(more(t("home.switchUsb"), found.map(driveRow)));

@@ -282,41 +282,23 @@
   background: var(--text-dim);
 }
 
-.partition-bar {
-  display: flex;
-  gap: 3px;
-  height: 8px;
-  margin-top: 4px;
-}
-
-.partition-bar-large {
-  height: 12px;
-  margin: 4px 0 14px;
-}
-
 .segment {
   border-radius: 3px;
   min-width: 4px;
 }
-
-.segment-accent,
-.swatch-accent {
+.segment-accent {
   background: var(--accent);
 }
-.segment-amber,
-.swatch-amber {
+.segment-amber {
   background: var(--amber);
 }
-.segment-violet,
-.swatch-violet {
+.segment-violet {
   background: var(--violet);
 }
-.segment-ok,
-.swatch-ok {
+.segment-ok {
   background: var(--ok);
 }
-.segment-muted,
-.swatch-muted {
+.segment-muted {
   background: var(--text-dim);
 }
 

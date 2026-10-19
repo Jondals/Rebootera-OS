@@ -14,8 +14,11 @@ export const THEMES: Theme[] = ["obsidian", "ivory", "sapphire"];
 /** Preferencias disponibles. */
 export interface Prefs {
   language: Language;
-  accent: "aurora" | "nebula";
   theme: Theme;
+  /** Fondo animado: automático (se apaga en equipos modestos), siempre o nunca. */
+  background: "auto" | "on" | "off";
+  /** Tamaño de la interfaz en porcentaje. */
+  scale: number;
   intro: boolean;
   reduceMotion: boolean;
 }
@@ -77,8 +80,9 @@ export function forceLite(): void {
 
 export const prefs: Prefs = {
   language: "en",
-  accent: "aurora",
   theme: "obsidian",
+  background: "auto",
+  scale: 100,
   intro: true,
   reduceMotion: false,
 };
@@ -90,11 +94,14 @@ export function loadPrefs(): void {
     if (saved.language === "en" || saved.language === "es") {
       prefs.language = saved.language;
     }
-    if (saved.accent === "aurora" || saved.accent === "nebula") {
-      prefs.accent = saved.accent;
-    }
     if (THEMES.includes(saved.theme as Theme)) {
       prefs.theme = saved.theme as Theme;
+    }
+    if (saved.background === "auto" || saved.background === "on" || saved.background === "off") {
+      prefs.background = saved.background;
+    }
+    if (typeof saved.scale === "number" && saved.scale >= 90 && saved.scale <= 130) {
+      prefs.scale = saved.scale;
     }
     if (typeof saved.intro === "boolean") {
       prefs.intro = saved.intro;
@@ -140,12 +147,42 @@ export async function loadVaultPrefs(): Promise<boolean> {
 /** No hace nada: guardar en el Vault es opcional (sesión de solo lectura). */
 function ignore(): void {}
 
-/** Aplica idioma, acento y movimiento al documento. */
+/**
+ * Indica si el equipo es modesto: pocos núcleos o poca memoria. Ahí el fondo animado se queda quieto en el modo
+ * automático, porque cada fotograma compite con la propia interfaz.
+ */
+function isModest(): boolean {
+  const memory = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+  return (
+    (navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4) ||
+    (memory !== undefined && memory <= 4)
+  );
+}
+
+/** Estado del fondo animado: "on" (se mueve), "still" (quieto) u "off" (sin fondo animado). */
+function backgroundState(): "on" | "still" | "off" {
+  if (prefs.background === "off") {
+    return "off";
+  }
+  if (prefs.background === "on") {
+    return "on";
+  }
+  // * Automático: quieto en equipos modestos o sin GPU; en el escritorio forzado a "ligero" (sin brillos) sí se mueve.
+  if ((isLite() && !keepMotion) || isModest()) {
+    return "still";
+  }
+  return "on";
+}
+
+/** Aplica idioma, tema, fondo, tamaño y movimiento al documento. */
 export function applyPrefs(): void {
   setLanguage(prefs.language);
-  document.documentElement.dataset.accent = prefs.accent;
-  document.documentElement.dataset.theme = THEMES.includes(prefs.theme) ? prefs.theme : "obsidian";
-  document.documentElement.dataset.gfx = isLite() ? "lite" : "full";
-  document.documentElement.dataset.motion =
-    prefs.reduceMotion || (isLite() && !keepMotion) ? "reduced" : "full";
+  const root = document.documentElement;
+  root.dataset.theme = THEMES.includes(prefs.theme) ? prefs.theme : "obsidian";
+  root.dataset.gfx = isLite() ? "lite" : "full";
+  root.dataset.motion = prefs.reduceMotion || (isLite() && !keepMotion) ? "reduced" : "full";
+  root.dataset.bg = backgroundState();
+  if (document.body) {
+    document.body.style.zoom = String(prefs.scale / 100);
+  }
 }

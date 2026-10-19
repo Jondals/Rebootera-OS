@@ -1,6 +1,6 @@
 # Pruebas
 
-Cómo se prueba y qué resultados se han obtenido. Las pruebas se repiten con `scripts/vmtest.py` (ver README).
+Cómo se prueba y qué resultados se han obtenido. Las pruebas se repiten con `scripts/test/vmtest.py` (ver README).
 
 ## Entorno
 
@@ -71,7 +71,7 @@ Imágenes probadas:
 
 ## v0.2.0 (2026-10-16)
 
-ISO definitiva `rebootera-os-0.2.0-amd64.iso` y la misma construcción con consola serie (`--debug`) para las pruebas automáticas. Rebootera Desktop se recompila con `scripts/build-desktop.sh`, que ejecuta `go test ./...` (todo pasa).
+ISO definitiva `rebootera-os-0.2.0-amd64.iso` y la misma construcción con consola serie (`--debug`) para las pruebas automáticas. Rebootera Desktop se recompila con `scripts/build/build-desktop.sh`, que ejecuta `go test ./...` (todo pasa).
 
 ### ISO definitiva (sin consola): arranque hasta la interfaz
 
@@ -93,7 +93,7 @@ Vault exFAT con `noexec`, `nosuid` y `nodev`; descarga real verificada; disco de
 
 ### Decisión sobre Secure Boot en el USB
 
-Con `VTOY_SECURE_BOOT_POLICY=1` Ventoy no deja arrancar Linux con Secure Boot. Se probó la `0` con UEFI + Secure Boot recorriendo MokManager a mano con `scripts/vmtest-interactive.py` (Enroll key from disk, VTOYEFI, `ENROLL_THIS_KEY_IN_MOKMANAGER.cer`, Yes, Reboot): tras inscribir la clave, Rebootera OS arranca hasta la interfaz en menos de 90 s con "Secure Boot: Active". **Decisión: política 0**, con aviso en la interfaz, el README y LIMITACIONES.md de que, con la clave inscrita, el equipo también arranca imágenes sin firma comprobada.
+Con `VTOY_SECURE_BOOT_POLICY=1` Ventoy no deja arrancar Linux con Secure Boot. Se probó la `0` con UEFI + Secure Boot recorriendo MokManager a mano con `scripts/test/vmtest-interactive.py` (Enroll key from disk, VTOYEFI, `ENROLL_THIS_KEY_IN_MOKMANAGER.cer`, Yes, Reboot): tras inscribir la clave, Rebootera OS arranca hasta la interfaz en menos de 90 s con "Secure Boot: Active". **Decisión: política 0**, con aviso en la interfaz, el README y LIMITACIONES.md de que, con la clave inscrita, el equipo también arranca imágenes sin firma comprobada.
 
 ### Compatibilidad de arranque desde el menú del USB
 
@@ -123,7 +123,7 @@ Con `VTOY_SECURE_BOOT_POLICY=1` Ventoy no deja arrancar Linux con Secure Boot. S
 
 ## v0.3.0 (2026-10-17)
 
-Todo se ejecuta con `scripts/test-all.sh` (compila las dos ISO y lanza las pruebas en paralelo, tres VM de 1,5 GB a la vez). Con las ISO ya compiladas tarda unos 10 minutos (antes, más de una hora una prueba detrás de otra); `--quick` (arranque de las dos ISO en UEFI + Secure Boot) tarda 1 minuto. Última ejecución completa: **93 comprobaciones, 0 fallos**.
+Todo se ejecuta con `scripts/test/test-all.sh` (compila las dos ISO y lanza las pruebas en paralelo, tres VM de 1,5 GB a la vez). Con las ISO ya compiladas tarda unos 10 minutos (antes, más de una hora una prueba detrás de otra); `--quick` (arranque de las dos ISO en UEFI + Secure Boot) tarda 1 minuto. Última ejecución completa: **93 comprobaciones, 0 fallos**.
 
 | Prueba | Resultado |
 | --- | --- |
@@ -170,7 +170,7 @@ Todo se ejecuta con `scripts/test-all.sh` (compila las dos ISO y lanza las prueb
 
 ## v0.4.0 (2026-10-17)
 
-Batería completa (`scripts/test-all.sh`, 880 s en total con la compilación de las dos ISO): **0 fallos de código**.
+Batería completa (`scripts/test/test-all.sh`, 880 s en total con la compilación de las dos ISO): **0 fallos de código**.
 
 | Prueba | Resultado |
 | --- | --- |
@@ -188,7 +188,7 @@ Batería completa (`scripts/test-all.sh`, 880 s en total con la compilación de 
 ### Incidencias
 
 - Mientras se descargaba y preparaba la ISO de Ubuntu 24.04 (6,2 GB) WSL dejó de responder (`Wsl/Service/0x8007274c`); tras `wsl --shutdown` todo estaba intacto y la prueba se repitió con éxito.
-- El modo `--quick` de `test-all.sh` solo recompila la ISO de depuración: tras un cambio del catálogo hay que ejecutar `scripts/build.sh` para la definitiva.
+- El modo `--quick` de `test-all.sh` solo recompila la ISO de depuración: tras un cambio del catálogo hay que ejecutar `scripts/build/build.sh` para la definitiva.
 
 ### No probado en la v0.4.0
 
@@ -196,14 +196,14 @@ Los instaladores reales de Windows (inyección de drivers), el arranque único e
 
 ## v0.5.0 (2026-10-17)
 
-Batería completa (`scripts/test-all.sh`, 862 s con la compilación de las dos ISO): **0 fallos** (dbg UEFI+SB 17, dbg BIOS 16, definitiva UEFI+SB 2 y BIOS 2, USB de extremo a extremo 20, Wi-Fi/drivers/teclado 20, Windows 8, Debian 12). El fallo intermitente de la 0.4.0 en el arranque único de Debian no se repitió.
+Batería completa (`scripts/test/test-all.sh`, 862 s con la compilación de las dos ISO): **0 fallos** (dbg UEFI+SB 17, dbg BIOS 16, definitiva UEFI+SB 2 y BIOS 2, USB de extremo a extremo 20, Wi-Fi/drivers/teclado 20, Windows 8, Debian 12). El fallo intermitente de la 0.4.0 en el arranque único de Debian no se repitió.
 
 Crear USB / actualizar (Rebootera Desktop, Windows 11), sin tocar ningún disco real:
 
 | Prueba | Resultado |
 | --- | --- |
 | Tests de Go de `internal/desktop` en Linux y como binario nativo de Windows (validación, copia, actualización del sistema, drivers, diálogo de selección múltiple) | OK |
-| `scripts/test-desktop-windows.ps1`: el `.exe` real contra un USB falso (carpeta temporal) | ISO de 40 MB copiada idéntica por hash, drivers copiados, sin `.part` sueltos, Rebootera OS intacto, "nada que hacer" y quitar con `..` rechazados |
+| `scripts/test/test-desktop-windows.ps1`: el `.exe` real contra un USB falso (carpeta temporal) | ISO de 40 MB copiada idéntica por hash, drivers copiados, sin `.part` sueltos, Rebootera OS intacto, "nada que hacer" y quitar con `..` rechazados |
 | Capturas con `PrintWindow` (solo la ventana) del Resumen, Crear USB y Asistente de drivers con un USB falso montado con `subst` | Correctas tras arreglar una clave sin traducir (`nav.create`) |
 
 ### Errores encontrados y corregidos
@@ -215,6 +215,37 @@ Crear USB / actualizar (Rebootera Desktop, Windows 11), sin tocar ningún disco 
 
 Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el ratón; solo se probó el análisis de su resultado), "Crear USB" borrando un pendrive real, instalar dentro de un USB ajeno (Rufus), un instalador real de Windows y la ejecución de los workflows de GitHub.
 
+## v0.11.0 (2026-10-19)
+
+| Prueba | Resultado |
+| --- | --- |
+| Batería completa de VM (`test-all.sh`: ISO de depuración y definitiva en UEFI + Secure Boot y BIOS, USB de extremo a extremo, Wi-Fi, Debian con preseed, adopt, particiones y Windows) | USB 20 OK, adopt 6, Debian 12, particiones 23, Windows 8 y depuración 16 y 17, todo sin fallos; la definitiva falló dos veces (ver errores) |
+| ISO definitiva tras corregir: UEFI + Secure Boot y BIOS | 2 de 2 en cada una, con el apagado desde la interfaz (clics reales en la barra superior) |
+| Depuración con las comprobaciones nuevas: navegador (las dos extensiones en la imagen y política JSON válida) y toque para clic activado en la configuración de labwc | 20 OK, 0 fallos |
+| `go vet`, `go test ./...`, `staticcheck` (U1000, SA, S1) y `deadcode` | sin avisos; se quitaron las funciones sin uso |
+| Compilación cruzada del escritorio: Windows, Linux (x64 y arm64) y macOS (Intel y Apple) | las cinco compilan y pasan `go vet` |
+| Escritorio de Linux en WSL (sin ventana): servidor local, unidades montadas y mensaje claro al pedir crear el USB | correcto |
+| `scripts/test/test-desktop-windows.ps1` y `test-installer-windows.ps1` con el exe real (sin ventana) | ISO y drivers copiados byte a byte, sistema intacto, peticiones malas rechazadas; ISO del instalador con El Torito BIOS + UEFI, 7 de 7 |
+| `tsc`, `knip` (sin archivos ni exportaciones sin uso), auditoría de textos y de reglas CSS sin uso | limpio |
+| Interfaz (tres temas, Inicio, Descargar con el selector de versión, Crear USB, Drivers, Discos, Ajustes) | dibujada en WebKitGTK sin ventana y revisada a mano |
+
+### Errores encontrados y corregidos
+
+| Error | Causa | Arreglo |
+| --- | --- | --- |
+| La ventana del kiosco salía de 200 x 200 px en la ISO definitiva | una regla de labwc alternaba la pantalla completa y el propio shell ya la pedía, así que se anulaban | se quitó la regla |
+| El apagado desde la interfaz fallaba en la prueba | los clics de la prueba (menú lateral y barra superior) apuntaban a la maquetación antigua | coordenadas nuevas en `vmtest.py` |
+| Los scripts de prueba de Windows no encontraban el exe | los scripts se movieron de carpeta | rutas corregidas |
+
+### No probado en la v0.11.0
+
+- **Ocultar la dirección abajo a la izquierda en WebView2**: el código se ejecuta al abrir la ventana y las pruebas van sin ventana, así que no se vio en pantalla.
+- **Rebootera Desktop en macOS** (solo se comprobó que compila y enlaza) y **la ventana propia de Linux con un navegador Chromium** (el binario se ejecutó sin ventana).
+- **El panel táctil de un portátil real**: se comprobó que el toque para clic sale activado en la configuración, no el comportamiento del hardware.
+- **Firefox con las extensiones abriéndose dentro de la sesión**, y la sensibilidad del puntero con un ratón real.
+- **Que los drivers de un portátil real se detecten en su partición de fábrica** (probado con datos de ejemplo).
+- Los enlaces de descarga a ISO propias (probado con servidor falso).
+
 ## v0.10.0 (2026-10-19)
 
 | Prueba | Resultado |
@@ -223,8 +254,8 @@ Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el r
 | Resolución real del catálogo (65 + 4 entradas, `go test -tags online ./internal/catalog/`) | todas resuelven salvo fallos puntuales de espejos (Fedora/Tumbleweed) y un 500 puntual del Archive al hacer HEAD; el enlace de Fedora con ruta absoluta de otro espejo se arregló |
 | `resolveArchive` (servidor falso), SHA-1 del Archive correcto y erróneo en el gestor de transferencias | pruebas Go |
 | `autounattend.xml` con reducción de telemetría: válido como XML, órdenes en specialize, sin tocar idioma ni discos | pruebas Go |
-| Interfaz (tres temas, Inicio, Descargar con logos y aviso del USB, Discos con datos de ejemplo, Ajustes, Instalar, Mis imágenes) | dibujada en WebKitGTK sin ventana (`scripts/preview-ui.sh`, con `PREVIEW_THEME` y `PREVIEW_FIXTURE`) y revisada a mano |
-| `scripts/test-installer-windows.ps1` con el exe real (IMAPI, sin ventana) | 7 de 7 |
+| Interfaz (tres temas, Inicio, Descargar con logos y aviso del USB, Discos con datos de ejemplo, Ajustes, Instalar, Mis imágenes) | dibujada en WebKitGTK sin ventana (`scripts/dev/preview-ui.sh`, con `PREVIEW_THEME` y `PREVIEW_FIXTURE`) y revisada a mano |
+| `scripts/test/test-installer-windows.ps1` con el exe real (IMAPI, sin ventana) | 7 de 7 |
 
 ### No probado en la v0.10.0
 
@@ -245,7 +276,7 @@ Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el r
 | Instalador en carpetas a ISO (Windows 11, IMAPI, ejecutando el binario de pruebas compilado, sin ventana) | mismas comprobaciones: `CD001`, El Torito BIOS + EFI |
 | Trabajo `iso` de la cola, registro en la biblioteca como "sin comprobar" y rutas de la API (buscar, inspeccionar, crear; rechaza carpetas que no son instaladores y rutas que salen del medio) | pruebas Go |
 | `release.FetchTo` (descarga directa al USB, reanudar, parcial corrupto) | pruebas Go |
-| Interfaz (Centro de descargas y Biblioteca) | dibujada en WebKitGTK sin ventana (`scripts/preview-ui.sh`) y revisada a mano |
+| Interfaz (Centro de descargas y Biblioteca) | dibujada en WebKitGTK sin ventana (`scripts/dev/preview-ui.sh`) y revisada a mano |
 
 ### No probado en la v0.7.0
 
@@ -255,7 +286,7 @@ Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el r
 
 ## v0.6.0 (2026-10-18)
 
-Batería completa (`scripts/test-all.sh`, unos 15 a 20 minutos con la compilación de las dos ISO): dbg UEFI+SB 17 OK, dbg BIOS 16, definitiva UEFI+SB 2 y BIOS 2, USB de extremo a extremo 20, Wi-Fi/drivers/teclado 20, Windows 8, Debian 12 y los dos escenarios nuevos:
+Batería completa (`scripts/test/test-all.sh`, unos 15 a 20 minutos con la compilación de las dos ISO): dbg UEFI+SB 17 OK, dbg BIOS 16, definitiva UEFI+SB 2 y BIOS 2, USB de extremo a extremo 20, Wi-Fi/drivers/teclado 20, Windows 8, Debian 12 y los dos escenarios nuevos:
 
 | Prueba | Resultado |
 | --- | --- |
@@ -263,7 +294,7 @@ Batería completa (`scripts/test-all.sh`, unos 15 a 20 minutos con la compilaci�
 | **Gestor de particiones, ejecución real** (`REBOOTERA_LOOP_TESTS=1 go test ./cmd/rebootera-agent -run TestLoop`, como root en WSL) | Sobre discos loop reales con ext4 y NTFS con datos: mover el límite en las dos direcciones, encoger y agrandar un NTFS, fusionar conservando la derecha y la izquierda, crear exFAT y borrar. Todos los archivos intactos por hash, `e2fsck` y `ntfsresize --check` limpios y tablas exactas |
 | **Gestor de particiones en la VM** (escenario `partitions`: Core, agente y API sobre un disco virtual) | 23 OK: el USB de arranque sale bloqueado y no se puede planificar nada sobre él, la vista previa da los pasos, sin la confirmación escrita no se aplica, mover el límite en las dos direcciones, encoger el NTFS por el final, crear una exFAT y borrarla, con los datos y los sistemas de archivos intactos tras cada paso |
 | **Añadir Rebootera sin borrar** (escenario `adopt`: imagen tipo Rufus con NTFS lleno + partición UEFI:NTFS, Ventoy `-n`) | 6 OK: arranca en UEFI, el Vault es el NTFS (`ntfs3`, noexec, nosuid, nodev), la API lo ve, los archivos del usuario siguen intactos por hash, Rebootera crea sus carpetas al lado y Core puede escribir |
-| Rebootera Desktop en Windows 11: **ventanas de PowerShell** (`scripts/test-no-popups.ps1`, sondeo cada 10 ms) | 0.5.0: **2 ventanas** nuevas; 0.6.0: **0** |
+| Rebootera Desktop en Windows 11: **ventanas de PowerShell** (`scripts/test/test-no-popups.ps1`, sondeo cada 10 ms) | 0.5.0: **2 ventanas** nuevas; 0.6.0: **0** |
 | Rebootera Desktop en Windows 11: **rendimiento en reposo** (app + WebView2 propios, 20 s) | 0.5.0: 39 % de un núcleo; 0.6.0: **1,5 %**; memoria unos 380 MB en 7 procesos |
 | Copias en tubería (`internal/fastcopy`, con `-race`) | Integridad de varios tamaños, errores de lectura y escritura distinguidos y cancelación aunque el origen no responda |
 

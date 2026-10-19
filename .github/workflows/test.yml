@@ -1,6 +1,6 @@
 # Comprobaciones rápidas en cada push y pull request: vet y pruebas de Go (con
 # las firmas oficiales reales de testdata/), tipos y formato de la interfaz.
-# No arranca máquinas virtuales: esas pruebas (scripts/test-all.sh) son locales.
+# No arranca máquinas virtuales: esas pruebas (scripts/test/test-all.sh) son locales.
 name: Test
 
 on:

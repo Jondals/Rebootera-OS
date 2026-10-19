@@ -3,6 +3,37 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.11.0] - 2026-10-19
+
+### Cambiado
+
+- **Logotipo e iconos nuevos.** La marca es ahora una "R" dentro de un anillo con flecha de reinicio en latón, dibujada una sola vez y recoloreada por cada tema. Se redibujaron todos los iconos de la interfaz (también los de los discos) y el menú de arranque, la pantalla de arranque y el icono de Rebootera Desktop usan la misma marca.
+- **Menú de arranque nuevo (UEFI/GRUB y Ventoy).** Tema rehecho con el logotipo, barras de selección redondeadas de 9 trozos, un título claro y las teclas a la vista; la ISO live arranca directa al kiosco.
+- **Inicio es un lanzador.** Una barra de búsqueda y una lista corta de acciones con atajos de teclado (flechas, Intro, números); al escribir el nombre de un sistema se ofrece descargarlo. Sustituye a la cuadrícula de tarjetas.
+- **Botones cuadrados.** Botones, etiquetas e insignias usan un radio de 8–11 px en lugar de píldoras.
+- **Selector de tema con vistas previas de verdad.** La barra superior enseña una miniatura del tema actual y abre una lista con una ventana en miniatura de cada uno; Ajustes usa las mismas miniaturas.
+- **Descargar: selector de versión propio** en lugar de la lista desplegable del navegador (edición, tamaño y marca "Recomendada").
+- **Crear USB (Rebootera Desktop) simplificado.** Cada USB sale una sola vez. Lo eliges y decides qué hacer: actualizar Rebootera (si ya lo tiene), añadir Rebootera conservando tus archivos o borrar y empezar de cero. Rebootera sale de la última versión (descargada y comprobada) o de tu propia ISO de Rebootera. Añadir imágenes y carpetas de drivers salió de esta pantalla.
+- **Gestor de particiones simplificado** a tres acciones: crear/cambiar tamaño, unir con una vecina, borrar. Desaparecen las opciones duplicadas de repartir espacio; el diálogo de cambiar tamaño dice qué hace. Nombres como `basic\x20data\x20partition` se muestran como "Datos" y los límites de NTFS (hibernación, inicio rápido, BitLocker, volumen sucio) se explican en lugar de fallar sin decir nada.
+- **Más fluido y ligero.** Transiciones entre páginas con entrada escalonada, fondo animado con más movimiento (órbitas y haces de luz que barren, solo transform, sin manchas), sondeos que se paran con la ventana oculta y se espacian en equipos modestos, y fondo quieto automático en equipos de 4 núcleos o menos. Se quitó cerca del 20 % de la hoja de estilos, código sin usar y textos sin usar.
+- **"Windows de Rufus" pasa a ser "Medios de instalación".** Se puede añadir cualquier instalación hecha con cualquier herramienta (Rufus, Ventoy, una carpeta, una ISO).
+- **Estructura del proyecto.** Los scripts se agrupan en `scripts/build`, `scripts/usb`, `scripts/test` y `scripts/dev`; la ventana del kiosco pasó a `os/shell`. Se eliminaron los documentos de plan y limitaciones; lo que describían está hecho o figura en el README.
+
+### Añadido
+
+- **Los drivers se encuentran solos.** En cada arranque Rebootera busca paquetes de drivers de Windows en el USB, en carpetas de drivers de las particiones de este equipo (las que dejan los fabricantes, como una partición DRIVERS o SWSetup) y en un Windows instalado, siempre en solo lectura. La página de Drivers enseña de dónde sale cada paquete y tiene "Buscar otra vez".
+- **Ajustes del puntero en el sistema live:** velocidad del puntero, toque para hacer clic (activado por defecto; antes el panel táctil exigía una pulsación fuerte) y desplazamiento natural, guardados en el USB.
+- **Un navegador dentro de Rebootera OS:** Firefox, solo para navegar, con uBlock Origin y Dark Reader instalados y bloqueados, sin tienda de extensiones, sin sincronización y sin telemetría. El kiosco ahora funciona sobre labwc (un compositor ligero).
+- **Descargar desde un enlace:** pega un enlace https a una imagen, o a un elemento del Internet Archive, y elige el archivo; se guarda en el USB como sin comprobar (el SHA-1 se verifica cuando el Archive lo publica).
+- **Más personalización:** fondo animado (automático, siempre, nunca), tamaño de la interfaz (90–130 %), ajustes del puntero, tema, idioma, teclado y Wi-Fi.
+- **Rebootera Desktop para Linux y macOS** (x64 y arm64, un solo binario cada uno). Se abre en su propia ventana si hay un navegador basado en Chromium, usa zenity/kdialog (Linux) o AppleScript (macOS) para los diálogos de archivos y detecta las unidades montadas. Crear el USB desde la aplicación sigue siendo solo de Windows (en Linux usa `scripts/usb/make-usb.sh`); crear una ISO desde una carpeta no está disponible en macOS.
+- Opción de privacidad de Windows: `ReduceTelemetry` es ahora opcional por instalación y los bloques de idioma son opcionales.
+
+### Corregido
+
+- Rebootera Desktop para Windows ya no enseña la dirección abajo a la izquierda al pasar el ratón por el menú.
+- El gestor de particiones podía negarse a cambiar el tamaño del disco o partición base; ahora los motivos son explícitos y se puede cambiar el tamaño en los sistemas de archivos compatibles.
+
 ## [0.10.0] - 2026-10-19
 
 ### Cambiado

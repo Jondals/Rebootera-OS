@@ -60,6 +60,7 @@ func (s *Server) registerVault(mux *http.ServeMux) {
 		"/api/settings":           s.handleGetSettings,
 		"/api/catalog":            s.handleCatalog,
 		"/api/catalog/families":   s.handleFamilies,
+		"/api/catalog/link":       s.handleInspectLink,
 		"/api/transfers/settings": s.handleGetBandwidth,
 		"/api/transfers":          s.handleTransfers,
 		"/api/library":            s.handleLibrary,
@@ -70,6 +71,7 @@ func (s *Server) registerVault(mux *http.ServeMux) {
 		"/api/catalog/resolve":    s.handleResolve,
 		"/api/transfers/settings": s.handleSetBandwidth,
 		"/api/transfers/download": s.handleDownload,
+		"/api/transfers/url":      s.handleDownloadLink,
 		"/api/transfers/import":   s.handleImport,
 		"/api/transfers/iso":      s.handleMakeISO,
 		"/api/installer/inspect":  s.handleInspect,
@@ -88,6 +90,7 @@ func (s *Server) registerVault(mux *http.ServeMux) {
 		post["/api/media/unmount"] = s.handleMediaMount
 		post["/api/boot/install"] = s.handleBootInstall
 		get["/api/drivers/plan"] = s.handleDriverPlan
+		post["/api/drivers/scan"] = s.handleDriverScan
 	}
 	for path, handler := range get {
 		mux.Handle("GET "+path, s.requireSession(handler))

@@ -1,7 +1,7 @@
 //go:build !windows
 
-// * En Linux, crear un USB se hace con scripts/make-usb.sh (necesita root y
-// * herramientas como losetup); la aplicación de escritorio lo indica.
+// * Fuera de Windows, crear un USB desde la aplicación no está disponible: en Linux se hace con
+// * scripts/usb/make-usb.sh (necesita root y herramientas como losetup) y la aplicación lo indica.
 package desktop
 
 import (
@@ -10,7 +10,7 @@ import (
 )
 
 // ErrUnsupported indica una función que solo existe en Windows.
-var ErrUnsupported = errors.New("solo disponible en Windows; en Linux usa scripts/make-usb.sh")
+var ErrUnsupported = errors.New("crear el USB desde la aplicación solo está disponible en Windows; en Linux usa scripts/usb/make-usb.sh")
 
 // * Create no está disponible fuera de Windows.
 func Create(int, string, fs.FS, string, Extras, bool) error {
@@ -22,22 +22,7 @@ func USBDisks() ([]USBDisk, error) {
 	return nil, ErrUnsupported
 }
 
-// * PickFile no está disponible fuera de Windows (se escribe la ruta).
-func PickFile(string) (string, error) {
-	return "", ErrUnsupported
-}
-
 // * PrepareVentoy no está disponible fuera de Windows.
 func PrepareVentoy() (string, error) {
-	return "", ErrUnsupported
-}
-
-// * PickFiles no está disponible fuera de Windows.
-func PickFiles(string) ([]string, error) {
-	return nil, ErrUnsupported
-}
-
-// * PickFolder no está disponible fuera de Windows.
-func PickFolder(string) (string, error) {
 	return "", ErrUnsupported
 }

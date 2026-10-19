@@ -9,7 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
+	"rebootera/core/internal/agentproto"
 	"rebootera/core/internal/boot"
 	"rebootera/core/internal/drivers"
 	"rebootera/core/internal/hardware"
@@ -43,10 +46,12 @@ type driverMatch struct {
 type driverPlan struct {
 	// Available indica que hay Vault (y por tanto carpeta drivers/).
 	Available bool `json:"available"`
-	// Packages es cuántos paquetes x64 hay en drivers/.
-	Packages int           `json:"packages"`
-	Matches  []driverMatch `json:"matches"`
-	Missing  []driverMatch `json:"missing"`
+	// Packages es cuántos paquetes x64 hay en todos los orígenes.
+	Packages int `json:"packages"`
+	// Sources son los sitios de donde salen los drivers (el USB, particiones del equipo, un Windows instalado).
+	Sources []drivers.Source `json:"sources"`
+	Matches []driverMatch    `json:"matches"`
+	Missing []driverMatch    `json:"missing"`
 }
 
 // * driversRoot es la carpeta drivers/ del Vault.
@@ -54,13 +59,18 @@ func driversRoot() string {
 	return vault.Path("drivers")
 }
 
-// * buildDriverPlan casa los dispositivos de este equipo con los paquetes del Vault.
+// * buildDriverPlan casa los dispositivos de este equipo con los paquetes de todos los orígenes: la carpeta
+// * drivers/ del USB y las carpetas de drivers que el agente encontró en las particiones del equipo.
 func buildDriverPlan() (driverPlan, drivers.Plan) {
-	result := driverPlan{Matches: []driverMatch{}, Missing: []driverMatch{}}
-	var packages []*drivers.Package
+	result := driverPlan{Matches: []driverMatch{}, Missing: []driverMatch{}, Sources: []drivers.Source{}}
+	vaultRoot := ""
 	if vault.Available() {
 		result.Available = true
-		packages = drivers.Scan(driversRoot())
+		vaultRoot = vault.Root
+	}
+	packages, used := drivers.ScanSources(drivers.Discover(vaultRoot, MediaRoot))
+	if used != nil {
+		result.Sources = used
 	}
 	result.Packages = len(packages)
 	plan := drivers.BuildPlan(hardware.List(), packages)
@@ -83,8 +93,39 @@ func deviceMatch(device hardware.Device) driverMatch {
 	}
 }
 
-// * handleDriverPlan devuelve el casado de drivers con el hardware.
+// scan guarda cuándo se buscaron drivers por última vez en las particiones del equipo.
+var scan struct {
+	mu   sync.Mutex
+	last time.Time
+}
+
+// * scanForDrivers pide al agente que abra en solo lectura las particiones que pueden traer drivers. Sin
+// * forzar, no se repite antes de dos minutos: la interfaz consulta el plan a menudo.
+func (s *Server) scanForDrivers(force bool) {
+	if s.mode() != ModeLive || s.agent == nil {
+		return
+	}
+	scan.mu.Lock()
+	defer scan.mu.Unlock()
+	if !force && time.Since(scan.last) < 2*time.Minute {
+		return
+	}
+	scan.last = time.Now()
+	if _, err := s.agent.Send(agentproto.Request{Op: agentproto.OpDriversScan}); err != nil {
+		log.Printf("drivers: no se pudo buscar en las particiones: %v", err)
+	}
+}
+
+// * handleDriverPlan devuelve el casado de drivers con el hardware, buscando antes en las particiones.
 func (s *Server) handleDriverPlan(w http.ResponseWriter, r *http.Request) {
+	s.scanForDrivers(false)
+	result, _ := buildDriverPlan()
+	writeJSON(w, http.StatusOK, result)
+}
+
+// * handleDriverScan vuelve a buscar drivers en las particiones del equipo y devuelve el casado nuevo.
+func (s *Server) handleDriverScan(w http.ResponseWriter, r *http.Request) {
+	s.scanForDrivers(true)
 	result, _ := buildDriverPlan()
 	writeJSON(w, http.StatusOK, result)
 }

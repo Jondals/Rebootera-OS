@@ -1,5 +1,6 @@
 //go:build linux
 
+// * Creación de una ISO arrancable (BIOS y UEFI, con archivos de más de 4 GiB) con genisoimage en Linux.
 package installer
 
 import (

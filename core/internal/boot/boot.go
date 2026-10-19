@@ -120,12 +120,6 @@ func ArchivePath() (string, string) {
 	return filepath.Join(WorkDir(), driversArchive), workPathPrefix + driversArchive
 }
 
-// * SetNext hace que Ventoy preseleccione la imagen rel (por ejemplo
-// * "isos/linux/debian.iso") en el próximo arranque.
-func SetNext(rel string) error {
-	return Prepare(rel, Prep{})
-}
-
 // * Prepare hace que Ventoy preseleccione la imagen rel y, si se pide, le
 // * entregue el archivo de respuestas y los drivers.
 func Prepare(rel string, prep Prep) error {

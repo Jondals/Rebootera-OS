@@ -3,7 +3,7 @@
 // * descargas oficiales, añadir imágenes del equipo, actualizar Rebootera OS y
 // * (en Windows) crear un USB nuevo.
 // * Lleva dentro la misma interfaz que Rebootera OS (ui/) y el contenido común
-// * de un USB (kit/), que prepara scripts/build-desktop.sh.
+// * de un USB (kit/), que prepara scripts/build/build-desktop.sh.
 // ! Escucha solo en 127.0.0.1, en un puerto aleatorio, con un token por
 // ! ejecución: ninguna otra máquina puede usar su API.
 package main

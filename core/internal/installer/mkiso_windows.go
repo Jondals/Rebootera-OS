@@ -1,5 +1,6 @@
 //go:build windows
 
+// * Creación de una ISO arrancable (BIOS y UEFI, con archivos de más de 4 GiB) con las interfaces IMAPI de Windows.
 package installer
 
 import (

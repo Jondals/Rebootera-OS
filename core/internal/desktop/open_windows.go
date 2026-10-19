@@ -1,5 +1,6 @@
 //go:build windows
 
+// * Abrir una dirección web con el navegador del escritorio en Windows.
 package desktop
 
 import "os/exec"

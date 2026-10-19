@@ -1,5 +1,5 @@
 #!/bin/sh
-# * Configuración de live-build para Rebootera OS. La llama scripts/build.sh con
+# * Configuración de live-build para Rebootera OS. La llama scripts/build/build.sh con
 # * REBOOTERA_VERSION y REBOOTERA_DEBUG definidos.
 set -e
 

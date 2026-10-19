@@ -220,12 +220,6 @@ main:focus-visible {
   }
 }
 
-@media (max-width: 900px) {
-  .chip-boot span:not(.pulse-dot) {
-    display: none;
-  }
-}
-
 /* El indicador de red abre Ajustes (donde está el Wi-Fi) */
 html:not([data-mode="desktop"]) #net-chip {
   cursor: pointer;

@@ -3,6 +3,37 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.11.0] - 2026-10-19
+
+### Changed
+
+- **New logo and icons.** The mark is now an "R" inside a boot-arrow ring in brass, drawn once and recoloured by each theme. Every icon of the interface was redrawn (the disk icons included) and the boot menu, splash and Rebootera Desktop icon use the same mark.
+- **New boot menu (UEFI/GRUB and Ventoy).** Rebuilt theme with the logo, rounded 9-slice selection bars, a clear title and key hints; the live ISO boots straight into the kiosk.
+- **Home is a launcher.** One search bar and a short list of actions with keyboard shortcuts (arrows, Enter, numbers); typing a system name offers to download it. It replaces the card grid.
+- **Square buttons.** Buttons, chips and badges use an 8–11 px radius instead of pills.
+- **Theme switcher with real previews.** The top bar shows a small preview of the current theme and opens a list with a miniature window of each one; Settings uses the same miniatures.
+- **Download: a real version picker** instead of the browser's drop-down list (edition, size and a "Recommended" mark).
+- **Make USB (Rebootera Desktop) simplified.** Each USB appears once. Pick it and choose what to do: update Rebootera (if it already has it), add Rebootera and keep your files, or erase and start clean. Rebootera comes from the latest version (downloaded and checked) or from your own Rebootera ISO. Adding images and driver folders moved out of this screen.
+- **Partition manager simplified** to three actions: create/resize, merge into a neighbour, delete. The duplicate "share space" options are gone; the resize dialog now says what it does. Partition names such as `basic\x20data\x20partition` are shown as "Data" and NTFS limits (hibernation, Fast Startup, BitLocker, dirty volume) are explained instead of failing silently.
+- **Smoother and lighter.** Page transitions with a staggered entrance, an animated background with more movement (orbits and sweeping light beams, transform-only, not blobs), polling that stops while the window is hidden and runs less often on modest computers, and an automatic "still background" on computers with 4 cores or less. About 20 % of the stylesheet, unused code and unused texts were removed.
+- **"Windows from Rufus" became "Installation media".** Any installation made with any tool (Rufus, Ventoy, a folder, a plain ISO) can be added.
+- **Project layout.** Scripts are now grouped in `scripts/build`, `scripts/usb`, `scripts/test` and `scripts/dev`; the kiosk window moved to `os/shell`. The plan and limitations documents were removed; what they described is built or listed in the README.
+
+### Added
+
+- **Drivers are found by themselves.** At every start Rebootera looks for Windows driver packages on the USB, in driver folders of this computer's partitions (the ones manufacturers leave, such as a DRIVERS partition or SWSetup) and in an installed Windows, all read-only. The Drivers page shows where each package comes from and has "Search again".
+- **Pointer settings in the live system:** pointer speed, tap to click (on by default; the touchpad needed a hard press before) and natural scrolling, saved on the USB.
+- **A browser inside Rebootera OS:** Firefox, only to browse, with uBlock Origin and Dark Reader installed and locked, no extensions store, no sync and no telemetry. The kiosk now runs on labwc (a light compositor).
+- **Download from a link:** paste an https link to an image, or an Internet Archive item, and pick the file; it is saved to the USB as unchecked (SHA-1 is verified when the Archive publishes it).
+- **More customisation:** animated background (automatic, always, never), interface size (90–130 %), pointer settings, theme, language, keyboard and Wi-Fi.
+- **Rebootera Desktop for Linux and macOS** (x64 and arm64, a single binary each). It opens in its own window when a Chromium-based browser is installed, uses zenity/kdialog (Linux) or AppleScript (macOS) for file dialogs and detects mounted drives. Creating the USB from the app is still Windows-only (on Linux use `scripts/usb/make-usb.sh`); making an ISO from a folder is not available on macOS.
+- Windows privacy option: `ReduceTelemetry` is now optional per installation and language blocks are optional.
+
+### Fixed
+
+- Rebootera Desktop for Windows no longer shows the address at the bottom left when hovering the menu.
+- The partition manager could refuse to resize the base disk/partition; the reasons are now explicit and resizing works on supported file systems.
+
 ## [0.10.0] - 2026-10-19
 
 ### Changed

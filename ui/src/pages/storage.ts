@@ -28,7 +28,7 @@ import {
   type Segment,
 } from "../partman.js";
 import type { Page } from "../router.js";
-import { openBoundary, openCreate, openDelete, openMerge, openResize } from "./partdialogs.js";
+import { openCreate, openDelete, openMerge, openResize } from "./partdialogs.js";
 
 /** Tono de cada función de disco. */
 const ROLE_TONES: Record<string, Tone> = {
@@ -320,23 +320,6 @@ function actionsPanel(layout: Layout, segment: Segment): HTMLElement {
         icons.refresh,
       ),
     );
-    for (const other of [left, right]) {
-      if (other) {
-        const [a, b] = other.start < segment.start ? [other, segment] : [segment, other];
-        buttons.push(
-          action(
-            t("pm.boundary", { name: titleOf(other) }),
-            t("pm.actBoundary"),
-            function boundary(): void {
-              openBoundary(layout, a, b, started);
-            },
-            a.resizable && b.resizable,
-            t("pm.cannotResize", { fs: (a.resizable ? b : a).fsType || "?" }),
-            icons.disk,
-          ),
-        );
-      }
-    }
     if (left || right) {
       buttons.push(
         action(

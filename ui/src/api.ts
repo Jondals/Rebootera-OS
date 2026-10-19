@@ -274,7 +274,9 @@ export interface BrowseEntry {
 }
 
 /** Paquete de drivers de Windows de /api/drivers/plan. */
-export interface DriverPackage {
+interface DriverPackage {
+  /** Origen del paquete (ver DriverSource.id). */
+  sourceId: string;
   dir: string;
   inf: string;
   provider: string;
@@ -298,9 +300,19 @@ export interface DriverMatch {
   package: DriverPackage | null;
 }
 
-/** Casado de los drivers del Vault con el hardware. */
+/** Sitio de donde salen drivers: el USB de Rebootera, una partición del equipo o un Windows instalado. */
+export interface DriverSource {
+  id: string;
+  kind: "usb" | "partition" | "windows";
+  device?: string;
+  folder?: string;
+  packages: number;
+}
+
+/** Casado de los drivers encontrados con el hardware. */
 export interface DriverPlan {
   available: boolean;
+  sources: DriverSource[];
   packages: number;
   matches: DriverMatch[];
   missing: DriverMatch[];
@@ -324,10 +336,3 @@ export interface WifiNetwork {
 }
 
 /** Respuestas automáticas del instalador (idioma, zona horaria y cuenta). */
-export interface Unattended {
-  language: string;
-  timeZone: string;
-  userName: string;
-  fullName: string;
-  password: string;
-}

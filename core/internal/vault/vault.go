@@ -30,22 +30,6 @@ func Available() bool {
 	return err == nil && info.IsDir()
 }
 
-// * EnsureLayout crea las carpetas mínimas de un Vault (estado e imágenes por
-// * categoría) en root. Se usa para la biblioteca local del equipo.
-func EnsureLayout(root string) error {
-	for _, dir := range []string{
-		filepath.Join("rebootera", "state"),
-		filepath.Join("isos", "windows"),
-		filepath.Join("isos", "linux"),
-		filepath.Join("isos", "tools"),
-	} {
-		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // * Path devuelve la ruta absoluta de una ruta relativa al Vault.
 func Path(parts ...string) string {
 	return filepath.Join(append([]string{Root}, parts...)...)
@@ -125,11 +109,14 @@ func ReadJSON(path string, value any) error {
 // Settings son las preferencias que sobreviven al reinicio.
 type Settings struct {
 	Language string `json:"language"`
-	Accent   string `json:"accent"`
 	// Theme es el tema visual: "obsidian" (oscuro), "ivory" (claro) o "sapphire" (azul oscuro).
-	Theme        string `json:"theme"`
-	Intro        bool   `json:"intro"`
-	ReduceMotion bool   `json:"reduceMotion"`
+	Theme string `json:"theme"`
+	// Background controla el fondo animado: "auto" (se apaga solo en equipos modestos), "on" u "off".
+	Background string `json:"background"`
+	// Scale es el tamaño de la interfaz en porcentaje (90 a 130).
+	Scale        int  `json:"scale"`
+	Intro        bool `json:"intro"`
+	ReduceMotion bool `json:"reduceMotion"`
 }
 
 var settingsMu sync.Mutex
@@ -138,7 +125,7 @@ var settingsMu sync.Mutex
 func LoadSettings() (Settings, error) {
 	settingsMu.Lock()
 	defer settingsMu.Unlock()
-	settings := Settings{Language: "en", Accent: "aurora", Theme: "obsidian", Intro: true}
+	settings := Settings{Language: "en", Theme: "obsidian", Background: "auto", Scale: 100, Intro: true}
 	if !Available() {
 		return settings, ErrUnavailable
 	}
@@ -151,8 +138,18 @@ func SaveSettings(settings Settings) error {
 	if settings.Language != "en" && settings.Language != "es" {
 		return fmt.Errorf("idioma no válido: %q", settings.Language)
 	}
-	if settings.Accent != "aurora" && settings.Accent != "nebula" {
-		return fmt.Errorf("acento no válido: %q", settings.Accent)
+	switch settings.Background {
+	case "":
+		settings.Background = "auto"
+	case "auto", "on", "off":
+	default:
+		return fmt.Errorf("fondo no válido: %q", settings.Background)
+	}
+	if settings.Scale == 0 {
+		settings.Scale = 100
+	}
+	if settings.Scale < 90 || settings.Scale > 130 {
+		return fmt.Errorf("tamaño de interfaz no válido: %d", settings.Scale)
 	}
 	// * Los temas de la 0.9 (sky, night, forest) pasan al oscuro por defecto.
 	switch settings.Theme {

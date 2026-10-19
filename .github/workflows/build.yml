@@ -48,7 +48,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           df -h /
 
-      - name: Build the ISO and the Windows app (Debian 13)
+      - name: Build the ISO and the desktop apps (Debian 13)
         run: |
           docker run --rm --privileged -v "$PWD":/src -w /src debian:trixie bash -euo pipefail -c '
             export DEBIAN_FRONTEND=noninteractive
@@ -57,8 +57,8 @@ jobs:
               imagemagick librsvg2-bin grub-common fonts-inter fonts-jetbrains-mono xorriso mtools squashfs-tools \
               dosfstools exfatprogs
             git config --global --add safe.directory /src
-            bash scripts/build-desktop.sh
-            bash scripts/build.sh
+            bash scripts/build/build-desktop.sh
+            bash scripts/build/build.sh
           '
 
       - name: Collect the files with their fixed names
@@ -70,6 +70,10 @@ jobs:
           cp "out/Rebootera Desktop.exe" dist/Rebootera-Desktop.exe
           (cd dist && sha256sum rebootera-os-amd64.iso > rebootera-os-amd64.iso.sha256)
           (cd dist && sha256sum Rebootera-Desktop.exe > Rebootera-Desktop.exe.sha256)
+          for archive in out/rebootera-desktop-*.tar.gz; do
+            cp "$archive" dist/
+            (cd dist && sha256sum "$(basename "$archive")" > "$(basename "$archive").sha256")
+          done
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "ISO_SHA=$(cut -d' ' -f1 dist/rebootera-os-amd64.iso.sha256)" >> "$GITHUB_ENV"
           ls -lh dist
@@ -104,7 +108,7 @@ jobs:
           commit: ${GITHUB_SHA}
           sha256: ${ISO_SHA}
 
-          Files: \`Rebootera-Desktop.exe\` (Windows app that creates the USB) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."
+          Files: \`Rebootera-Desktop.exe\` (Windows app that creates the USB), \`rebootera-desktop-linux-*.tar.gz\` and \`rebootera-desktop-darwin-*.tar.gz\` (the desktop app for Linux and macOS) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."
 
       - name: Create or advance the beta branch and publish the beta release
         if: github.ref_name == 'master'

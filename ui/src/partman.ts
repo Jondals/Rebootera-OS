@@ -4,7 +4,7 @@
 import { getJSON, postJSON } from "./api.js";
 
 /** Sectores de 512 bytes en 1 MiB. */
-export const SECTORS_PER_MIB = 2048;
+const SECTORS_PER_MIB = 2048;
 
 /** Trozo de un disco: partición (number > 0) o hueco libre. */
 export interface Segment {
@@ -54,7 +54,7 @@ export interface Op {
 }
 
 /** Paso del plan. */
-export interface PlanStep {
+interface PlanStep {
   kind: string;
   part: number;
   length?: number;
