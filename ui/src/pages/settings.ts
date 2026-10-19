@@ -1,7 +1,7 @@
 // * Página "Ajustes": idioma, color de acento, intro al arrancar, movimiento
 // * reducido y datos del sistema (versión, kernel, tiempo encendido).
 
-import { pageHeader, panel } from "../components.js";
+import { more, pageHeader, panel } from "../components.js";
 import { el } from "../dom.js";
 import * as fmt from "../format.js";
 import { t, type Language } from "../i18n.js";
@@ -108,24 +108,27 @@ function render(root: HTMLElement): void {
             setLanguage,
           ),
         ]),
-        panel(t("settings.accent"), [
-          choice(
-            t("settings.accent"),
-            [
-              ["aurora", t("settings.accentAurora")],
-              ["nebula", t("settings.accentNebula")],
-            ],
-            prefs.accent,
-            setAccent,
-          ),
-        ]),
-        panel(t("settings.title"), [
-          toggle(t("settings.intro"), prefs.intro, setIntro),
-          toggle(t("settings.motion"), prefs.reduceMotion, setMotion),
-        ]),
         isDesktop() ? null : keyboardPanel(),
         isDesktop() ? null : wifiPanel(),
-        panel(t("settings.about"), [about]),
+        // * Lo que casi nadie toca queda plegado.
+        more(t("settings.advanced"), [
+          panel(t("settings.accent"), [
+            choice(
+              t("settings.accent"),
+              [
+                ["aurora", t("settings.accentAurora")],
+                ["nebula", t("settings.accentNebula")],
+              ],
+              prefs.accent,
+              setAccent,
+            ),
+          ]),
+          panel(t("settings.title"), [
+            toggle(t("settings.intro"), prefs.intro, setIntro),
+            toggle(t("settings.motion"), prefs.reduceMotion, setMotion),
+          ]),
+          panel(t("settings.about"), [about]),
+        ]),
       ]),
     ]),
   );

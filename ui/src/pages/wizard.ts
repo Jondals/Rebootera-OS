@@ -20,7 +20,7 @@ import {
   button,
   emptyState,
   errorBox,
-  monoLabel,
+  more,
   pageHeader,
   panel,
   type Tone,
@@ -34,7 +34,7 @@ import { navigate, type Page } from "../router.js";
 import { snapshot } from "../state.js";
 
 /** Claves de los pasos, en orden. */
-const STEPS = ["stepOs", "stepInspect", "stepDrivers", "stepTarget", "stepSettings", "stepDeploy"];
+const STEPS = ["stepOs", "stepTarget", "stepSettings", "stepDeploy"];
 
 /** Tamaño mínimo de disco para Windows 11 (64 GB). */
 const MIN_DISK = 64e9;
@@ -253,14 +253,6 @@ function render(root: HTMLElement): void {
     el("div", { class: "page" }, [
       pageHeader(t("wizard.title"), t("wizard.subtitle")),
       stepper,
-      el("section", { class: "guard-banner" }, [
-        el("span", { class: "guard-icon" }, [icon(icons.shield)]),
-        el("div", {}, [
-          el("strong", {}, [t("wizard.guardTitle")]),
-          el("p", {}, [t("wizard.guardText")]),
-        ]),
-        badge("SAFE_GUARD", "ok"),
-      ]),
       content,
       footer,
     ]),
@@ -288,10 +280,7 @@ function renderStepper(): void {
             el("span", { class: "step-index" }, [
               index < step ? icon(icons.check) : String(index + 1),
             ]),
-            el("span", { class: "step-text" }, [
-              monoLabel("STEP " + (index + 1)),
-              el("span", {}, [t("wizard." + key)]),
-            ]),
+            el("span", { class: "step-text" }, [el("span", {}, [t("wizard." + key)])]),
           ],
         ),
       ]);
@@ -876,12 +865,15 @@ function update(): void {
   renderStepper();
   const system = snapshot.system;
   const disks = snapshot.disks;
+  // * La comprobación del equipo y de los drivers va plegada dentro de "Opciones": casi nunca hace falta.
   const views: Node[][] = [
     stepChooseOs(),
-    stepInspect(system, disks),
-    stepDrivers(),
     stepTarget(disks),
-    [...stepInstallerSettings(), ...stepSummary()],
+    [
+      ...stepInstallerSettings(),
+      more(t("wizard.checkComputer"), [...stepInspect(system, disks), ...stepDrivers()]),
+      ...stepSummary(),
+    ],
     stepDeploy(),
   ];
   if (step === 2) {
@@ -898,7 +890,7 @@ function update(): void {
   next.disabled = step === STEPS.length - 1;
   footer.replaceChildren(
     back,
-    el("span", { class: "mono-small muted" }, [step + 1 + " / " + STEPS.length]),
+    el("span", { class: "muted" }, [step + 1 + " / " + STEPS.length]),
     next,
   );
 }

@@ -3,6 +3,21 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.8.0] - 2026-10-19
+
+### Cambiado
+
+- **Todos los menús rehechos para que sean simples.** Un aspecto tranquilo en todas partes: colores planos, letra normal en vez de las mayúsculas técnicas pequeñas, texto y botones más grandes y mucho menos en pantalla.
+  - **Inicio** es una pregunta ("¿Qué quieres hacer?") y tarjetas grandes: Instalar un sistema, Descargar sistemas, Mis imágenes, Discos, Drivers (en Rebootera Desktop: tu USB de un vistazo y Crear USB, Descargar, Mis imágenes, Drivers). Procesador, discos y firmware pasaron a "Sobre este equipo", plegado; los widgets de temperaturas, red y registro del kernel ya no están en la portada.
+  - **Barra superior**: solo avisa cuando algo falla (sin red, sin USB). Ya no están el reloj, el modo de arranque ni Secure Boot.
+  - **Nombres del menú** claros: Inicio, Instalar, Mis imágenes, Drivers, Descargar, Discos.
+  - **Descargar** enseña una tarjeta pequeña por sistema: nombre, una línea, un desplegable para elegir la versión (con su tamaño) y un botón Descargar. La verificación, la compatibilidad de arranque y el SHA-256 están en "Detalles". La barra inferior solo aparece mientras se descarga algo; la cola y el ancho de banda son botones de la cabecera.
+  - **Instalar** tiene cuatro pasos (Sistema, Disco, Opciones, Instalar) en vez de seis; las comprobaciones del equipo y de los drivers van plegadas dentro de Opciones y el aviso largo de seguridad desaparece (el subtítulo dice que no se escribe nada hasta que confirmes).
+  - **Drivers** lista los dispositivos con solo un nombre, un tipo y "Con driver" / "Sin driver"; los identificadores salen al pasar el ratón. Lo que casa con el USB va plegado.
+  - **Crear USB**: el origen de Rebootera OS y las imágenes y drivers opcionales van plegados; solo quedan abiertos el USB y el botón final.
+  - **Ajustes**: primero idioma, teclado y Wi-Fi; el color de acento, la intro, el movimiento reducido y los datos del sistema están en "Más opciones".
+  - **Mis imágenes**: textos más cortos y filas más suaves.
+
 ## [0.7.0] - 2026-10-18
 
 ### Añadido

@@ -44,16 +44,6 @@ const FAMILY_ICONS: Record<string, string> = {
   rescue: icons.recover,
 };
 
-/** Tono de cada etiqueta de una versión. */
-const TAG_TONES: Record<string, Tone> = {
-  recommended: "accent",
-  lts: "ok",
-  rolling: "violet",
-  light: "amber",
-  live: "muted",
-  legacy: "muted",
-};
-
 /** Tono de cada estado de transferencia. */
 const STATUS_TONES: Record<Job["status"], Tone> = {
   queued: "muted",
@@ -116,14 +106,17 @@ function render(root: HTMLElement): void {
   search.value = query;
   search.addEventListener("input", onSearch);
   page = el("div", { class: "page dl-page" }, [
-    el("header", { class: "dl-hero" }, [
+    el("header", { class: "page-header" }, [
       el("div", {}, [
-        el("span", { class: "mono-label" }, [t("downloads.official")]),
         el("h1", { class: "page-title" }, [t("downloads.title")]),
         el("p", { class: "page-subtitle" }, [t("downloads.subtitle")]),
       ]),
-      destinationBody,
+      el("div", { class: "page-actions" }, [
+        button(t("downloads.viewQueue"), openQueue, { iconPaths: icons.library }),
+        button(t("downloads.bandwidth"), openBandwidth, { iconPaths: icons.activity }),
+      ]),
     ]),
+    destinationBody,
     message,
     el("div", { class: "dl-tools" }, [search, tabsBody]),
     listBody,
@@ -338,12 +331,6 @@ function bootBadge(entry: CatalogEntry): HTMLElement {
   return node;
 }
 
-/** Primera frase de una nota. */
-function firstSentence(text: string): string {
-  const end = text.indexOf(". ");
-  return end > 0 ? text.slice(0, end + 1) : text;
-}
-
 /** Tamaño de una entrada, o "…" mientras se consulta. */
 function sizeText(entry: CatalogEntry, selected: boolean): string {
   if (entry.resolver.type === "manual") {
@@ -373,33 +360,56 @@ function activeJob(entry: CatalogEntry): Job | undefined {
   });
 }
 
-/** Una versión dentro de la tarjeta de su familia. */
-function versionRow(entry: CatalogEntry, selected: boolean): HTMLElement {
-  const input = el("input", {
-    type: "radio",
-    name: "version-" + entry.family,
-    value: entry.id,
-    checked: selected,
-    "data-family": entry.family,
+/** Texto de una versión en el desplegable: edición y, si se sabe, tamaño. */
+function versionLabel(entry: CatalogEntry): string {
+  const size = sizeText(entry, false);
+  return entry.edition + (size && size !== "—" ? " · " + size : "");
+}
+
+/** Desplegable con las versiones de una familia (solo si hay más de una). */
+function versionSelect(entries: CatalogEntry[], chosen: CatalogEntry): HTMLElement {
+  if (entries.length < 2) {
+    return el("span", { class: "fam-edition" }, [chosen.edition]);
+  }
+  const select = el(
+    "select",
+    { class: "text-input fam-select", "data-family": chosen.family, "aria-label": chosen.name },
+    entries.map(function option(entry) {
+      const node = el("option", { value: entry.id }, [versionLabel(entry)]);
+      node.selected = entry.id === chosen.id;
+      return node;
+    }),
+  );
+  select.addEventListener("change", chooseVersion);
+  return select;
+}
+
+/** Abre la ventana con los detalles de una versión: verificación, arranque y SHA-256. */
+function openDetails(event: MouseEvent): void {
+  const id = (event.currentTarget as HTMLElement).dataset.id ?? "";
+  const entry = catalog?.find(function sameId(item) {
+    return item.id === id;
   });
-  input.addEventListener("change", chooseVersion);
-  // * Las etiquetas de la versión elegida ya salen en la cabecera de la tarjeta.
-  const tags = selected
-    ? []
-    : entry.tags.map(function tagBadge(tag) {
-        return badge(t("downloads.tags." + tag), TAG_TONES[tag] ?? "muted");
-      });
-  return el("label", { class: "fam-version" + (selected ? " fam-selected" : "") }, [
-    input,
-    el("div", { class: "fam-version-main" }, [
-      el("strong", {}, [entry.edition]),
-      el("span", { class: "muted fam-version-note" }, [
-        firstSentence(entry.notes[getLanguage()] ?? entry.notes.en),
-      ]),
-    ]),
-    el("div", { class: "fam-version-tags" }, tags),
-    el("span", { class: "mono-small muted fam-version-size" }, [sizeText(entry, selected)]),
-  ]);
+  if (!entry) {
+    return;
+  }
+  const check = verification(entry);
+  const info = resolved.get(entry.id);
+  const rows: HTMLElement[] = [
+    el("p", {}, [entry.notes[getLanguage()] ?? entry.notes.en]),
+    el("div", { class: "fam-facts" }, [badge(check.text, check.tone), bootBadge(entry)]),
+    el("p", { class: "muted" }, [check.hint]),
+  ];
+  if (info && info !== "error" && info.fileName) {
+    rows.push(el("p", { class: "muted" }, [info.fileName]));
+  }
+  if (entry.resolver.type !== "manual") {
+    const copy = button(t("downloads.copySha"), copySha, { iconPaths: icons.check });
+    copy.dataset.id = entry.id;
+    copy.disabled = !(info && info !== "error" && info.sha256);
+    rows.push(el("div", { class: "modal-actions" }, [copy]));
+  }
+  openModal(entry.name + " " + entry.version, rows);
 }
 
 /** Barra de progreso de una descarga dentro de la tarjeta. */
@@ -455,42 +465,32 @@ function familyFooter(entry: CatalogEntry): HTMLElement {
   if (job) {
     return inlineProgress(job);
   }
-  const destination =
-    appMode.usb || appMode.library ? t("downloads.toUsb") : t("downloads.download");
-  const actions: HTMLElement[] = [];
-  const info = resolved.get(entry.id);
+  let main: HTMLElement;
   if (entry.resolver.type === "manual") {
-    const open = button(t("downloads.openVendor"), openVendor, {
+    main = button(t("downloads.openVendor"), openVendor, {
       variant: "primary",
       iconPaths: icons.globe,
     });
-    open.dataset.url = entry.homepage;
-    actions.push(open);
+    main.dataset.url = entry.homepage;
   } else if (entry.inLibrary) {
-    actions.push(badge(t("downloads.inLibrary"), "ok"));
+    main = badge(t("downloads.inLibrary"), "ok");
   } else {
-    const get = button(destination, startDownload, {
+    main = button(t("downloads.download"), startDownload, {
       variant: "primary",
       iconPaths: icons.download,
     });
-    get.dataset.id = entry.id;
-    get.disabled = !snapshot.vault?.available;
-    actions.push(get);
-  }
-  if (entry.resolver.type !== "manual") {
-    const copy = button(t("downloads.copySha"), copySha, { iconPaths: icons.check });
-    copy.classList.add("btn-small");
-    copy.dataset.id = entry.id;
-    copy.disabled = !(info && info !== "error" && info.sha256);
-    if (copy.disabled) {
-      copy.title = t("downloads.copyShaWait");
+    main.dataset.id = entry.id;
+    if (main instanceof HTMLButtonElement) {
+      main.disabled = !snapshot.vault?.available;
     }
-    actions.push(copy);
   }
-  return el("div", { class: "fam-actions" }, actions);
+  const details = button(t("downloads.details"), openDetails, { iconPaths: icons.info });
+  details.classList.add("btn-small", "btn-quiet");
+  details.dataset.id = entry.id;
+  return el("div", { class: "fam-actions" }, [main, details]);
 }
 
-/** Tarjeta de una familia con sus versiones. */
+/** Tarjeta de una familia: nombre, una frase, la versión a elegir y un botón. */
 function familyCard(family: Family, entries: CatalogEntry[]): HTMLElement {
   const chosenId = picked.get(family.id);
   const chosen =
@@ -502,34 +502,16 @@ function familyCard(family: Family, entries: CatalogEntry[]): HTMLElement {
     }) ??
     entries[0];
   queueResolve(chosen.id);
-  const check = verification(chosen);
-  const verified = badge(check.text, check.tone);
-  verified.title = check.hint;
   const iconPaths = FAMILY_ICONS[family.icon] ?? icons.library;
   return el("article", { class: "fam-card" }, [
     el("header", { class: "fam-head" }, [
       el("span", { class: "fam-icon" }, [icon(iconPaths)]),
       el("div", { class: "fam-title" }, [
         el("h3", {}, [family.name]),
-        el("span", { class: "muted" }, [family.vendor]),
+        el("span", { class: "muted" }, [family.summary[getLanguage()] ?? family.summary.en]),
       ]),
-      el(
-        "div",
-        { class: "fam-badges" },
-        chosen.tags.slice(0, 2).map(function tagBadge(tag) {
-          return badge(t("downloads.tags." + tag), TAG_TONES[tag] ?? "muted");
-        }),
-      ),
     ]),
-    el("p", { class: "fam-summary" }, [family.summary[getLanguage()] ?? family.summary.en]),
-    el(
-      "div",
-      { class: "fam-versions", role: "radiogroup", "aria-label": family.name },
-      entries.map(function row(entry) {
-        return versionRow(entry, entry.id === chosen.id);
-      }),
-    ),
-    el("div", { class: "fam-facts" }, [verified, bootBadge(chosen)]),
+    versionSelect(entries, chosen),
     familyFooter(chosen),
   ]);
 }
@@ -580,16 +562,6 @@ function renderList(): void {
   drawTabs();
 }
 
-/** Número de familias de cada pestaña (para el contador). */
-function tabCount(name: Tab): number {
-  if (families === null) {
-    return 0;
-  }
-  return families.filter(function inTab(family) {
-    return name === "all" || family.group === name;
-  }).length;
-}
-
 /** Dibuja los botones de las pestañas. */
 function drawTabs(): void {
   if (tabsBody === null) {
@@ -597,7 +569,6 @@ function drawTabs(): void {
   }
   tabsBody.replaceChildren(
     ...TABS.map(function tabButton(name) {
-      const count = tabCount(name);
       const node = el(
         "button",
         {
@@ -607,10 +578,7 @@ function drawTabs(): void {
           "aria-selected": String(tab === name),
           "data-tab": name,
         },
-        [
-          t("downloads.tabs." + name),
-          count > 0 ? el("span", { class: "chip-count" }, [String(count)]) : null,
-        ],
+        [t("downloads.tabs." + name)],
       );
       node.addEventListener("click", chooseTab);
       return node;
@@ -618,7 +586,7 @@ function drawTabs(): void {
   );
 }
 
-/** Tarjeta del destino de las descargas: el USB (o la carpeta del PC) y su espacio. */
+/** Línea del destino de las descargas: el USB (o la carpeta del PC) y su espacio. */
 function drawDestination(): void {
   if (destinationBody === null) {
     return;
@@ -630,29 +598,25 @@ function drawDestination(): void {
   }
   if (!vault.available) {
     destinationBody.replaceChildren(
-      el("div", { class: "dl-dest-head" }, [
-        icon(icons.lock),
-        el("strong", {}, [t("downloads.noStorage")]),
-      ]),
-      el("p", { class: "muted small-note" }, [t("downloads.noStorageHint")]),
+      icon(icons.lock),
+      el("span", {}, [t("downloads.noStorage") + ". " + t("downloads.noStorageHint")]),
     );
     return;
   }
-  const total = vault.usedBytes + vault.freeBytes;
   const where = appMode.usb
     ? t("downloads.destUsb", { name: drive?.label || appMode.usb })
     : appMode.library
       ? t("downloads.destLocal")
       : t("downloads.destLive");
   destinationBody.replaceChildren(
-    el("div", { class: "dl-dest-head" }, [
-      icon(appMode.library && !appMode.usb ? icons.disk : icons.usb),
-      el("strong", {}, [where]),
-      drive?.fileSystem ? badge(drive.fileSystem, "muted") : null,
-    ]),
-    progress(vault.usedBytes / Math.max(1, total), "accent"),
-    el("span", { class: "mono-small muted" }, [
-      t("downloads.destFree", { free: fmt.bytes(vault.freeBytes), total: fmt.bytes(total) }),
+    icon(appMode.library && !appMode.usb ? icons.disk : icons.usb),
+    el("span", {}, [
+      where +
+        " · " +
+        t("downloads.destFree", {
+          free: fmt.bytes(vault.freeBytes),
+          total: fmt.bytes(vault.usedBytes + vault.freeBytes),
+        }),
     ]),
   );
 }
@@ -688,16 +652,8 @@ function drawBar(): void {
       progress(fraction, "accent"),
     ]);
   }
-  barBody.replaceChildren(
-    summary,
-    el("div", { class: "image-actions" }, [
-      button(t("downloads.viewQueue"), openQueue, { iconPaths: icons.library }),
-      button(t("downloads.bandwidth"), openBandwidth, {
-        variant: "primary",
-        iconPaths: icons.activity,
-      }),
-    ]),
-  );
+  barBody.hidden = active.length === 0;
+  barBody.replaceChildren(summary);
 }
 
 /** Fila de una transferencia en la ventana de la cola. */

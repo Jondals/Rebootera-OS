@@ -99,3 +99,53 @@ export function button(
   node.addEventListener("click", onClick);
   return node;
 }
+
+/** Tarjeta grande y pulsable: icono, título y una frase. Es la pieza de las portadas. */
+export function tile(
+  iconPaths: string,
+  title: string,
+  text: string,
+  onClick: () => void,
+  options: { primary?: boolean; badge?: Node | null } = {},
+): HTMLElement {
+  const card = el(
+    "button",
+    { class: "tile" + (options.primary ? " tile-primary" : ""), type: "button" },
+    [
+      el("span", { class: "tile-icon" }, [icon(iconPaths)]),
+      el("span", { class: "tile-body" }, [
+        el("strong", { class: "tile-title" }, [title]),
+        el("span", { class: "tile-text" }, [text]),
+      ]),
+      options.badge ?? null,
+      icon(icons.chevronRight, "icon tile-arrow"),
+    ],
+  );
+  card.addEventListener("click", onClick);
+  return card;
+}
+
+/** Secciones plegables abiertas por el usuario (sobreviven a que la página se redibuje). */
+const openSections = new Set<string>();
+
+/**
+ * Sección plegable: lo secundario se esconde hasta que se pide. Con `key`, recuerda si está abierta
+ * aunque la página se vuelva a dibujar.
+ */
+export function more(summary: string, body: (Node | null)[], key = ""): HTMLElement {
+  const node = el("details", { class: "more" }, [
+    el("summary", {}, [el("span", {}, [summary]), icon(icons.chevronRight, "icon more-arrow")]),
+    el("div", { class: "more-body" }, body),
+  ]);
+  if (key !== "") {
+    node.open = openSections.has(key);
+    node.addEventListener("toggle", function remember() {
+      if (node.open) {
+        openSections.add(key);
+      } else {
+        openSections.delete(key);
+      }
+    });
+  }
+  return node;
+}

@@ -11,7 +11,7 @@ import { el, icon } from "./dom.js";
 import * as fmt from "./format.js";
 import { t, translateStatic } from "./i18n.js";
 import { icons } from "./icons.js";
-import { bootSource, liveMedia, onlineInterface } from "./insights.js";
+import { liveMedia, onlineInterface } from "./insights.js";
 import { playIntro } from "./intro.js";
 import { appMode, isDesktop, loadMode } from "./mode.js";
 import { createPage } from "./pages/create.js";
@@ -87,77 +87,25 @@ function renderNav(): void {
   );
 }
 
-/** Chip de la barra superior con icono y texto. */
+/** Aviso de la barra superior con icono y texto. */
 function chip(iconPaths: string, text: string, tone: string): HTMLElement {
   return el("span", { class: "chip chip-" + tone }, [icon(iconPaths), el("span", {}, [text])]);
 }
 
-/** Barra superior y tarjeta del USB en Rebootera Desktop. */
-function renderDesktopShell(): void {
-  const platform = appMode.platform === "windows" ? "Windows" : "Linux";
-  byId("boot-chip").replaceChildren(
-    el("span", { class: "pulse-dot" }),
-    el("span", {}, [t("desktop.boot", { platform })]),
-  );
-  byId("net-chip").replaceChildren(
-    appMode.usb
-      ? chip(icons.usb, appMode.usb, "ok")
-      : appMode.library
-        ? chip(icons.disk, t("desktop.localChip"), "accent")
-        : chip(icons.usb, t("desktop.noUsbChip"), "warn"),
-  );
-  byId("sb-chip").replaceChildren();
-  renderDriveCard();
-}
-
-/** Refresca los indicadores de la barra superior y la tarjeta del USB. */
+/**
+ * Refresca la barra superior y la tarjeta del USB. La barra solo avisa cuando algo falla (sin red,
+ * sin USB): lo demás no hace falta para usar la aplicación y está en Ajustes.
+ */
 function renderShell(): void {
+  let notice: HTMLElement | null = null;
   if (isDesktop()) {
-    renderDesktopShell();
-    return;
+    if (!appMode.usb && !appMode.library) {
+      notice = chip(icons.usb, t("desktop.noUsbChip"), "warn");
+    }
+  } else if (snapshot.system !== null && onlineInterface(snapshot.system) === null) {
+    notice = chip(icons.offline, t("topbar.offline"), "warn");
   }
-  const system = snapshot.system;
-  const disks = snapshot.disks;
-
-  const source = bootSource(disks);
-  const bootText =
-    source === "usb"
-      ? t("topbar.bootedUsb")
-      : source === "optical"
-        ? t("topbar.bootedOptical")
-        : t("topbar.bootedOther");
-  byId("boot-chip").replaceChildren(el("span", { class: "pulse-dot" }), el("span", {}, [bootText]));
-
-  if (system === null) {
-    return;
-  }
-  const iface = onlineInterface(system);
-  let net: HTMLElement;
-  if (iface === null) {
-    net = chip(icons.offline, t("topbar.offline"), "warn");
-  } else if (iface.kind === "wifi") {
-    net = chip(icons.wifi, t("topbar.wifi"), "ok");
-  } else {
-    net = chip(
-      icons.ethernet,
-      iface.speedMbps > 0
-        ? t("topbar.ethernetSpeed", { speed: fmt.linkSpeed(iface.speedMbps) })
-        : t("topbar.ethernet"),
-      "ok",
-    );
-  }
-  let secure: HTMLElement;
-  if (system.firmware === "bios") {
-    secure = chip(icons.shieldOff, t("topbar.legacy"), "muted");
-  } else if (system.secureBoot === "on") {
-    secure = chip(icons.shield, t("topbar.secureBootOn"), "ok");
-  } else if (system.secureBoot === "off") {
-    secure = chip(icons.shieldOff, t("topbar.secureBootOff"), "warn");
-  } else {
-    secure = chip(icons.shieldOff, t("topbar.secureBootUnknown"), "muted");
-  }
-  byId("net-chip").replaceChildren(net);
-  byId("sb-chip").replaceChildren(secure);
+  byId("status-chip").replaceChildren(...(notice ? [notice] : []));
   renderDriveCard();
 }
 
@@ -201,11 +149,6 @@ function renderDriveCard(): void {
   );
 }
 
-/** Actualiza el reloj de la barra superior. */
-function tickClock(): void {
-  byId("clock-chip").replaceChildren(icon(icons.clock), el("span", {}, [fmt.clock(new Date())]));
-}
-
 /** Alterna entre inglés y español desde la barra superior. */
 function toggleLanguage(): void {
   prefs.language = prefs.language === "en" ? "es" : "en";
@@ -220,7 +163,6 @@ function relabel(): void {
   byId("lang-code").textContent = prefs.language.toUpperCase();
   renderNav();
   renderShell();
-  tickClock();
 }
 
 /** Abre los ajustes. */
@@ -262,7 +204,6 @@ async function init(): Promise<void> {
   byId("lang-code").textContent = prefs.language.toUpperCase();
   byId("power-button").addEventListener("click", openPowerDialog);
   byId("settings-button").addEventListener("click", openSettings);
-  byId("net-chip").addEventListener("click", openSettings);
   byId("lang-button").addEventListener("click", toggleLanguage);
   document.addEventListener("rebootera:language", relabel);
   // * El kiosco no ofrece menú contextual: no hay nada útil que mostrar en él.
@@ -287,8 +228,6 @@ async function init(): Promise<void> {
   register("settings", settingsPage);
 
   subscribe(renderShell);
-  tickClock();
-  window.setInterval(tickClock, 1000);
   const ready = Promise.all([loadVersion(), start(isDesktop()), applyVaultPrefs()]);
   startRouter(byId("view"), renderNav);
   playIntro(ready);

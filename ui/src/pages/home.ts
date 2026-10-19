@@ -4,7 +4,7 @@
 // * el USB se hace solo desde "Crear USB".
 
 import { getJSON, postJSON } from "../api.js";
-import { badge, button, emptyState, errorBox, pageHeader, panel, progress } from "../components.js";
+import { badge, button, errorBox, more, progress, tile } from "../components.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
@@ -38,8 +38,11 @@ function render(root: HTMLElement): void {
   message = el("div", { class: "page-message", "aria-live": "polite" });
   lastSignature = "";
   root.append(
-    el("div", { class: "page" }, [
-      pageHeader(t("nav.overview"), t("desktop.homeSubtitle")),
+    el("div", { class: "page home" }, [
+      el("header", { class: "home-head" }, [
+        el("h1", { class: "home-title" }, [t("home.title")]),
+        el("p", { class: "home-subtitle" }, [t("home.subtitle")]),
+      ]),
       message,
       body,
     ]),
@@ -84,7 +87,7 @@ function openCreate(): void {
   navigate("create");
 }
 
-/** Abre la biblioteca. */
+/** Abre las imágenes guardadas. */
 function openLibrary(): void {
   navigate("library");
 }
@@ -99,62 +102,39 @@ function openDrivers(): void {
   navigate("drivers");
 }
 
-/** Tarjeta del USB elegido con sus cifras y atajos. */
-function selectedCard(drive: Drive): HTMLElement {
+/** Tarjeta del USB elegido: nombre, espacio y cuántas imágenes tiene. */
+function usbCard(drive: Drive): HTMLElement {
   const used = drive.sizeBytes - drive.freeBytes;
   const images = snapshot.library.length;
-  return panel(
-    t("desktop.rebooteraDrive"),
-    [
-      el("div", { class: "usb-summary" }, [
-        el("span", { class: "install-icon" }, [icon(icons.usb)]),
-        el("div", {}, [
-          el("strong", { class: "usb-root" }, [drive.root]),
-          el("span", { class: "muted" }, [
-            t("desktop.version") + ": " + (drive.version || t("common.unknown")),
-          ]),
-          el("span", { class: "muted" }, [
-            (images === 1 ? t("library.countOne") : t("library.count", { n: images })) +
-              " · " +
-              t("desktop.driverCount", { n: driverCount }),
-          ]),
-        ]),
+  return el("section", { class: "usb-hero" }, [
+    el("span", { class: "usb-hero-icon" }, [icon(icons.usb)]),
+    el("div", { class: "usb-hero-main" }, [
+      el("strong", { class: "usb-hero-title" }, [
+        (drive.label || t("home.usbTitle")) + " (" + drive.root + ")",
+      ]),
+      el("span", { class: "muted" }, [
+        t("home.usbText", { used: fmt.bytes(used), free: fmt.bytes(drive.freeBytes) }) +
+          " · " +
+          (images === 1 ? t("home.usbImagesOne") : t("home.usbImages", { n: images })),
       ]),
       progress(used / Math.max(1, drive.sizeBytes), "accent"),
-      el("span", { class: "mono-small muted" }, [
-        t("sidebar.usedFree", { used: fmt.bytes(used), free: fmt.bytes(drive.freeBytes) }),
-      ]),
-      el("div", { class: "image-actions usb-actions" }, [
-        button(t("desktop.nav.create"), openCreate, {
-          variant: "primary",
-          iconPaths: icons.sparkle,
-        }),
-        button(t("library.title"), openLibrary, { iconPaths: icons.library }),
-        button(t("nav.drivers"), openDrivers, { iconPaths: icons.drivers }),
-        button(t("overview.downloadTitle"), openDownloads, { iconPaths: icons.download }),
-      ]),
-    ],
-    { iconPaths: icons.usb },
-  );
+    ]),
+  ]);
 }
 
 /** Instrucciones para arrancar desde el USB. */
 function bootHelp(): HTMLElement {
-  return panel(
-    t("desktop.bootTitle"),
-    [
-      el("ol", { class: "boot-steps" }, [
-        el("li", {}, [t("desktop.bootStep1")]),
-        el("li", {}, [t("desktop.bootStep2")]),
-        el("li", {}, [t("desktop.bootStep3")]),
-      ]),
-      el("div", { class: "notice" }, [
-        icon(icons.shield),
-        el("span", {}, [t("desktop.secureBootNote")]),
-      ]),
-    ],
-    { iconPaths: icons.info, className: "usb-help" },
-  );
+  return more(t("home.bootHelp"), [
+    el("ol", { class: "boot-steps" }, [
+      el("li", {}, [t("desktop.bootStep1")]),
+      el("li", {}, [t("desktop.bootStep2")]),
+      el("li", {}, [t("desktop.bootStep3")]),
+    ]),
+    el("div", { class: "notice" }, [
+      icon(icons.shield),
+      el("span", {}, [t("desktop.secureBootNote")]),
+    ]),
+  ]);
 }
 
 /** Fila de un USB de Rebootera conectado. */
@@ -171,9 +151,7 @@ function driveRow(drive: Drive): HTMLElement {
     el("span", { class: "device-icon" }, [icon(icons.usb)]),
     el("div", { class: "device-main" }, [
       el("strong", {}, [(drive.label || drive.root) + " (" + drive.root + ")"]),
-      el("span", { class: "muted" }, [
-        fmt.bytes(drive.sizeBytes) + " · " + (drive.version || t("common.unknown")),
-      ]),
+      el("span", { class: "muted" }, [fmt.bytes(drive.sizeBytes)]),
     ]),
     action,
   ]);
@@ -197,19 +175,25 @@ function update(): void {
   });
   const parts: HTMLElement[] = [];
   if (selected) {
-    parts.push(selectedCard(selected));
+    parts.push(
+      usbCard(selected),
+      el("div", { class: "tile-grid tile-grid-3" }, [
+        tile(icons.sparkle, t("home.make"), t("home.makeText"), openCreate, { primary: true }),
+        tile(icons.download, t("home.download"), t("home.downloadText"), openDownloads),
+        tile(icons.library, t("home.library"), t("home.libraryText"), openLibrary),
+        tile(icons.drivers, t("home.drivers"), t("home.driversText"), openDrivers),
+      ]),
+    );
   } else {
-    const create = button(t("desktop.createCta"), openCreate, {
-      variant: "primary",
-      iconPaths: icons.sparkle,
-    });
-    const empty = emptyState(icons.usb, t("desktop.noUsbTitle"), t("desktop.noUsbText"));
-    empty.append(create);
-    parts.push(empty);
+    parts.push(
+      el("div", { class: "tile-grid" }, [
+        tile(icons.usb, t("home.noUsb"), t("home.noUsbText"), openCreate, { primary: true }),
+      ]),
+    );
   }
   // * La lista solo hace falta si hay que elegir entre varios USB o ninguno está en uso.
   if (found.length > 1 || (found.length === 1 && !selected)) {
-    parts.push(panel(t("desktop.drivesTitle"), found.map(driveRow), { iconPaths: icons.disk }));
+    parts.push(more(t("home.switchUsb"), found.map(driveRow)));
   }
   parts.push(bootHelp());
   body.replaceChildren(...parts);

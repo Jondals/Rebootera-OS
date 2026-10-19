@@ -5,7 +5,7 @@
 // * del USB de Rebootera (los que el asistente puede llevar al instalador de Windows).
 
 import { getJSON, type Device, type DriverMatch, type DriverPlan } from "../api.js";
-import { badge, button, emptyState, pageHeader, panel } from "../components.js";
+import { badge, button, emptyState, more, pageHeader } from "../components.js";
 import { el, icon } from "../dom.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
@@ -101,9 +101,7 @@ function drawUsb(): void {
       );
     }
   }
-  usbBox.replaceChildren(
-    panel(t("drivers.usbTitle"), body, { subtitle: t("drivers.usbText"), iconPaths: icons.usb }),
-  );
+  usbBox.replaceChildren(more(t("drivers.usbTitle"), body));
 }
 
 /** Vuelve a analizar el hardware. */
@@ -155,23 +153,13 @@ function deviceRow(device: Device): HTMLElement {
     el("span", { class: "device-icon" }, [icon(CATEGORY_ICONS[device.category] ?? icons.drivers)]),
     el("div", { class: "device-main" }, [
       el("strong", {}, [title]),
-      el("span", { class: "muted" }, [
-        [device.vendor, device.bus.toUpperCase() + " " + device.address]
-          .filter(Boolean)
-          .join(" · "),
+      // * Los identificadores de hardware ya no se enseñan: salen al pasar el ratón.
+      el("span", { class: "muted", title: device.hardwareIds.join("\n") }, [
+        t("categories." + device.category) + (device.vendor ? " · " + device.vendor : ""),
       ]),
     ]),
-    el("div", { class: "device-meta" }, [
-      el("span", { class: "device-category" }, [t("categories." + device.category)]),
-      device.critical ? badge(t("drivers.critical"), "amber") : null,
-    ]),
-    el("div", { class: "device-driver" }, [
-      device.driver ? badge(device.driver, "ok") : badge(t("drivers.noDriver"), "warn"),
-    ]),
-    // * Se muestra el Hardware ID genérico (el último); el completo va en el título.
-    el("code", { class: "device-id", title: device.hardwareIds.join("\n") }, [
-      device.hardwareIds[device.hardwareIds.length - 1] ?? "",
-    ]),
+    device.critical ? badge(t("drivers.critical"), "amber") : null,
+    device.driver ? badge(t("drivers.hasDriver"), "ok") : badge(t("drivers.noDriver"), "warn"),
   ]);
 }
 

@@ -1,6 +1,6 @@
 # Limitaciones y errores conocidos
 
-Estado a 2026-10-18, versión 0.7.0.
+Estado a 2026-10-19, versión 0.8.0.
 
 ## Lo que todavía no existe
 

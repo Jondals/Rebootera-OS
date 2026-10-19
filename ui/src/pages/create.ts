@@ -8,7 +8,7 @@
 // ! el texto exacto de confirmación. Actualizar un USB de Rebootera no borra nada.
 
 import { getJSON, postJSON } from "../api.js";
-import { button, emptyState, errorBox, pageHeader, panel, progress } from "../components.js";
+import { button, emptyState, errorBox, more, pageHeader, panel, progress } from "../components.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
@@ -500,7 +500,7 @@ function usbPanel(): HTMLElement {
   } else if (drives.length === 0) {
     parts.push(el("p", { class: "muted" }, [t("desktop.onlyWindows")]));
   }
-  return panel("1 · " + t("desktop.stepUsb"), parts, { iconPaths: icons.usb, action: refresh });
+  return panel(t("desktop.stepUsb"), parts, { iconPaths: icons.usb, action: refresh });
 }
 
 /** Panel 2: de dónde sale Rebootera OS. */
@@ -544,7 +544,13 @@ function systemPanel(): HTMLElement {
       onChange: chooseSource,
     }),
   );
-  return panel("2 · " + t("desktop.stepSystem"), cards, { iconPaths: icons.sparkle });
+  const label =
+    source === "keep"
+      ? t("desktop.sourceKeep")
+      : source === "file"
+        ? t("desktop.sourceFile")
+        : t("desktop.sourceDownload");
+  return more(t("desktop.stepSystem") + ": " + label, cards, "create-system");
 }
 
 /** Fila de una imagen elegida, con su categoría y el botón de quitarla. */
@@ -598,18 +604,15 @@ function extrasPanel(): HTMLElement {
     iconPaths: icons.library,
   });
   const addDrivers = button(t("desktop.addDrivers"), pickDrivers, { iconPaths: icons.drivers });
-  return panel(
-    "3 · " + t("desktop.stepAdd"),
+  return more(
+    t("desktop.stepAdd"),
     [
       el("p", { class: "muted small-note" }, [t("desktop.addHint")]),
       el("div", { class: "image-actions" }, [addImages, addDrivers]),
       ...images.map(imageRow),
       ...driverDirs.map(driversRow),
-      images.length === 0 && driverDirs.length === 0
-        ? el("p", { class: "muted small-note" }, [t("desktop.noExtras")])
-        : null,
     ],
-    { iconPaths: icons.download },
+    "create-extras",
   );
 }
 
@@ -664,7 +667,7 @@ function goPanel(): HTMLElement {
     parts.push(el("p", { class: "muted" }, [t("desktop.chooseUsbFirst")]));
   }
   parts.push(el("div", { class: "deploy-actions" }, [go]));
-  return panel("4 · " + t("desktop.stepGo"), parts, { iconPaths: icons.shield });
+  return panel(t("desktop.stepGo"), parts, { iconPaths: icons.shield });
 }
 
 /** Dibuja el estado de la operación en curso o terminada. */

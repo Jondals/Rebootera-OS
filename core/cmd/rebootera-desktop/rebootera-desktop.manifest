@@ -3,7 +3,7 @@
      * se abre sin pedir permisos de administrador (solo crear un USB los pide),
      * se ve nítido en pantallas de alta densidad y usa los controles modernos. -->
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <assemblyIdentity version="0.7.0.0" processorArchitecture="amd64" name="Rebootera.Desktop" type="win32"/>
+  <assemblyIdentity version="0.8.0.0" processorArchitecture="amd64" name="Rebootera.Desktop" type="win32"/>
   <description>Rebootera Desktop</description>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="styles/layout.css" />
     <link rel="stylesheet" href="styles/components.css" />
     <link rel="stylesheet" href="styles/pages.css" />
+    <link rel="stylesheet" href="styles/calm.css" />
     <link rel="stylesheet" href="styles/intro.css" />
     <script type="module" src="js/main.js"></script>
   </head>
@@ -46,7 +47,6 @@
 
     <div class="app">
       <aside class="sidebar">
-        <span class="nav-section" data-i18n="nav.section"></span>
         <nav id="nav" class="nav" data-i18n-label="nav.section"></nav>
         <div class="drive-card" id="drive-card"></div>
         <div class="brand">
@@ -60,11 +60,8 @@
 
       <div class="workspace">
         <header class="topbar">
-          <span class="chip chip-boot" id="boot-chip"></span>
+          <span id="status-chip"></span>
           <div class="topbar-right">
-            <span id="net-chip"></span>
-            <span id="sb-chip"></span>
-            <span id="clock-chip" class="chip chip-clock"></span>
             <button
               class="icon-button"
               id="lang-button"

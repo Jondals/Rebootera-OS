@@ -3,6 +3,21 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.8.0] - 2026-10-19
+
+### Changed
+
+- **All menus redone to be simple.** One calm look everywhere: flat colors, normal lettering instead of small technical capitals, bigger text and buttons, and far less on screen.
+  - **Home** is one question ("What do you want to do?") and big cards: Install a system, Download systems, My images, Disks, Drivers (in Rebootera Desktop: your USB at a glance and Make USB, Download, My images, Drivers). Processor, disks and firmware moved to a folded "About this computer"; the temperature, network and kernel-log widgets are gone from the front page.
+  - **Top bar** only shows a notice when something is wrong (no network, no USB). The clock, boot mode and Secure Boot chips are gone.
+  - **Menu names** are plain: Home, Install, My images, Drivers, Download, Disks.
+  - **Download** shows one small card per system: name, one line, a drop-down to pick the version (with its size) and a Download button. Verification, boot compatibility and the SHA-256 are behind "Details". The bottom bar only appears while something is downloading; the queue and bandwidth are buttons in the header.
+  - **Install** has four steps (System, Disk, Options, Install) instead of six; the hardware and driver checks are folded inside Options, and the long safety banner is gone (the subtitle says nothing is written until you confirm).
+  - **Drivers** lists devices with just a name, a kind and "Has a driver" / "No driver"; identifiers appear when you hover. The USB driver matches are folded.
+  - **Make USB**: the source of Rebootera OS and the optional images and drivers are folded; only the USB and the final button stay open.
+  - **Settings**: language, keyboard and Wi-Fi first; accent color, intro, reduced motion and system info are under "More options".
+  - **My images**: shorter texts and softer rows.
+
 ## [0.7.0] - 2026-10-18
 
 ### Added
