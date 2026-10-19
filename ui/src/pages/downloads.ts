@@ -26,7 +26,7 @@ import { refreshVault, snapshot } from "../state.js";
 import { linkPanel } from "./linkpanel.js";
 
 /** Pestañas de la lista. */
-const TABS = ["all", "windows", "linux", "servers", "rescue", "other"] as const;
+const TABS = ["all", "windows", "linux", "servers", "boards", "rescue", "other"] as const;
 type Tab = (typeof TABS)[number];
 
 /** Tono de cada estado de transferencia. */

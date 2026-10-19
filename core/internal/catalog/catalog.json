@@ -2744,5 +2744,1298 @@
       "en": "A whole graphical system in 5 MB, written in assembly. A curiosity that boots in seconds. From the Internet Archive.",
       "es": "Un sistema gráfico entero en 5 MB, escrito en ensamblador. Una curiosidad que arranca en segundos. Desde el Internet Archive."
     }
+  },
+  {
+    "id": "raspberrypi-os-arm64",
+    "name": "Raspberry Pi OS",
+    "vendor": "Raspberry Pi",
+    "version": "Desktop 64-bit",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://www.raspberrypi.com/software/operating-systems/",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://downloads.raspberrypi.com/raspios_arm64_latest",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Desktop for Raspberry Pi 3, 4, 5 and Zero 2 W (64-bit).",
+      "es": "Escritorio para Raspberry Pi 3, 4, 5 y Zero 2 W (64 bits)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "raspberrypi-os",
+    "group": "boards",
+    "edition": "Desktop 64-bit",
+    "tags": [
+      "recommended",
+      "board"
+    ]
+  },
+  {
+    "id": "raspberrypi-os-lite_arm64",
+    "name": "Raspberry Pi OS",
+    "vendor": "Raspberry Pi",
+    "version": "Lite 64-bit (no desktop)",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://www.raspberrypi.com/software/operating-systems/",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://downloads.raspberrypi.com/raspios_lite_arm64_latest",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "No desktop, for servers and projects (64-bit).",
+      "es": "Sin escritorio, para servidores y proyectos (64 bits)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "raspberrypi-os",
+    "group": "boards",
+    "edition": "Lite 64-bit (no desktop)",
+    "tags": [
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "raspberrypi-os-full_arm64",
+    "name": "Raspberry Pi OS",
+    "vendor": "Raspberry Pi",
+    "version": "Full 64-bit (desktop + software)",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://www.raspberrypi.com/software/operating-systems/",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://downloads.raspberrypi.com/raspios_full_arm64_latest",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Desktop with recommended software (64-bit).",
+      "es": "Escritorio con el software recomendado (64 bits)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "raspberrypi-os",
+    "group": "boards",
+    "edition": "Full 64-bit (desktop + software)",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "raspberrypi-os-armhf",
+    "name": "Raspberry Pi OS",
+    "vendor": "Raspberry Pi",
+    "version": "Desktop 32-bit",
+    "arch": "armhf",
+    "category": "tools",
+    "homepage": "https://www.raspberrypi.com/software/operating-systems/",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://downloads.raspberrypi.com/raspios_armhf_latest",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Desktop for every Raspberry Pi, including the oldest (32-bit).",
+      "es": "Escritorio para todas las Raspberry Pi, también las más antiguas (32 bits)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "raspberrypi-os",
+    "group": "boards",
+    "edition": "Desktop 32-bit",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "raspberrypi-os-lite_armhf",
+    "name": "Raspberry Pi OS",
+    "vendor": "Raspberry Pi",
+    "version": "Lite 32-bit (no desktop)",
+    "arch": "armhf",
+    "category": "tools",
+    "homepage": "https://www.raspberrypi.com/software/operating-systems/",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://downloads.raspberrypi.com/raspios_lite_armhf_latest",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "No desktop, runs on any Raspberry Pi (32-bit).",
+      "es": "Sin escritorio, funciona en cualquier Raspberry Pi (32 bits)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "raspberrypi-os",
+    "group": "boards",
+    "edition": "Lite 32-bit (no desktop)",
+    "tags": [
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "raspberrypi-os-full_armhf",
+    "name": "Raspberry Pi OS",
+    "vendor": "Raspberry Pi",
+    "version": "Full 32-bit (desktop + software)",
+    "arch": "armhf",
+    "category": "tools",
+    "homepage": "https://www.raspberrypi.com/software/operating-systems/",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://downloads.raspberrypi.com/raspios_full_armhf_latest",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Desktop with recommended software (32-bit).",
+      "es": "Escritorio con el software recomendado (32 bits)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "raspberrypi-os",
+    "group": "boards",
+    "edition": "Full 32-bit (desktop + software)",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "arch": "arm64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "tags": [
+      "recommended",
+      "lts",
+      "board"
+    ],
+    "id": "ubuntu-pi-26.04-server",
+    "name": "Ubuntu for Raspberry Pi",
+    "vendor": "Canonical",
+    "version": "26.04 LTS Server",
+    "category": "tools",
+    "homepage": "https://ubuntu.com/download/raspberry-pi",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.ubuntu.com/releases/26.04/release/SHA256SUMS",
+      "pattern": "^ubuntu-26\\.04(\\.\\d+)?-preinstalled-server-arm64\\+raspi\\.img\\.xz$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.ubuntu.com/releases/26.04/release/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-pi",
+    "group": "boards",
+    "edition": "Server 26.04 LTS",
+    "notes": {
+      "en": "Ubuntu Server 26.04 LTS for Raspberry Pi 4 and 5.",
+      "es": "Ubuntu Server 26.04 LTS para Raspberry Pi 4 y 5."
+    }
+  },
+  {
+    "arch": "arm64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "tags": [
+      "lts",
+      "board"
+    ],
+    "id": "ubuntu-pi-26.04-desktop",
+    "name": "Ubuntu for Raspberry Pi",
+    "vendor": "Canonical",
+    "version": "26.04 LTS Desktop",
+    "category": "tools",
+    "homepage": "https://ubuntu.com/download/raspberry-pi",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.ubuntu.com/releases/26.04/release/SHA256SUMS",
+      "pattern": "^ubuntu-26\\.04(\\.\\d+)?-preinstalled-desktop-arm64\\+raspi\\.img\\.xz$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.ubuntu.com/releases/26.04/release/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-pi",
+    "group": "boards",
+    "edition": "Desktop 26.04 LTS",
+    "notes": {
+      "en": "Ubuntu Desktop 26.04 LTS for Raspberry Pi 4 and 5.",
+      "es": "Ubuntu Desktop 26.04 LTS para Raspberry Pi 4 y 5."
+    }
+  },
+  {
+    "arch": "arm64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "tags": [
+      "lts",
+      "board"
+    ],
+    "id": "ubuntu-pi-24.04-server",
+    "name": "Ubuntu for Raspberry Pi",
+    "vendor": "Canonical",
+    "version": "24.04 LTS Server",
+    "category": "tools",
+    "homepage": "https://ubuntu.com/download/raspberry-pi",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.ubuntu.com/releases/24.04/release/SHA256SUMS",
+      "pattern": "^ubuntu-24\\.04(\\.\\d+)?-preinstalled-server-arm64\\+raspi\\.img\\.xz$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.ubuntu.com/releases/24.04/release/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-pi",
+    "group": "boards",
+    "edition": "Server 24.04 LTS",
+    "notes": {
+      "en": "Ubuntu Server 24.04 LTS for Raspberry Pi 4 and 5.",
+      "es": "Ubuntu Server 24.04 LTS para Raspberry Pi 4 y 5."
+    }
+  },
+  {
+    "arch": "arm64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "tags": [
+      "lts",
+      "board"
+    ],
+    "id": "ubuntu-pi-24.04-desktop",
+    "name": "Ubuntu for Raspberry Pi",
+    "vendor": "Canonical",
+    "version": "24.04 LTS Desktop",
+    "category": "tools",
+    "homepage": "https://ubuntu.com/download/raspberry-pi",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.ubuntu.com/releases/24.04/release/SHA256SUMS",
+      "pattern": "^ubuntu-24\\.04(\\.\\d+)?-preinstalled-desktop-arm64\\+raspi\\.img\\.xz$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.ubuntu.com/releases/24.04/release/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-pi",
+    "group": "boards",
+    "edition": "Desktop 24.04 LTS",
+    "notes": {
+      "en": "Ubuntu Desktop 24.04 LTS for Raspberry Pi 4 and 5.",
+      "es": "Ubuntu Desktop 24.04 LTS para Raspberry Pi 4 y 5."
+    }
+  },
+  {
+    "id": "dietpi-rpi234-armv8",
+    "name": "DietPi",
+    "vendor": "DietPi",
+    "version": "Raspberry Pi 2, 3, 4 and Zero 2 (64-bit)",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://dietpi.com/#download",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://dietpi.com/downloads/images/DietPi_RPi234-ARMv8-Trixie.img.xz",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Debian 13 based. Raspberry Pi 2, 3, 4 and Zero 2 (64-bit).",
+      "es": "Basado en Debian 13. Raspberry Pi 2, 3, 4 and Zero 2 (64-bit)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "dietpi",
+    "group": "boards",
+    "edition": "Raspberry Pi 2, 3, 4 and Zero 2 (64-bit)",
+    "tags": [
+      "recommended",
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "dietpi-rpi5-armv8",
+    "name": "DietPi",
+    "vendor": "DietPi",
+    "version": "Raspberry Pi 5 (64-bit)",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://dietpi.com/#download",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://dietpi.com/downloads/images/DietPi_RPi5-ARMv8-Trixie.img.xz",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Debian 13 based. Raspberry Pi 5 (64-bit).",
+      "es": "Basado en Debian 13. Raspberry Pi 5 (64-bit)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "dietpi",
+    "group": "boards",
+    "edition": "Raspberry Pi 5 (64-bit)",
+    "tags": [
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "dietpi-rpi1-armv6",
+    "name": "DietPi",
+    "vendor": "DietPi",
+    "version": "Raspberry Pi 1 and Zero (32-bit)",
+    "arch": "armv6",
+    "category": "tools",
+    "homepage": "https://dietpi.com/#download",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://dietpi.com/downloads/images/DietPi_RPi1-ARMv6-Trixie.img.xz",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Debian 13 based. Raspberry Pi 1 and Zero (32-bit).",
+      "es": "Basado en Debian 13. Raspberry Pi 1 and Zero (32-bit)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "dietpi",
+    "group": "boards",
+    "edition": "Raspberry Pi 1 and Zero (32-bit)",
+    "tags": [
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "dietpi-odroidn2-armv8",
+    "name": "DietPi",
+    "vendor": "DietPi",
+    "version": "ODROID-N2 (64-bit)",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://dietpi.com/#download",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://dietpi.com/downloads/images/DietPi_OdroidN2-ARMv8-Trixie.img.xz",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Debian 13 based. ODROID-N2 (64-bit).",
+      "es": "Basado en Debian 13. ODROID-N2 (64-bit)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "dietpi",
+    "group": "boards",
+    "edition": "ODROID-N2 (64-bit)",
+    "tags": [
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "dietpi-vm-x86_64",
+    "name": "DietPi",
+    "vendor": "DietPi",
+    "version": "Virtual machines and PCs (x86-64 disk image)",
+    "arch": "amd64",
+    "category": "tools",
+    "homepage": "https://dietpi.com/#download",
+    "resolver": {
+      "type": "latest-sum",
+      "index": "https://dietpi.com/downloads/images/DietPi_VM-x86_64-Trixie.img.xz",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Debian 13 based. Virtual machines and PCs (x86-64 disk image).",
+      "es": "Basado en Debian 13. Virtual machines and PCs (x86-64 disk image)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "dietpi",
+    "group": "boards",
+    "edition": "Virtual machines and PCs (x86-64 disk image)",
+    "tags": [
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "openwrt-x86-64-generic-ext4-combined-efi",
+    "name": "OpenWrt",
+    "vendor": "OpenWrt",
+    "version": "25.12 x86-64 UEFI (ext4)",
+    "arch": "amd64",
+    "category": "tools",
+    "homepage": "https://openwrt.org/downloads",
+    "resolver": {
+      "type": "sums",
+      "index": "https://downloads.openwrt.org/releases/25.12.6/targets/x86/64/sha256sums",
+      "pattern": "^openwrt-25\\.12\\.\\d+-x86-64-generic-ext4-combined-efi\\.img\\.gz$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Stable 25.12 series. Write it to a drive or SD card.",
+      "es": "Serie estable 25.12. Grábala en una unidad o tarjeta SD."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "openwrt",
+    "group": "boards",
+    "edition": "x86-64 UEFI (ext4)",
+    "tags": [
+      "recommended",
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "openwrt-x86-64-generic-squashfs-combined-efi",
+    "name": "OpenWrt",
+    "vendor": "OpenWrt",
+    "version": "25.12 x86-64 UEFI (squashfs)",
+    "arch": "amd64",
+    "category": "tools",
+    "homepage": "https://openwrt.org/downloads",
+    "resolver": {
+      "type": "sums",
+      "index": "https://downloads.openwrt.org/releases/25.12.6/targets/x86/64/sha256sums",
+      "pattern": "^openwrt-25\\.12\\.\\d+-x86-64-generic-squashfs-combined-efi\\.img\\.gz$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Stable 25.12 series. Write it to a drive or SD card.",
+      "es": "Serie estable 25.12. Grábala en una unidad o tarjeta SD."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "openwrt",
+    "group": "boards",
+    "edition": "x86-64 UEFI (squashfs)",
+    "tags": [
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "openwrt-bcm27xx-bcm2711-rpi-4-ext4-factory",
+    "name": "OpenWrt",
+    "vendor": "OpenWrt",
+    "version": "25.12 Raspberry Pi 4 (ext4)",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://openwrt.org/downloads",
+    "resolver": {
+      "type": "sums",
+      "index": "https://downloads.openwrt.org/releases/25.12.6/targets/bcm27xx/bcm2711/sha256sums",
+      "pattern": "^openwrt-25\\.12\\.\\d+-bcm27xx-bcm2711-rpi-4-ext4-factory\\.img\\.gz$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Stable 25.12 series. Write it to a drive or SD card.",
+      "es": "Serie estable 25.12. Grábala en una unidad o tarjeta SD."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "openwrt",
+    "group": "boards",
+    "edition": "Raspberry Pi 4 (ext4)",
+    "tags": [
+      "light",
+      "board"
+    ]
+  },
+  {
+    "id": "home-assistant-rpi5-64",
+    "name": "Home Assistant OS",
+    "vendor": "Home Assistant",
+    "version": "Raspberry Pi 5",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://www.home-assistant.io/installation/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/home-assistant/operating-system/releases/latest",
+      "pattern": "^haos_rpi5-64-[\\d.]+\\.img\\.xz$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Raspberry Pi 5. Latest stable release.",
+      "es": "Raspberry Pi 5. Última versión estable."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "home-assistant",
+    "group": "boards",
+    "edition": "Raspberry Pi 5",
+    "tags": [
+      "recommended",
+      "board"
+    ]
+  },
+  {
+    "id": "home-assistant-rpi4-64",
+    "name": "Home Assistant OS",
+    "vendor": "Home Assistant",
+    "version": "Raspberry Pi 4",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://www.home-assistant.io/installation/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/home-assistant/operating-system/releases/latest",
+      "pattern": "^haos_rpi4-64-[\\d.]+\\.img\\.xz$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Raspberry Pi 4. Latest stable release.",
+      "es": "Raspberry Pi 4. Última versión estable."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "home-assistant",
+    "group": "boards",
+    "edition": "Raspberry Pi 4",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "home-assistant-rpi3-64",
+    "name": "Home Assistant OS",
+    "vendor": "Home Assistant",
+    "version": "Raspberry Pi 3",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://www.home-assistant.io/installation/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/home-assistant/operating-system/releases/latest",
+      "pattern": "^haos_rpi3-64-[\\d.]+\\.img\\.xz$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Raspberry Pi 3. Latest stable release.",
+      "es": "Raspberry Pi 3. Última versión estable."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "home-assistant",
+    "group": "boards",
+    "edition": "Raspberry Pi 3",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "home-assistant-green",
+    "name": "Home Assistant OS",
+    "vendor": "Home Assistant",
+    "version": "Home Assistant Green",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://www.home-assistant.io/installation/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/home-assistant/operating-system/releases/latest",
+      "pattern": "^haos_green-[\\d.]+\\.img\\.xz$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Home Assistant Green. Latest stable release.",
+      "es": "Home Assistant Green. Última versión estable."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "home-assistant",
+    "group": "boards",
+    "edition": "Home Assistant Green",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "home-assistant-generic-x86-64",
+    "name": "Home Assistant OS",
+    "vendor": "Home Assistant",
+    "version": "Generic x86-64 (PC, UEFI)",
+    "arch": "amd64",
+    "category": "tools",
+    "homepage": "https://www.home-assistant.io/installation/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/home-assistant/operating-system/releases/latest",
+      "pattern": "^haos_generic-x86-64-[\\d.]+\\.img\\.xz$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Generic x86-64 (PC, UEFI). Latest stable release.",
+      "es": "Generic x86-64 (PC, UEFI). Última versión estable."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "home-assistant",
+    "group": "boards",
+    "edition": "Generic x86-64 (PC, UEFI)",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "home-assistant-generic-aarch64",
+    "name": "Home Assistant OS",
+    "vendor": "Home Assistant",
+    "version": "Generic aarch64",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://www.home-assistant.io/installation/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/home-assistant/operating-system/releases/latest",
+      "pattern": "^haos_generic-aarch64-[\\d.]+\\.img\\.xz$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "Generic aarch64. Latest stable release.",
+      "es": "Generic aarch64. Última versión estable."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for an SD card or drive, not a bootable ISO: write it with Raspberry Pi Imager or balenaEtcher. It does not start from the Rebootera menu.",
+        "es": "Imagen de disco para una tarjeta SD o unidad, no una ISO de arranque: grábala con Raspberry Pi Imager o balenaEtcher. No arranca desde el menú de Rebootera."
+      }
+    },
+    "family": "home-assistant",
+    "group": "boards",
+    "edition": "Generic aarch64",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "ubuntu-22.04-desktop",
+    "name": "Ubuntu Desktop",
+    "vendor": "Canonical",
+    "version": "22.04 LTS",
+    "arch": "amd64",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/download/desktop",
+    "resolver": {
+      "type": "sums",
+      "index": "https://releases.ubuntu.com/22.04/SHA256SUMS",
+      "pattern": "^ubuntu-22\\.04(\\.\\d+)?-desktop-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://releases.ubuntu.com/22.04/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "notes": {
+      "en": "Older long-term support release, supported until 2027.",
+      "es": "Versión anterior con soporte extendido, mantenida hasta 2027."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "ubuntu",
+    "group": "linux",
+    "edition": "Desktop 22.04 LTS",
+    "tags": [
+      "lts"
+    ]
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "lts"
+    ],
+    "id": "ubuntu-22.04-server",
+    "name": "Ubuntu Server",
+    "vendor": "Canonical",
+    "version": "22.04 LTS",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/download/server",
+    "resolver": {
+      "type": "sums",
+      "index": "https://releases.ubuntu.com/22.04/SHA256SUMS",
+      "pattern": "^ubuntu-22\\.04(\\.\\d+)?-live-server-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://releases.ubuntu.com/22.04/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-server",
+    "group": "servers",
+    "edition": "Server 22.04 LTS",
+    "notes": {
+      "en": "Older long-term support release, supported until 2027.",
+      "es": "Versión anterior con soporte extendido, mantenida hasta 2027."
+    }
+  },
+  {
+    "id": "debian-12-netinst",
+    "name": "Debian",
+    "vendor": "Debian Project",
+    "version": "12 (netinst)",
+    "arch": "amd64",
+    "category": "linux",
+    "homepage": "https://www.debian.org/distrib/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldstable/amd64/iso-cd/SHA256SUMS",
+      "pattern": "^debian-12\\.\\d+\\.\\d+-amd64-netinst\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldstable/amd64/iso-cd/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "notes": {
+      "en": "Small installer that downloads packages during installation. Needs a network connection.",
+      "es": "Instalador pequeño que descarga los paquetes durante la instalación. Necesita conexión a internet."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "12 netinst (installs over the network)",
+    "tags": [
+      "light"
+    ]
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "debian-12-live-gnome",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "12 live (GNOME)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-12\\.\\d+\\.\\d+-amd64-gnome\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 12 (GNOME)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the GNOME desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio GNOME."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "debian-12-live-kde",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "12 live (KDE Plasma)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-12\\.\\d+\\.\\d+-amd64-kde\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 12 (KDE Plasma)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the KDE Plasma desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio KDE Plasma."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "debian-12-live-xfce",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "12 live (Xfce)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-12\\.\\d+\\.\\d+-amd64-xfce\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 12 (Xfce)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the Xfce desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio Xfce."
+    }
+  },
+  {
+    "id": "fedora-43-workstation",
+    "name": "Fedora Workstation",
+    "vendor": "Fedora Project",
+    "version": "43",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://fedoraproject.org/workstation/download",
+    "resolver": {
+      "type": "fedora",
+      "index": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Workstation/x86_64/iso/",
+      "pattern": "^Fedora-Workstation-Live-43-\\d+\\.\\d+\\.x86_64\\.iso$",
+      "signature": {
+        "type": "clearsign",
+        "keys": [
+          "fedora.asc"
+        ],
+        "fingerprints": [
+          "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+          "4F50A6114CD5C6976A7F1179655A4B02F577861E",
+          "C6E7F081CF80E13146676E88829B606631645531",
+          "D924B10D3E810DABDD8B56B596E7E91491211FCE"
+        ]
+      }
+    },
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "notes": {
+      "en": "Previous release, supported until Fedora 45 is out.",
+      "es": "Versión anterior, mantenida hasta que salga Fedora 45."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "fedora",
+    "group": "linux",
+    "edition": "Workstation 43 (GNOME)",
+    "tags": []
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "mint-lmde-7",
+    "name": "Linux Mint",
+    "vendor": "Linux Mint",
+    "version": "LMDE 7 Cinnamon",
+    "category": "linux",
+    "homepage": "https://linuxmint.com/download.php",
+    "resolver": {
+      "type": "sums",
+      "index": "https://mirrors.edge.kernel.org/linuxmint/debian/sha256sum.txt",
+      "pattern": "^lmde-7-cinnamon-64bit\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://mirrors.edge.kernel.org/linuxmint/debian/sha256sum.txt.gpg",
+        "keys": [
+          "mint.asc"
+        ],
+        "fingerprints": [
+          "27DEB15644C6B3CF3BD7D291300F846BA25BAE09"
+        ]
+      }
+    },
+    "family": "mint",
+    "group": "linux",
+    "edition": "LMDE 7 Cinnamon (Debian base)",
+    "notes": {
+      "en": "Linux Mint built on Debian instead of Ubuntu.",
+      "es": "Linux Mint construido sobre Debian en lugar de Ubuntu."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "almalinux-9-minimal",
+    "name": "AlmaLinux",
+    "vendor": "AlmaLinux OS Foundation",
+    "version": "9 minimal",
+    "category": "linux",
+    "homepage": "https://almalinux.org/get-almalinux/",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://repo.almalinux.org/almalinux/9/isos/x86_64/CHECKSUM",
+      "pattern": "^AlmaLinux-9\\.\\d+-x86_64-minimal\\.iso$",
+      "signature": {
+        "type": "clearsign",
+        "keys": [
+          "alma9.asc"
+        ],
+        "fingerprints": [
+          "BF18AC2876178908D6E71267D36CB86CB86B3716"
+        ]
+      }
+    },
+    "family": "almalinux",
+    "group": "servers",
+    "edition": "9 minimal",
+    "notes": {
+      "en": "Binary-compatible Red Hat Enterprise Linux 10 for servers.",
+      "es": "Compatible con Red Hat Enterprise Linux 10 para servidores."
+    }
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "light"
+    ],
+    "id": "windows-10-ltsc-eval-en",
+    "name": "Windows 10 Enterprise LTSC",
+    "vendor": "Microsoft",
+    "version": "Enterprise LTSC 2021 (English)",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/evalcenter/evaluate-windows-10-enterprise",
+    "resolver": {
+      "type": "direct",
+      "index": "https://go.microsoft.com/fwlink/?linkid=2195404&clcid=0x409&culture=en-us&country=us"
+    },
+    "family": "windows-10",
+    "group": "windows",
+    "edition": "Enterprise LTSC 2021 (90-day evaluation, English)",
+    "notes": {
+      "en": "Light, long-term Windows 10 for older hardware. Microsoft's official 90-day evaluation image, in Spanish.",
+      "es": "Windows 10 ligero y de soporte largo para equipos antiguos. Imagen oficial de evaluación de 90 días de Microsoft, en español."
+    }
   }
 ]

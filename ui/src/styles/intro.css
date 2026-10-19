@@ -1,6 +1,7 @@
-/* * Intro de Rebootera OS: ligera a propósito. Un fondo fijo (sin desenfoques ni mezclas), el logotipo
-   * que aparece, el nombre y una barra fina. Solo se animan opacity y transform, que no cuestan casi
-   * nada ni en equipos con renderizado por software. Coordinada con los tiempos de intro.ts. */
+/* * Intro de Rebootera OS: amanece. La ficha aparece, las líneas del horizonte se abren desde el centro, el sol
+   * sube desde detrás del horizonte, los arcos se trazan de dentro hacia fuera y el nombre entra letra a letra.
+   * Solo se animan opacity, transform y el trazo de un SVG pequeño, que cuestan muy poco; en equipos modestos o
+   * con "reducir movimiento" (clase intro-reduced) todo aparece sin movimiento. Va coordinada con intro.ts. */
 
 .intro {
   position: fixed;
@@ -10,21 +11,19 @@
   place-items: center;
   background:
     radial-gradient(
-      70vmax 50vmax at 20% 10%,
+      60vmax 40vmax at 50% 62%,
       var(--bloom-a, rgba(214, 172, 95, 0.16)),
-      transparent 60%
-    ),
-    radial-gradient(
-      60vmax 50vmax at 90% 90%,
-      var(--bloom-b, rgba(70, 120, 160, 0.18)),
-      transparent 60%
+      transparent 70%
     ),
     var(--bg);
-  transition: opacity 420ms ease;
+  transition:
+    opacity 480ms ease,
+    transform 480ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .intro-leave {
   opacity: 0;
+  transform: scale(1.04);
   pointer-events: none;
 }
 
@@ -32,33 +31,61 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  opacity: 0;
-  transform: translateY(8px) scale(0.98);
-}
-
-.intro-play .intro-center {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 600ms ease,
-    transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  gap: 20px;
 }
 
 .intro-logo {
-  width: 84px;
-  height: 84px;
-  filter: none;
+  width: 150px;
+  height: 150px;
+  overflow: visible;
+}
+
+.intro-tile,
+.intro-arc,
+.intro-line,
+.intro-wordmark span,
+.intro-tagline {
+  opacity: 0;
+}
+
+.intro-tile {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.88);
+}
+
+.intro-arc {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+
+.intro-line {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleX(0);
+}
+
+.intro-sun {
+  transform: translateY(64px);
 }
 
 .intro-wordmark {
   display: flex;
-  gap: 0.28em;
+  margin: 0;
   font-family: var(--display);
   font-size: 40px;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--text);
+}
+
+.intro-wordmark span {
+  display: inline-block;
+  transform: translateY(14px);
+}
+
+.intro-wordmark .intro-space {
+  width: 0.3em;
 }
 
 .intro-wordmark .intro-os {
@@ -67,48 +94,100 @@
 }
 
 .intro-tagline {
-  color: var(--text-muted);
+  margin: 0;
   font-size: 14px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  transform: translateY(8px);
 }
 
-.intro-progress {
-  width: 180px;
-  height: 2px;
-  margin-top: 6px;
-  border-radius: 2px;
-  overflow: hidden;
-  background: var(--border);
+/* Línea de tiempo (a partir de que intro.ts añade intro-play) */
+
+.intro-play .intro-tile {
+  animation: intro-pop 480ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-.intro-progress-fill {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left center;
+.intro-play .intro-line-a {
+  animation: intro-open 520ms cubic-bezier(0.3, 0.8, 0.2, 1) 280ms forwards;
 }
 
-.intro-progress-run {
-  transform: scaleX(0.7);
-  transition: transform 1100ms cubic-bezier(0.3, 0.6, 0.3, 1);
+.intro-play .intro-line-b {
+  animation: intro-open 520ms cubic-bezier(0.3, 0.8, 0.2, 1) 400ms forwards;
 }
 
-.intro-progress-done {
-  transform: scaleX(1);
-  transition: transform 260ms ease;
+.intro-play .intro-sun {
+  animation: intro-rise 900ms cubic-bezier(0.25, 0.9, 0.25, 1) 480ms forwards;
 }
 
-.intro-status,
-.intro-skip,
-.intro-grid,
-.aurora,
-.intro-halo {
-  display: none;
+.intro-play .intro-arc-a {
+  animation: intro-draw 700ms cubic-bezier(0.5, 0, 0.2, 1) 1050ms forwards;
 }
 
-.intro-reduced .intro-center,
-.intro-reduced.intro-play .intro-center {
-  transition: none;
+.intro-play .intro-arc-b {
+  animation: intro-draw 800ms cubic-bezier(0.5, 0, 0.2, 1) 1250ms forwards;
+}
+
+.intro-play .intro-wordmark span {
+  animation: intro-up 520ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(1100ms + var(--i, 0) * 45ms);
+}
+
+.intro-play .intro-tagline {
+  animation: intro-up 600ms ease 1900ms forwards;
+}
+
+@keyframes intro-pop {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes intro-open {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes intro-rise {
+  to {
+    transform: none;
+  }
+}
+
+@keyframes intro-draw {
+  from {
+    opacity: 1;
+    stroke-dashoffset: 100;
+  }
+  to {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes intro-up {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Sin movimiento: todo aparece de golpe */
+
+.intro-reduced .intro-tile,
+.intro-reduced .intro-arc,
+.intro-reduced .intro-line,
+.intro-reduced .intro-wordmark span,
+.intro-reduced .intro-tagline {
+  opacity: 1;
+  transform: none;
+  stroke-dashoffset: 0;
+  animation: none !important;
+}
+
+.intro-reduced .intro-sun {
+  transform: none;
+  animation: none !important;
 }

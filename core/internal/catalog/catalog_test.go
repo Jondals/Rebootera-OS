@@ -36,6 +36,17 @@ func fakeSources(w http.ResponseWriter, r *http.Request) {
 	case "/alpine/latest-releases.yaml":
 		w.Write([]byte("---\n-\n  title: \"Mini\"\n  flavor: alpine-minirootfs\n  iso: mini.tar.gz\n  size: 10\n  sha256: " + hashA + "\n" +
 			"-\n  title: \"Virtual\"\n  desc: |\n    Slimmed down kernel.\n  flavor: alpine-virt\n  iso: alpine-virt-3.24.2-x86_64.iso\n  time: 17:32:03\n  size: 69206016\n  sha256: " + hashB + "\n"))
+	case "/latest":
+		http.Redirect(w, r, "/images/2026-10-06-raspios-lite.img.xz", http.StatusFound)
+	case "/images/2026-10-06-raspios-lite.img.xz":
+		w.Header().Set("Content-Length", "1234")
+	case "/images/2026-10-06-raspios-lite.img.xz.sha256":
+		w.Write([]byte(hashA + "  2026-10-06-raspios-lite.img.xz\n"))
+	case "/latest-bad":
+		http.Redirect(w, r, "/images/other.img.xz", http.StatusFound)
+	case "/images/other.img.xz":
+	case "/images/other.img.xz.sha256":
+		w.Write([]byte(hashB + "  distinto.img.xz\n"))
 	default:
 		http.NotFound(w, r)
 	}
@@ -152,5 +163,28 @@ func TestSiblingRutaAbsoluta(t *testing.T) {
 	}
 	if got := sibling("https://mirror.example/pub/", "https://otro.example/x/CHECKSUM"); got != "https://otro.example/x/CHECKSUM" {
 		t.Fatalf("con servidor: %s", got)
+	}
+}
+
+// * TestLatestSum sigue el enlace "latest" hasta la imagen y lee su suma publicada al lado.
+func TestLatestSum(t *testing.T) {
+	base := withServer(t)
+	got, err := resolveLatestSum(Resolver{Index: base + "/latest", SumSuffix: ".sha256"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.FileName != "2026-10-06-raspios-lite.img.xz" || got.SHA256 != hashA || got.URL != base+"/images/2026-10-06-raspios-lite.img.xz" || got.SizeBytes != 1234 {
+		t.Fatalf("obtuve %+v", got)
+	}
+}
+
+// * TestLatestSumRechazaOtraSuma no acepta una suma que es de otro archivo.
+func TestLatestSumRechazaOtraSuma(t *testing.T) {
+	base := withServer(t)
+	if _, err := resolveLatestSum(Resolver{Index: base + "/latest-bad", SumSuffix: ".sha256"}); err == nil {
+		t.Fatal("debería rechazar la suma de otro archivo")
+	}
+	if _, err := resolveLatestSum(Resolver{Index: base + "/latest"}); err == nil {
+		t.Fatal("sin sumSuffix debería fallar")
 	}
 }

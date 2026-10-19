@@ -91,6 +91,9 @@ type Resolver struct {
 	// Link, si está, es la URL de la imagen cuando no cuelga del mismo directorio que el índice
 	// (por ejemplo, el enlace "latest" de NixOS, que redirige al archivo con nombre y versión).
 	Link string `json:"link,omitempty"`
+	// SumSuffix (resolvedor "latest-sum") es lo que se añade a la URL final de la imagen para encontrar su suma
+	// SHA-256 (por ejemplo ".sha256").
+	SumSuffix string `json:"sumSuffix,omitempty"`
 	// Signature describe cómo está firmado el índice (nil = sin firma).
 	Signature *SigSpec `json:"signature,omitempty"`
 	// ISOSignature describe la firma de la propia imagen, para los proyectos que
@@ -164,6 +167,8 @@ func Resolve(entry Entry) (Resolved, error) {
 		resolved, err = resolveDirect(entry.Resolver)
 	case "archive":
 		resolved, err = resolveArchive(entry.Resolver)
+	case "latest-sum":
+		resolved, err = resolveLatestSum(entry.Resolver)
 	case "manual":
 		return Resolved{}, ErrManual
 	default:
@@ -489,6 +494,46 @@ func resolveArchive(r Resolver) (Resolved, error) {
 	}
 	pick := found[name]
 	return Resolved{URL: pick.URL, FileName: pick.Name, SHA1: pick.SHA1, SizeBytes: pick.SizeBytes}, nil
+}
+
+// * resolveLatestSum resuelve imágenes cuyo enlace estable redirige a la versión más reciente (los enlaces "latest"
+// * de Raspberry Pi OS, la imagen fija de DietPi) y cuya suma SHA-256 se publica junto a la imagen, con otro final
+// * (SumSuffix). El archivo y la suma se leen por HTTPS en el momento; si el nombre de la suma no coincide con el
+// * de la imagen, se rechaza.
+func resolveLatestSum(r Resolver) (Resolved, error) {
+	if r.SumSuffix == "" {
+		return Resolved{}, errors.New("falta sumSuffix en el resolvedor latest-sum")
+	}
+	req, err := http.NewRequest("HEAD", r.Index, nil)
+	if err != nil {
+		return Resolved{}, err
+	}
+	req.Header.Set("User-Agent", UserAgent)
+	resp, err := Client.Do(req)
+	if err != nil {
+		return Resolved{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return Resolved{}, fmt.Errorf("%s respondió %d", r.Index, resp.StatusCode)
+	}
+	final := resp.Request.URL
+	if final.Scheme != "https" {
+		return Resolved{}, fmt.Errorf("%s redirigió a una conexión sin cifrar", r.Index)
+	}
+	name := path.Base(final.Path)
+	text, err := fetchText(final.String() + r.SumSuffix)
+	if err != nil {
+		return Resolved{}, err
+	}
+	fields := strings.Fields(text)
+	if len(fields) == 0 || !isSHA256(fields[0]) {
+		return Resolved{}, fmt.Errorf("%s: la suma publicada no es un SHA-256", final.String()+r.SumSuffix)
+	}
+	if len(fields) > 1 && strings.TrimPrefix(fields[1], "*") != name {
+		return Resolved{}, fmt.Errorf("%s: la suma es de otro archivo (%s)", final.String()+r.SumSuffix, fields[1])
+	}
+	return Resolved{URL: final.String(), FileName: name, SHA256: strings.ToLower(fields[0]), SizeBytes: max(resp.ContentLength, 0)}, nil
 }
 
 // * resolveDirect sigue el enlace oficial del fabricante (por ejemplo, las ediciones de evaluación de

@@ -320,9 +320,9 @@ def test_system(vm, checks):
 
 
 # * Posiciones del menú lateral en pantallas de más de 1180 px de ancho
-# * (coinciden con layout.css): x del texto e y de cada entrada.
-NAV_X = 45
-NAV_Y = {"overview": 140, "install": 203, "library": 270, "drivers": 340, "downloads": 405, "storage": 470}
+# * (coinciden con sidebar.css): x del texto e y de cada entrada.
+NAV_X = 100
+NAV_Y = {"overview": 136, "install": 186, "library": 236, "drivers": 286, "downloads": 336, "storage": 386, "settings": 655}
 
 
 def stable_screen_size(vm):
@@ -352,14 +352,14 @@ def test_ui(vm, checks, poweroff):
         time.sleep(1.5)
         vm.screenshot("%d-%s" % (index, route))
 
-    # * Botones de la barra superior, de derecha a izquierda: energía, ajustes, idioma.
-    power_x, settings_x, lang_x, top_y = width - 43, width - 85, width - 127, 52
+    # * Botones de la barra superior, de derecha a izquierda: energía e idioma (Ajustes está al pie del menú lateral).
+    power_x, lang_x, top_y = width - 43, width - 85, 52
     vm.click(NAV_X, NAV_Y["overview"])
     vm.click(lang_x, top_y)
     time.sleep(1.5)
     vm.screenshot("6-espanol")
     vm.click(lang_x, top_y)
-    vm.click(settings_x, top_y)
+    vm.click(NAV_X, NAV_Y["settings"])
     time.sleep(1.5)
     vm.screenshot("7-ajustes")
     if not poweroff:

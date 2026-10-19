@@ -24,6 +24,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"rebootera/core/internal/vault"
 )
@@ -38,7 +39,7 @@ const (
 )
 
 // * Extensiones que Ventoy puede arrancar y su tipo.
-var kinds = map[string]string{".iso": "iso", ".img": "img", ".wim": "wim", ".vhd": "vhd", ".vhdx": "vhd", ".efi": "efi"}
+var kinds = map[string]string{".iso": "iso", ".img": "img", ".wim": "wim", ".vhd": "vhd", ".vhdx": "vhd", ".efi": "efi", ".xz": "img", ".gz": "img"}
 
 // Item es una imagen de la biblioteca.
 type Item struct {
@@ -56,6 +57,9 @@ type Item struct {
 	// BootStatus es la compatibilidad de arranque conocida si la imagen viene
 	// del catálogo ("verified", "incompatible", "untested"); la rellena la API.
 	BootStatus string `json:"bootStatus,omitempty"`
+	// Title y Image son el nombre y la foto que el usuario le puso (el archivo no se toca).
+	Title string `json:"title,omitempty"`
+	Image string `json:"image,omitempty"`
 }
 
 // meta es lo que se guarda de cada imagen entre arranques.
@@ -66,6 +70,8 @@ type meta struct {
 	Expected  string `json:"expected"`
 	State     string `json:"state"`
 	Source    string `json:"source"`
+	Title     string `json:"title,omitempty"`
+	Image     string `json:"image,omitempty"`
 }
 
 // Library guarda los metadatos y el progreso de los cálculos de hash.
@@ -177,6 +183,7 @@ func (l *Library) refreshed() []Item {
 	for i, item := range l.cache {
 		if m, ok := l.db[item.Path]; ok {
 			item.SHA256, item.Expected, item.State, item.Source = m.SHA256, m.Expected, m.State, m.Source
+			item.Title, item.Image = m.Title, m.Image
 		}
 		item.Progress = l.progress[item.Path]
 		items[i] = item
@@ -229,7 +236,7 @@ func (s *scan) visit(path string, entry fs.DirEntry, err error) error {
 		if known {
 			source = m.Source
 		}
-		m = meta{SizeBytes: info.Size(), ModUnix: info.ModTime().Unix(), State: StateUnchecked, Source: source, Expected: m.Expected}
+		m = meta{SizeBytes: info.Size(), ModUnix: info.ModTime().Unix(), State: StateUnchecked, Source: source, Expected: m.Expected, Title: m.Title, Image: m.Image}
 		s.lib.db[rel] = m
 		s.lib.save()
 	}
@@ -282,6 +289,7 @@ func (l *Library) Register(rel, sha, expected, source string) error {
 	defer l.mu.Unlock()
 	l.invalidate()
 	l.load()
+	previous := l.db[rel]
 	l.db[rel] = meta{
 		SizeBytes: info.Size(),
 		ModUnix:   info.ModTime().Unix(),
@@ -289,8 +297,64 @@ func (l *Library) Register(rel, sha, expected, source string) error {
 		Expected:  expected,
 		State:     stateFor(sha, expected),
 		Source:    source,
+		Title:     previous.Title,
+		Image:     previous.Image,
 	}
 	return l.save()
+}
+
+// Límites del nombre y de la foto que se le pone a una imagen.
+const (
+	maxTitle = 80
+	maxImage = 160 << 10
+)
+
+// * SetLook guarda el nombre y la foto que el usuario le pone a una imagen de la biblioteca. La imagen del disco
+// * no cambia. La foto llega como data URL (png, jpeg o webp) ya reducida por la interfaz; vacía quita la foto.
+func (l *Library) SetLook(rel, title, image string) error {
+	title = strings.TrimSpace(title)
+	if utf8.RuneCountInString(title) > maxTitle {
+		return fmt.Errorf("el nombre es demasiado largo (máximo %d letras)", maxTitle)
+	}
+	if strings.ContainsAny(title, "<>\x00") {
+		return errors.New("el nombre tiene caracteres no válidos")
+	}
+	if image != "" {
+		if len(image) > maxImage {
+			return errors.New("la foto es demasiado grande")
+		}
+		ok := false
+		for _, prefix := range []string{"data:image/png;base64,", "data:image/jpeg;base64,", "data:image/webp;base64,"} {
+			if strings.HasPrefix(image, prefix) && base64Only(image[len(prefix):]) {
+				ok = true
+			}
+		}
+		if !ok {
+			return errors.New("la foto no es válida")
+		}
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.load()
+	m, ok := l.db[rel]
+	if !ok {
+		return errors.New("esa imagen no está en la biblioteca")
+	}
+	m.Title, m.Image = title, image
+	l.db[rel] = m
+	return l.save()
+}
+
+// * base64Only indica si un texto solo tiene caracteres del alfabeto base64.
+func base64Only(text string) bool {
+	for _, r := range text {
+		switch {
+		case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '+', r == '/', r == '=':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 // * stateFor decide el estado de verificación a partir de los dos hashes.

@@ -13,7 +13,7 @@ import (
 )
 
 // imageExtensions son las extensiones de imagen que se aceptan al descargar por enlace.
-var imageExtensions = []string{".iso", ".img", ".wim", ".esd", ".vhd", ".vhdx"}
+var imageExtensions = []string{".iso", ".img", ".wim", ".esd", ".vhd", ".vhdx", ".img.xz", ".img.gz"}
 
 // Candidate es un archivo de imagen que se puede descargar por enlace.
 type Candidate struct {

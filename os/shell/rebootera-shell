@@ -5,7 +5,7 @@
 # * Bloquea cualquier navegación fuera de la interfaz local, desactiva el menú
 # * contextual y las herramientas de desarrollo, y recarga la interfaz si su proceso
 # * se cierra inesperadamente. La interfaz puede pedirle abrir el navegador del sistema
-# * (Firefox ya configurado) con un mensaje {"action": "browser"}.
+# * (Firefox ya configurado) con un mensaje {"action": "browser"} y le avisa de que ya se dibuja con {"action": "ready"}.
 
 import json
 import os
@@ -24,6 +24,8 @@ TOKEN_FILE = "/run/rebootera-core/ui-token"
 POLL_MS = 500
 BACKGROUND = "#0b0d11"
 BROWSER = "/usr/lib/rebootera/browser"
+# * Archivo que start-kiosk vigila: la interfaz avisa de que ya dibujó su primer fotograma y aquí se marca.
+READY_FILE = os.environ.get("REBOOTERA_READY", "")
 
 
 def core_ready():
@@ -106,13 +108,26 @@ class Shell:
         return GLib.SOURCE_REMOVE
 
     def on_message(self, manager, value):
-        """Atiende los mensajes de la interfaz: solo se conoce la acción "browser"."""
+        """Atiende los mensajes de la interfaz: las acciones cerradas "ready" y "browser"."""
         try:
             message = json.loads(value.to_string())
         except ValueError:
             return
-        if isinstance(message, dict) and message.get("action") == "browser":
+        if not isinstance(message, dict):
+            return
+        if message.get("action") == "ready":
+            self.mark_ready()
+        elif message.get("action") == "browser":
             self.open_browser()
+
+    def mark_ready(self):
+        """Marca que la interfaz ya se dibuja (start-kiosk espera este archivo antes de darla por buena)."""
+        if READY_FILE:
+            try:
+                with open(READY_FILE, "w", encoding="ascii") as handle:
+                    handle.write("1")
+            except OSError:
+                pass
 
     def open_browser(self):
         """Abre el navegador del sistema si no hay ya uno en marcha."""

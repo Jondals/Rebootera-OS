@@ -203,6 +203,9 @@ export interface LibraryItem {
   source: string;
   progress: number;
   bootStatus?: "verified" | "incompatible" | "untested";
+  /** Nombre y foto que el usuario le puso a la imagen (el archivo no cambia). */
+  title?: string;
+  image?: string;
 }
 
 /** Entrada del catálogo de /api/catalog. */
@@ -220,7 +223,7 @@ export interface CatalogEntry {
   inLibrary: boolean;
   /** Tarjeta (familia) a la que pertenece y pestaña donde sale. */
   family: string;
-  group: "windows" | "linux" | "servers" | "rescue";
+  group: "windows" | "linux" | "servers" | "boards" | "rescue" | "other";
   /** Nombre corto de esta versión dentro de su familia. */
   edition: string;
   tags: string[];
@@ -237,7 +240,7 @@ export interface Family {
   id: string;
   name: string;
   vendor: string;
-  group: "windows" | "linux" | "servers" | "rescue";
+  group: "windows" | "linux" | "servers" | "boards" | "rescue" | "other";
   icon: string;
   homepage: string;
   summary: Record<string, string>;

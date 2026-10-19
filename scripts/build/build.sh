@@ -130,9 +130,9 @@ main() {
 	# * En cada carpeta de salida solo queda la ISO recién construida.
 	rm -f "$OUT_DIR"/rebootera-os-*.iso "$OUT_DIR"/rebootera-os-*.iso.sha256
 	mv "$ISO" "$OUT_DIR/$OUT_NAME"
-	(cd "$OUT_DIR" && sha256sum "$OUT_NAME" >"$OUT_NAME.sha256")
 	ls -lh "$OUT_DIR/$OUT_NAME"
-	cat "$OUT_DIR/$OUT_NAME.sha256"
+	# * La suma se enseña pero no se guarda en un archivo: out/ solo lleva la ISO y el .exe.
+	(cd "$OUT_DIR" && sha256sum "$OUT_NAME")
 }
 
 main "$@"

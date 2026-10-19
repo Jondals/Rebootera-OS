@@ -54,6 +54,10 @@ func keyboardSet(layout string) error {
 }
 
 // * killKiosk mata la sesión del kiosco para que systemd la reabra.
+// ! labwc no se queda en el grupo del servicio (logind lo mueve al ámbito de la sesión), así que "systemctl kill"
+// ! lo deja vivo y huérfano agarrando la pantalla: la sesión nueva no podría dibujar (pantalla negra con el ratón).
+// ! Por eso también se mata todo lo que sea del usuario del kiosco.
 func killKiosk() {
 	run("systemctl", "kill", "-s", "KILL", "rebootera-ui.service")
+	run("pkill", "-KILL", "-u", "rebootera")
 }

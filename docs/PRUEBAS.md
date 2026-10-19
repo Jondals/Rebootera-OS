@@ -215,6 +215,33 @@ Crear USB / actualizar (Rebootera Desktop, Windows 11), sin tocar ningún disco 
 
 Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el ratón; solo se probó el análisis de su resultado), "Crear USB" borrando un pendrive real, instalar dentro de un USB ajeno (Rufus), un instalador real de Windows y la ejecución de los workflows de GitHub.
 
+## v0.12.0 (2026-10-20)
+
+| Prueba | Resultado |
+| --- | --- |
+| Batería completa de VM (`test-all.sh`: ISO de depuración y definitiva en UEFI + Secure Boot y BIOS, USB de extremo a extremo, Wi-Fi/teclado/puntero, Debian con preseed, adopt, particiones y Windows) | 0 fallos: depuración 18 y 19, definitiva 2 y 2 (con el apagado desde la interfaz), USB 20, adopt 6, Debian 12, particiones 23, Wi-Fi y puntero 25, Windows 8 |
+| Arranque directo de la ISO (GRUB sin menú ni espera) | arranca hasta la interfaz en las cuatro pruebas de arranque |
+| Reinicio de la sesión al cambiar el teclado o el puntero | el compositor antiguo muere y el nuevo arranca con el teclado elegido (antes sobrevivía) |
+| `LoadInput` sin archivo guardado devuelve los valores por defecto | pruebas Go |
+| Catálogo contra las fuentes reales (35 entradas nuevas: placas, Ubuntu 22.04, Debian 12, Fedora 43, LMDE 7, AlmaLinux 9, Windows 10 LTSC en inglés) | todas resuelven, con firma OpenPGP donde el proyecto la publica |
+| Resolvedor "latest-sum" y nombre y foto de las imágenes | pruebas Go |
+| `go vet`, `go test ./...`, `staticcheck`, `tsc`, `knip` | sin avisos |
+| `scripts/test/test-desktop-windows.ps1` y `test-installer-windows.ps1` con el exe real (sin ventana) | ISO y drivers copiados byte a byte, sistema intacto; ISO del instalador con El Torito BIOS + UEFI |
+| Icono del exe | el grupo de iconos 2 del ejecutable es el amanecer nuevo (comprobado extrayéndolo) |
+
+### Errores encontrados y corregidos
+
+| Error | Causa | Arreglo |
+| --- | --- | --- |
+| Pantalla negra con el ratón y pantallazos en equipos reales | `LoadInput` devolvía ajustes vacíos si no había archivo guardado (se aplicaban en cada arranque y reiniciaban el kiosco); y labwc sobrevivía al reinicio de la sesión y se quedaba con la pantalla | valores por defecto al leer; `ExecStopPost` y el agente matan lo que quede del usuario del kiosco |
+| Los clics de las pruebas apuntaban al menú lateral viejo | maquetación nueva | coordenadas nuevas en `vmtest.py` |
+
+### No probado en la v0.12.0
+
+- **El arreglo de la pantalla negra en tu equipo real**: se reprodujo y se comprobó en la VM, pero no en hardware real.
+- **La intro, el icono y el menú en la ventana real del exe** (las pruebas son sin ventana) y **la ventana propia en macOS**.
+- **El panel táctil real**, y **las imágenes de placas escritas en una tarjeta SD** (solo se comprueba la descarga y su suma).
+
 ## v0.11.0 (2026-10-19)
 
 | Prueba | Resultado |

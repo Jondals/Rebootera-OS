@@ -567,7 +567,7 @@ function imageCard(item: LibraryItem): HTMLElement {
       input,
       el("span", { class: "disk-icon" }, [icon(icons.library)]),
       el("div", { class: "disk-title" }, [
-        el("strong", {}, [item.name]),
+        el("strong", {}, [item.title || item.name]),
         el("span", { class: "mono-small muted" }, [
           fmt.bytes(item.sizeBytes) + " · " + t("library.categories." + item.category),
         ]),
@@ -801,7 +801,7 @@ function stepSummary(): Node[] {
   const disk = (snapshot.disks ?? []).find(isSelected);
   const item = chosenItem();
   const rows: [string, string][] = [
-    [t("wizard.stepOs"), item ? item.name : "—"],
+    [t("wizard.stepOs"), item ? item.title || item.name : "—"],
     [
       t("wizard.stepTarget"),
       disk ? (disk.model || disk.name) + " · " + fmt.bytes(disk.sizeBytes) : "—",

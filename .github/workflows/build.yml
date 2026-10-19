@@ -57,7 +57,7 @@ jobs:
               imagemagick librsvg2-bin grub-common fonts-inter fonts-jetbrains-mono xorriso mtools squashfs-tools \
               dosfstools exfatprogs
             git config --global --add safe.directory /src
-            bash scripts/build/build-desktop.sh
+            bash scripts/build/build-desktop.sh --all
             bash scripts/build/build.sh
           '
 
@@ -65,13 +65,12 @@ jobs:
         run: |
           sudo chown -R "$USER" out
           VERSION="$(sed -n 's/^var Version = "\(.*\)"/\1/p' core/internal/version/version.go)"
-          mkdir dist
+          mkdir -p dist
           cp "out/rebootera-os-${VERSION}-amd64.iso" dist/rebootera-os-amd64.iso
           cp "out/Rebootera Desktop.exe" dist/Rebootera-Desktop.exe
           (cd dist && sha256sum rebootera-os-amd64.iso > rebootera-os-amd64.iso.sha256)
           (cd dist && sha256sum Rebootera-Desktop.exe > Rebootera-Desktop.exe.sha256)
-          for archive in out/rebootera-desktop-*.tar.gz; do
-            cp "$archive" dist/
+          for archive in dist/rebootera-desktop-*.tar.gz; do
             (cd dist && sha256sum "$(basename "$archive")" > "$(basename "$archive").sha256")
           done
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"

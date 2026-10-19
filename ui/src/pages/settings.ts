@@ -6,7 +6,7 @@ import { el } from "../dom.js";
 import * as fmt from "../format.js";
 import { t, type Language } from "../i18n.js";
 import { applyPrefs, prefs, savePrefs, THEMES, type Theme } from "../prefs.js";
-import { renderCurrent, type Page } from "../router.js";
+import { refreshCurrent, type Page } from "../router.js";
 import { isDesktop } from "../mode.js";
 import { snapshot } from "../state.js";
 import { keyboardPanel } from "./keyboard.js";
@@ -39,9 +39,13 @@ function choice(
     group.append(node);
   }
 
-  /** Aplica la opción pulsada. */
+  /** Marca la opción pulsada (sin esperar a que se redibuje la página) y la aplica. */
   function handleClick(event: MouseEvent): void {
-    onSelect((event.currentTarget as HTMLElement).dataset.value ?? "");
+    const chosen = event.currentTarget as HTMLElement;
+    for (const other of group.querySelectorAll<HTMLElement>(".segment-button")) {
+      other.setAttribute("aria-checked", String(other === chosen));
+    }
+    onSelect(chosen.dataset.value ?? "");
   }
 
   return group;
@@ -69,7 +73,7 @@ function setLanguage(value: string): void {
   prefs.language = value as Language;
   savePrefs();
   document.dispatchEvent(new CustomEvent("rebootera:language"));
-  renderCurrent();
+  refreshCurrent();
 }
 
 /** Activa o desactiva la intro. */
@@ -89,6 +93,18 @@ function setBackground(value: string): void {
   prefs.background = value as typeof prefs.background;
   savePrefs();
   applyPrefs();
+}
+
+/** Cambia el desenfoque del fondo y lo aplica al momento. */
+function setBlur(value: string): void {
+  prefs.blur = value as typeof prefs.blur;
+  savePrefs();
+}
+
+/** Cambia entre menú lateral con texto o solo iconos. */
+function setSidebar(value: string): void {
+  prefs.sidebar = value as typeof prefs.sidebar;
+  savePrefs();
 }
 
 /** Cambia el tamaño de la interfaz y lo aplica al momento. */
@@ -115,6 +131,32 @@ function appearancePanel(): HTMLElement {
       ),
     ]),
     el("div", { class: "setting-block" }, [
+      el("span", {}, [t("settings.blur")]),
+      choice(
+        t("settings.blur"),
+        [
+          ["off", t("settings.blurOff")],
+          ["soft", t("settings.blurSoft")],
+          ["medium", t("settings.blurMedium")],
+          ["strong", t("settings.blurStrong")],
+        ],
+        prefs.blur,
+        setBlur,
+      ),
+    ]),
+    el("div", { class: "setting-block" }, [
+      el("span", {}, [t("settings.sidebar")]),
+      choice(
+        t("settings.sidebar"),
+        [
+          ["full", t("settings.sidebarFull")],
+          ["compact", t("settings.sidebarCompact")],
+        ],
+        prefs.sidebar,
+        setSidebar,
+      ),
+    ]),
+    el("div", { class: "setting-block" }, [
       el("span", {}, [t("settings.size")]),
       choice(
         t("settings.size"),
@@ -136,7 +178,7 @@ function setTheme(event: MouseEvent): void {
   prefs.theme = (event.currentTarget as HTMLElement).dataset.theme as Theme;
   savePrefs();
   document.dispatchEvent(new CustomEvent("rebootera:theme"));
-  renderCurrent();
+  refreshCurrent();
 }
 
 /** Panel con los tres temas, cada uno con su muestra. */

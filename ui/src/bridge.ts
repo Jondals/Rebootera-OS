@@ -20,6 +20,11 @@ export function browserAvailable(): boolean {
   return channel() !== null;
 }
 
+/** Avisa a la sesión de que la interfaz ya dibujó su primer fotograma (start-kiosk espera este aviso). */
+export function reportReady(): void {
+  channel()?.postMessage(JSON.stringify({ action: "ready" }));
+}
+
 /** Pide a la sesión que abra el navegador del sistema (Firefox, solo para navegar, con uBlock Origin y Dark Reader). */
 export function openBrowser(): void {
   channel()?.postMessage(JSON.stringify({ action: "browser" }));

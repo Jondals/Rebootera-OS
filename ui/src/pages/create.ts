@@ -138,8 +138,18 @@ function render(root: HTMLElement): void {
       body,
     ]),
   );
-  acknowledged = false;
-  void loadTargets();
+  // * Al volver a esta pestaña con una operación en marcha, el progreso sale al instante (con el último estado
+  // * conocido) y se actualiza ya, sin esperar a leer los discos, que en Windows tarda unos segundos.
+  const busy = status !== null && (status.running || (status.done && !acknowledged));
+  if (!busy) {
+    acknowledged = false;
+  }
+  void pollStatus();
+  if (busy) {
+    draw();
+  } else {
+    void loadTargets();
+  }
   window.clearInterval(timer);
   timer = window.setInterval(pollStatus, 1000);
 }

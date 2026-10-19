@@ -25,11 +25,12 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 | **USB & Storage** | Disks and partitions with their role and usage. **Safe Disk Guard**: internal disks and the Rebootera USB are protected and only read. |
 | **Disks and partitions** | Every disk as a visual bar with three actions: create or resize a partition, merge it into a neighbour, delete it (ext4 and NTFS can be resized without losing files). Each change shows the exact steps first and asks you to type the disk name; the USB Rebootera runs from is never touched. |
 | **Rebootera Desktop** | Windows, Linux and macOS app. On Windows its **Create USB** option shows each USB once and offers what fits it: update Rebootera, add it keeping your files, or erase and start clean, with the latest Rebootera downloaded for you or your own ISO. It also downloads official images and manages the library without a USB (they are saved in the `Rebootera` folder of your user). On Linux and macOS creating the USB from the app is not available yet. |
-| **Look and feel** | Three themes (Obsidian, Ivory, Sapphire), an animated background that can be turned off, interface size, English and Spanish. |
+| **Look and feel** | Eight themes (seven dark: Obsidian, Sapphire, Emerald, Amethyst, Ember, Graphite, Amoled; and Ivory), an animated background with configurable blur that can be turned off, a collapsible side menu, interface size, English and Spanish. |
+| **Boards & IoT** | Raspberry Pi OS, Ubuntu for Raspberry Pi, DietPi, OpenWrt and Home Assistant OS, checked with their published SHA-256 (disk images to write to an SD card). Rename any image and give it a picture from My images. |
 
 | | |
 | --- | --- |
-| ![Disks and partitions](docs/images/disks.png) | ![Boot menu](docs/images/boot-menu.png) |
+| ![Disks and partitions](docs/images/disks.png) | ![Themes](docs/images/themes.png) |
 | ![Download Center](docs/images/downloads.png) | ![Rebootera Desktop](docs/images/desktop.png) |
 
 ## Getting a Rebootera USB
@@ -43,7 +44,7 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 **From Linux** — as root:
 
 ```bash
-scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.11.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.12.0-amd64.iso
 ```
 
 The script refuses non-removable disks and the system disk.
@@ -125,7 +126,7 @@ wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-d
 It takes about a minute. The script builds the interface, embeds it together with the files of a new Rebootera USB (boot menu settings and theme), adds the icon and the Windows manifest, and cross-compiles. The result is:
 
 - `out/Rebootera Desktop.exe`: a single file, no installation. It needs the Microsoft Edge WebView2 Runtime, which Windows 10 and 11 already include. Close the app before rebuilding it.
-- `out/rebootera-desktop-linux-amd64.tar.gz`, `-linux-arm64`, `-darwin-amd64` and `-darwin-arm64`: one binary each, with no dependencies. For a window of its own it uses a Chromium-based browser if one is installed; otherwise it opens your default browser.
+- With `--all`, `dist/rebootera-desktop-linux-amd64.tar.gz`, `-linux-arm64`, `-darwin-amd64` and `-darwin-arm64`: one binary each, with no dependencies (`out/` only holds the ISO and the .exe). For a window of its own it uses a Chromium-based browser if one is installed; otherwise it opens your default browser.
 
 ### 4. Make a Rebootera USB
 

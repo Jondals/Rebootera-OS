@@ -38,6 +38,9 @@ ExecStartPre=-/usr/bin/plymouth quit --retain-splash
 # proceso tiene cualquier capacidad. setpriv la retira antes de lanzar labwc.
 # start-kiosk lanza labwc probando varios niveles de renderizado (ver el script).
 ExecStart=/usr/bin/setpriv --ambient-caps=-all --inh-caps=-all -- /usr/lib/rebootera/start-kiosk
+# * Al parar la sesión (también al reiniciarla) se matan los procesos que hayan quedado fuera del grupo del
+# * servicio: un labwc huérfano seguiría agarrando la pantalla y el nuevo no podría dibujar.
+ExecStopPost=+/bin/sh -c 'pkill -KILL -u rebootera; exit 0'
 Restart=always
 RestartSec=2
 

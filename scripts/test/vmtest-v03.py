@@ -162,8 +162,12 @@ def test_keyboard(vm, checks):
         if after and after != before:
             env = vm.run("tr '\\0' '\\n' < /proc/%s/environ | grep XKB_DEFAULT_LAYOUT" % after)
             break
+    detail = "antes %s, ahora %s, %s" % (before, after, env)
+    if "XKB_DEFAULT_LAYOUT=us" not in env:
+        # * Si falla, se guarda cómo quedó la sesión para poder entender por qué no se reinició.
+        detail += " | " + vm.run("systemctl is-active rebootera-ui; ps -eo pid,ppid,etime,cmd | grep -E \"labwc|start-kiosk|rebootera-shell|cage\" | grep -v grep; journalctl -u rebootera-ui --no-pager -n 12 | cut -c1-160").replace("\n", " ; ")
     checks.check("teclado: el kiosco se reinicia y labwc arranca con XKB_DEFAULT_LAYOUT=us",
-                 "XKB_DEFAULT_LAYOUT=us" in env, "antes %s, ahora %s, %s" % (before, after, env))
+                 "XKB_DEFAULT_LAYOUT=us" in env, detail)
     shell = vm.run("sleep 8; pgrep -f rebootera-shell | head -1")
     checks.check("teclado: la interfaz vuelve a estar abierta", shell.strip().isdigit(), shell)
     saved = vm.run("cat /run/rebootera/vault/rebootera/state/keyboard.json; cat /run/rebootera/keyboard")

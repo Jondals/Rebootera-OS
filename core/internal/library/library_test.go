@@ -5,6 +5,7 @@ package library
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -140,5 +141,41 @@ func TestCacheDelListado(t *testing.T) {
 	}
 	if items, _ = lib.List(); len(items) != 2 {
 		t.Fatalf("tras registrar deberían verse las dos: %+v", items)
+	}
+}
+
+// * TestNombreYFoto guarda el nombre y la foto de una imagen, la conserva al refrescar y rechaza lo no válido.
+func TestNombreYFoto(t *testing.T) {
+	root := fakeVault(t)
+	rel := "isos/linux/a.iso"
+	os.WriteFile(filepath.Join(root, rel), []byte("contenido"), 0o644)
+	lib := New()
+	if _, err := lib.ListFresh(); err != nil {
+		t.Fatal(err)
+	}
+	good := "data:image/png;base64,iVBORw0KGgo="
+	if err := lib.SetLook(rel, "  Mi Windows  ", good); err != nil {
+		t.Fatal(err)
+	}
+	items, err := lib.ListFresh()
+	if err != nil || len(items) != 1 {
+		t.Fatalf("listado: %v %d", err, len(items))
+	}
+	if items[0].Title != "Mi Windows" || items[0].Image != good {
+		t.Fatalf("nombre o foto perdidos: %+v", items[0])
+	}
+	for _, bad := range []string{"data:text/html;base64,AAAA", "data:image/png;base64,AAA<script>", "http://x/y.png"} {
+		if err := lib.SetLook(rel, "x", bad); err == nil {
+			t.Fatalf("debería rechazar %q", bad)
+		}
+	}
+	if err := lib.SetLook(rel, strings.Repeat("a", 81), ""); err == nil {
+		t.Fatal("un nombre largo debería rechazarse")
+	}
+	if err := lib.SetLook("isos/linux/no-existe.iso", "x", ""); err == nil {
+		t.Fatal("una imagen que no existe debería rechazarse")
+	}
+	if err := lib.SetLook(rel, "", ""); err != nil {
+		t.Fatal(err)
 	}
 }

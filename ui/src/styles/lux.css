@@ -91,13 +91,8 @@
   --shadow: var(--lift);
   --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 
-  --logo-tile-a: #232935;
   --logo-tile-b: #0b0d11;
-  --logo-ring-a: #f5dc9b;
-  --logo-ring-b: #bd8f3d;
-  --logo-ink: #f3eee1;
   --logo-edge: rgba(216, 174, 98, 0.35);
-  --logo-halo: rgba(216, 174, 98, 0.12);
   --ring: rgba(216, 174, 98, 0.24);
   --beam: rgba(216, 174, 98, 0.1);
   color-scheme: dark;
@@ -155,13 +150,8 @@
   --grain-opacity: 0.1;
   --vignette: rgba(110, 80, 30, 0.14);
 
-  --logo-tile-a: #fffaf0;
   --logo-tile-b: #eadfc9;
-  --logo-ring-a: #c39a4a;
-  --logo-ring-b: #7a5214;
-  --logo-ink: #2a2216;
   --logo-edge: rgba(140, 98, 32, 0.4);
-  --logo-halo: rgba(140, 98, 32, 0.1);
   --ring: rgba(140, 98, 32, 0.22);
   --beam: rgba(255, 255, 255, 0.6);
   color-scheme: light;
@@ -219,15 +209,305 @@
   --grain-opacity: 0.06;
   --vignette: rgba(0, 0, 10, 0.55);
 
-  --logo-tile-a: #1c2757;
   --logo-tile-b: #070b17;
-  --logo-ring-a: #c4d4ff;
-  --logo-ring-b: #6a8cf0;
-  --logo-ink: #eef2ff;
   --logo-edge: rgba(142, 170, 255, 0.4);
-  --logo-halo: rgba(142, 170, 255, 0.12);
   --ring: rgba(142, 170, 255, 0.24);
   --beam: rgba(142, 170, 255, 0.11);
+  color-scheme: dark;
+}
+
+/* Tema Esmeralda: verde profundo */
+:root[data-theme="emerald"] {
+  --bg: #060d0b;
+  --surface-solid: #0f1a17;
+  --bg-elevated: rgba(150, 230, 200, 0.05);
+  --panel: rgba(15, 26, 23, 0.78);
+  --panel-2: rgba(150, 230, 200, 0.055);
+  --panel-hover: rgba(150, 230, 200, 0.1);
+  --border: rgba(150, 230, 200, 0.12);
+  --border-strong: rgba(150, 230, 200, 0.25);
+  --edge: inset 0 1px 0 rgba(210, 250, 235, 0.07);
+  --lift: 0 14px 34px rgba(0, 0, 0, 0.5);
+
+  --text: #e4f2ec;
+  --text-muted: #93b3a6;
+  --text-dim: #62806f;
+
+  --accent: #5fd3a0;
+  --accent-strong: #3fb985;
+  --accent-soft: rgba(95, 211, 160, 0.13);
+  --accent-border: rgba(95, 211, 160, 0.46);
+  --accent-contrast: #04140d;
+  --primary: linear-gradient(180deg, #7fe3b8, #3fb985);
+  --on-primary: #04140d;
+  --primary-edge: rgba(210, 250, 235, 0.55);
+
+  --ok: #7fd8b0;
+  --warn: #efca7c;
+  --danger: #f39aa6;
+  --amber: #efb572;
+  --violet: #bfa9ff;
+  --teal: #80d0e0;
+  --teal-strong: #5fbad0;
+  --ok-bg: rgba(127, 216, 176, 0.14);
+  --warn-bg: rgba(239, 202, 124, 0.14);
+  --danger-bg: rgba(243, 154, 166, 0.14);
+  --violet-bg: rgba(191, 169, 255, 0.15);
+  --accent-bg: rgba(95, 211, 160, 0.15);
+  --badge-bg: rgba(150, 230, 200, 0.1);
+
+  --field-bg: rgba(0, 0, 0, 0.42);
+  --select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2716%27%20height%3D%2716%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%2393b3a6%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27m6%209%206%206%206-6%27%2F%3E%3C%2Fsvg%3E");
+  --scrim: rgba(0, 0, 0, 0.7);
+  --modal-bg: #0f1a17;
+
+  --bloom-a: rgba(60, 200, 150, 0.2);
+  --bloom-b: rgba(50, 130, 170, 0.14);
+  --bloom-c: rgba(160, 200, 80, 0.09);
+  --mote: rgba(210, 250, 235, 0.5);
+  --grain-opacity: 0.06;
+  --vignette: rgba(0, 8, 5, 0.55);
+
+  --logo-tile-b: #060d0b;
+  --logo-edge: rgba(95, 211, 160, 0.4);
+  --ring: rgba(95, 211, 160, 0.24);
+  --beam: rgba(95, 211, 160, 0.1);
+  color-scheme: dark;
+}
+
+/* Tema Amatista: noche violeta */
+:root[data-theme="amethyst"] {
+  --bg: #0b0814;
+  --surface-solid: #181226;
+  --bg-elevated: rgba(190, 160, 255, 0.05);
+  --panel: rgba(24, 18, 38, 0.78);
+  --panel-2: rgba(190, 160, 255, 0.055);
+  --panel-hover: rgba(190, 160, 255, 0.1);
+  --border: rgba(190, 160, 255, 0.12);
+  --border-strong: rgba(190, 160, 255, 0.25);
+  --edge: inset 0 1px 0 rgba(225, 210, 255, 0.07);
+  --lift: 0 14px 34px rgba(0, 0, 0, 0.5);
+
+  --text: #ece6fa;
+  --text-muted: #a398c4;
+  --text-dim: #6f6694;
+
+  --accent: #b79cff;
+  --accent-strong: #9a78f0;
+  --accent-soft: rgba(183, 156, 255, 0.13);
+  --accent-border: rgba(183, 156, 255, 0.46);
+  --accent-contrast: #12082e;
+  --primary: linear-gradient(180deg, #cdb8ff, #9a78f0);
+  --on-primary: #12082e;
+  --primary-edge: rgba(225, 210, 255, 0.55);
+
+  --ok: #7fd8b0;
+  --warn: #efca7c;
+  --danger: #f39aa6;
+  --amber: #efb572;
+  --violet: #bfa9ff;
+  --teal: #80d0e0;
+  --teal-strong: #5fbad0;
+  --ok-bg: rgba(127, 216, 176, 0.14);
+  --warn-bg: rgba(239, 202, 124, 0.14);
+  --danger-bg: rgba(243, 154, 166, 0.14);
+  --violet-bg: rgba(191, 169, 255, 0.15);
+  --accent-bg: rgba(183, 156, 255, 0.15);
+  --badge-bg: rgba(190, 160, 255, 0.1);
+
+  --field-bg: rgba(0, 0, 0, 0.42);
+  --select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2716%27%20height%3D%2716%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%23a398c4%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27m6%209%206%206%206-6%27%2F%3E%3C%2Fsvg%3E");
+  --scrim: rgba(0, 0, 0, 0.7);
+  --modal-bg: #181226;
+
+  --bloom-a: rgba(150, 100, 255, 0.22);
+  --bloom-b: rgba(220, 90, 190, 0.13);
+  --bloom-c: rgba(80, 130, 240, 0.1);
+  --mote: rgba(225, 210, 255, 0.5);
+  --grain-opacity: 0.06;
+  --vignette: rgba(6, 0, 14, 0.55);
+
+  --logo-tile-b: #0b0814;
+  --logo-edge: rgba(183, 156, 255, 0.4);
+  --ring: rgba(183, 156, 255, 0.24);
+  --beam: rgba(183, 156, 255, 0.1);
+  color-scheme: dark;
+}
+
+/* Tema Brasa: oscuro, rojo cálido */
+:root[data-theme="ember"] {
+  --bg: #0f0807;
+  --surface-solid: #1d1210;
+  --bg-elevated: rgba(255, 170, 140, 0.05);
+  --panel: rgba(29, 18, 16, 0.78);
+  --panel-2: rgba(255, 170, 140, 0.055);
+  --panel-hover: rgba(255, 170, 140, 0.1);
+  --border: rgba(255, 170, 140, 0.12);
+  --border-strong: rgba(255, 170, 140, 0.25);
+  --edge: inset 0 1px 0 rgba(255, 225, 205, 0.07);
+  --lift: 0 14px 34px rgba(0, 0, 0, 0.5);
+
+  --text: #f4e6e0;
+  --text-muted: #b9998d;
+  --text-dim: #82665c;
+
+  --accent: #ff9a6b;
+  --accent-strong: #f0773f;
+  --accent-soft: rgba(255, 154, 107, 0.13);
+  --accent-border: rgba(255, 154, 107, 0.46);
+  --accent-contrast: #1c0a02;
+  --primary: linear-gradient(180deg, #ffb690, #f0773f);
+  --on-primary: #1c0a02;
+  --primary-edge: rgba(255, 225, 205, 0.55);
+
+  --ok: #7fd8b0;
+  --warn: #efca7c;
+  --danger: #f39aa6;
+  --amber: #efb572;
+  --violet: #bfa9ff;
+  --teal: #80d0e0;
+  --teal-strong: #5fbad0;
+  --ok-bg: rgba(127, 216, 176, 0.14);
+  --warn-bg: rgba(239, 202, 124, 0.14);
+  --danger-bg: rgba(243, 154, 166, 0.14);
+  --violet-bg: rgba(191, 169, 255, 0.15);
+  --accent-bg: rgba(255, 154, 107, 0.15);
+  --badge-bg: rgba(255, 170, 140, 0.1);
+
+  --field-bg: rgba(0, 0, 0, 0.42);
+  --select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2716%27%20height%3D%2716%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%23b9998d%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27m6%209%206%206%206-6%27%2F%3E%3C%2Fsvg%3E");
+  --scrim: rgba(0, 0, 0, 0.7);
+  --modal-bg: #1d1210;
+
+  --bloom-a: rgba(255, 110, 60, 0.2);
+  --bloom-b: rgba(200, 50, 90, 0.14);
+  --bloom-c: rgba(240, 180, 60, 0.09);
+  --mote: rgba(255, 225, 205, 0.5);
+  --grain-opacity: 0.06;
+  --vignette: rgba(14, 2, 0, 0.55);
+
+  --logo-tile-b: #0f0807;
+  --logo-edge: rgba(255, 154, 107, 0.4);
+  --ring: rgba(255, 154, 107, 0.24);
+  --beam: rgba(255, 154, 107, 0.1);
+  color-scheme: dark;
+}
+
+/* Tema Grafito: gris neutro */
+:root[data-theme="graphite"] {
+  --bg: #0d0e10;
+  --surface-solid: #17191c;
+  --bg-elevated: rgba(200, 205, 215, 0.05);
+  --panel: rgba(23, 25, 28, 0.78);
+  --panel-2: rgba(200, 205, 215, 0.055);
+  --panel-hover: rgba(200, 205, 215, 0.1);
+  --border: rgba(200, 205, 215, 0.12);
+  --border-strong: rgba(200, 205, 215, 0.25);
+  --edge: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --lift: 0 14px 34px rgba(0, 0, 0, 0.5);
+
+  --text: #eceef1;
+  --text-muted: #9ca2ab;
+  --text-dim: #6a7078;
+
+  --accent: #e8ebf0;
+  --accent-strong: #c5cad3;
+  --accent-soft: rgba(232, 235, 240, 0.13);
+  --accent-border: rgba(232, 235, 240, 0.46);
+  --accent-contrast: #101214;
+  --primary: linear-gradient(180deg, #f3f5f8, #bcc2cc);
+  --on-primary: #101214;
+  --primary-edge: rgba(255, 255, 255, 0.55);
+
+  --ok: #7fd8b0;
+  --warn: #efca7c;
+  --danger: #f39aa6;
+  --amber: #efb572;
+  --violet: #bfa9ff;
+  --teal: #80d0e0;
+  --teal-strong: #5fbad0;
+  --ok-bg: rgba(127, 216, 176, 0.14);
+  --warn-bg: rgba(239, 202, 124, 0.14);
+  --danger-bg: rgba(243, 154, 166, 0.14);
+  --violet-bg: rgba(191, 169, 255, 0.15);
+  --accent-bg: rgba(232, 235, 240, 0.15);
+  --badge-bg: rgba(200, 205, 215, 0.1);
+
+  --field-bg: rgba(0, 0, 0, 0.42);
+  --select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2716%27%20height%3D%2716%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%239ca2ab%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27m6%209%206%206%206-6%27%2F%3E%3C%2Fsvg%3E");
+  --scrim: rgba(0, 0, 0, 0.7);
+  --modal-bg: #17191c;
+
+  --bloom-a: rgba(200, 210, 230, 0.12);
+  --bloom-b: rgba(120, 130, 150, 0.12);
+  --bloom-c: rgba(160, 170, 190, 0.07);
+  --mote: rgba(255, 255, 255, 0.5);
+  --grain-opacity: 0.06;
+  --vignette: rgba(0, 0, 0, 0.5);
+
+  --logo-tile-b: #0d0e10;
+  --logo-edge: rgba(232, 235, 240, 0.4);
+  --ring: rgba(232, 235, 240, 0.24);
+  --beam: rgba(232, 235, 240, 0.1);
+  color-scheme: dark;
+}
+
+/* Tema Amoled: negro puro, cian */
+:root[data-theme="amoled"] {
+  --bg: #000000;
+  --surface-solid: #0a0b0d;
+  --bg-elevated: rgba(120, 220, 240, 0.05);
+  --panel: rgba(10, 11, 13, 0.78);
+  --panel-2: rgba(120, 220, 240, 0.055);
+  --panel-hover: rgba(120, 220, 240, 0.1);
+  --border: rgba(120, 220, 240, 0.12);
+  --border-strong: rgba(120, 220, 240, 0.25);
+  --edge: inset 0 1px 0 rgba(200, 245, 255, 0.07);
+  --lift: 0 14px 34px rgba(0, 0, 0, 0.5);
+
+  --text: #e8f4f7;
+  --text-muted: #8fb0b8;
+  --text-dim: #5a7a82;
+
+  --accent: #4fd8ee;
+  --accent-strong: #28bcd6;
+  --accent-soft: rgba(79, 216, 238, 0.13);
+  --accent-border: rgba(79, 216, 238, 0.46);
+  --accent-contrast: #021418;
+  --primary: linear-gradient(180deg, #7fe6f6, #28bcd6);
+  --on-primary: #021418;
+  --primary-edge: rgba(200, 245, 255, 0.55);
+
+  --ok: #7fd8b0;
+  --warn: #efca7c;
+  --danger: #f39aa6;
+  --amber: #efb572;
+  --violet: #bfa9ff;
+  --teal: #80d0e0;
+  --teal-strong: #5fbad0;
+  --ok-bg: rgba(127, 216, 176, 0.14);
+  --warn-bg: rgba(239, 202, 124, 0.14);
+  --danger-bg: rgba(243, 154, 166, 0.14);
+  --violet-bg: rgba(191, 169, 255, 0.15);
+  --accent-bg: rgba(79, 216, 238, 0.15);
+  --badge-bg: rgba(120, 220, 240, 0.1);
+
+  --field-bg: rgba(0, 0, 0, 0.42);
+  --select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2716%27%20height%3D%2716%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%238fb0b8%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27m6%209%206%206%206-6%27%2F%3E%3C%2Fsvg%3E");
+  --scrim: rgba(0, 0, 0, 0.7);
+  --modal-bg: #0a0b0d;
+
+  --bloom-a: rgba(40, 190, 220, 0.16);
+  --bloom-b: rgba(80, 100, 240, 0.1);
+  --bloom-c: rgba(40, 220, 170, 0.07);
+  --mote: rgba(200, 245, 255, 0.5);
+  --grain-opacity: 0.06;
+  --vignette: rgba(0, 0, 0, 0.6);
+
+  --logo-tile-b: #000000;
+  --logo-edge: rgba(79, 216, 238, 0.4);
+  --ring: rgba(79, 216, 238, 0.24);
+  --beam: rgba(79, 216, 238, 0.1);
   color-scheme: dark;
 }
 
@@ -625,6 +905,46 @@ main {
   --m-card: #16204a;
   --m-edge: rgba(142, 170, 255, 0.28);
   --m-accent: #8eaaff;
+}
+
+.mini-emerald {
+  --m-bg: #060d0b;
+  --m-side: #0f1a17;
+  --m-card: #0f1a17;
+  --m-edge: rgba(150, 230, 200, 0.3);
+  --m-accent: #5fd3a0;
+}
+
+.mini-amethyst {
+  --m-bg: #0b0814;
+  --m-side: #181226;
+  --m-card: #181226;
+  --m-edge: rgba(190, 160, 255, 0.3);
+  --m-accent: #b79cff;
+}
+
+.mini-ember {
+  --m-bg: #0f0807;
+  --m-side: #1d1210;
+  --m-card: #1d1210;
+  --m-edge: rgba(255, 170, 140, 0.3);
+  --m-accent: #ff9a6b;
+}
+
+.mini-graphite {
+  --m-bg: #0d0e10;
+  --m-side: #17191c;
+  --m-card: #17191c;
+  --m-edge: rgba(200, 205, 215, 0.3);
+  --m-accent: #e8ebf0;
+}
+
+.mini-amoled {
+  --m-bg: #000000;
+  --m-side: #0a0b0d;
+  --m-card: #0a0b0d;
+  --m-edge: rgba(120, 220, 240, 0.3);
+  --m-accent: #4fd8ee;
 }
 
 .theme-switch {
@@ -1044,34 +1364,40 @@ select.text-input option,
   margin-top: 6px;
 }
 
-/* Logotipo: sus colores salen de las variables --logo-* de cada tema */
+/* Logotipo: el amanecer toma los colores del tema (acento para el sol y los arcos) */
 
-.lg-tile-a {
-  stop-color: var(--logo-tile-a);
+.lg-t1 {
+  stop-color: color-mix(in srgb, var(--surface-solid) 82%, var(--accent));
 }
 
-.lg-tile-b {
-  stop-color: var(--logo-tile-b);
+.lg-t2 {
+  stop-color: var(--bg);
 }
 
-.lg-ring-a {
-  stop-color: var(--logo-ring-a);
+.lg-g1 {
+  stop-color: var(--accent);
+  stop-opacity: 0.4;
 }
 
-.lg-ring-b {
-  stop-color: var(--logo-ring-b);
+.lg-g2 {
+  stop-color: var(--accent);
+  stop-opacity: 0;
+}
+
+.lg-s1 {
+  stop-color: color-mix(in srgb, var(--accent) 55%, white);
+}
+
+.lg-s2 {
+  stop-color: var(--accent-strong);
 }
 
 .lg-edge {
   stroke: var(--logo-edge);
 }
 
-.lg-halo {
-  stroke: var(--logo-halo);
-}
-
-.lg-ink {
-  stroke: var(--logo-ink);
+.lg-ray {
+  stroke: var(--accent);
 }
 
 /* Lanzador de la portada: barra de búsqueda y lista de acciones */
@@ -2173,4 +2499,53 @@ button.target-card.target-selected {
 
 .launcher .home-head {
   margin-bottom: 16px;
+}
+
+/* Foto y nombre de una imagen de la biblioteca */
+
+.device-photo {
+  padding: 0;
+  overflow: hidden;
+}
+
+.item-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.look-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 14px 0;
+}
+
+.look-preview {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 84px;
+  height: 84px;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-2);
+  color: var(--accent);
+}
+
+.look-preview .icon {
+  width: 34px;
+  height: 34px;
+}
+
+.look-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.look-message {
+  margin-top: 8px;
 }

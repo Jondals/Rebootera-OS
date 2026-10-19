@@ -5,11 +5,13 @@
 // * (modo escritorio), con secciones distintas en cada modo.
 
 import { getJSON, postJSON } from "./api.js";
-import { miniTheme } from "./components.js";
+import { miniTheme, progress } from "./components.js";
 import { openPowerDialog } from "./dialogs.js";
 import { el, icon } from "./dom.js";
+import * as fmt from "./format.js";
 import { t, translateStatic } from "./i18n.js";
 import { icons } from "./icons.js";
+import { reportReady } from "./bridge.js";
 import { onlineInterface } from "./insights.js";
 import { playIntro } from "./intro.js";
 import { appMode, isDesktop, loadMode } from "./mode.js";
@@ -37,6 +39,7 @@ import {
   desktopRoutes,
   navigate,
   register,
+  refreshCurrent,
   renderCurrent,
   routes,
   setRoutes,
@@ -54,6 +57,7 @@ const NAV_ICONS: Record<string, string> = {
   downloads: icons.download,
   storage: icons.disk,
   create: icons.usb,
+  settings: icons.settings,
 };
 
 /** Clave de traducción del nombre de una ruta del menú. */
@@ -71,27 +75,29 @@ function onNavClick(event: MouseEvent): void {
   navigate((event.currentTarget as HTMLElement).dataset.route as Route);
 }
 
-/** Dibuja el menú lateral con la ruta activa marcada. */
-function renderNav(): void {
-  const nav = byId("nav");
-  nav.replaceChildren(
-    ...routes.map(function navItem(route) {
-      const active = activeRoute() === route;
-      // * Botones y no enlaces: sin href, WebView2 no enseña la dirección abajo a la izquierda al pasar el ratón.
-      const link = el(
-        "button",
-        {
-          class: "nav-item" + (active ? " nav-active" : ""),
-          type: "button",
-          "data-route": route,
-          "aria-current": active ? "page" : "false",
-        },
-        [icon(NAV_ICONS[route]), el("span", {}, [navLabel(route)])],
-      );
-      link.addEventListener("click", onNavClick);
-      return link;
-    }),
+/** Botón de una sección del menú lateral. */
+function navButton(route: string): HTMLElement {
+  const active = activeRoute() === route;
+  // * Botones y no enlaces: sin href, WebView2 no enseña la dirección abajo a la izquierda al pasar el ratón.
+  const link = el(
+    "button",
+    {
+      class: "nav-item" + (active ? " nav-active" : ""),
+      type: "button",
+      "data-route": route,
+      "aria-current": active ? "page" : "false",
+    },
+    [icon(NAV_ICONS[route]), el("span", {}, [navLabel(route)])],
   );
+  link.title = navLabel(route);
+  link.addEventListener("click", onNavClick);
+  return link;
+}
+
+/** Dibuja el menú lateral con la ruta activa marcada: las secciones arriba y Ajustes al pie. */
+function renderNav(): void {
+  byId("nav").replaceChildren(...routes.map(navButton));
+  byId("nav-foot").replaceChildren(navButton("settings"));
 }
 
 /** Aviso de la barra superior con icono y texto. */
@@ -116,9 +122,41 @@ function renderShell(): void {
   renderDriveCard();
 }
 
-/** La tarjeta del USB ya no está en el menú lateral: el USB se ve en Inicio y en Descargar. */
+/** Tarjeta de estado al pie del menú lateral: el USB de Rebootera (con su espacio) o, en el sistema, el medio de arranque. */
 function renderDriveCard(): void {
-  byId("drive-card").replaceChildren();
+  const card = byId("drive-card");
+  const vault = snapshot.vault;
+  let title = "";
+  let detail = "";
+  let ratio = -1;
+  if (isDesktop()) {
+    title = appMode.usb ? t("sidebar.usbReady") : t("sidebar.noUsb");
+    if (appMode.usb && vault && vault.available) {
+      const total = vault.usedBytes + vault.freeBytes;
+      detail = t("sidebar.free", { size: fmt.bytes(vault.freeBytes) });
+      ratio = total > 0 ? vault.usedBytes / total : 0;
+    } else if (!appMode.usb) {
+      detail = t("sidebar.noUsbHint");
+    }
+  } else if (vault && vault.available) {
+    const total = vault.usedBytes + vault.freeBytes;
+    title = t("sidebar.usbReady");
+    detail = t("sidebar.free", { size: fmt.bytes(vault.freeBytes) });
+    ratio = total > 0 ? vault.usedBytes / total : 0;
+  } else {
+    title = t("sidebar.live");
+    detail = t("sidebar.readOnly");
+  }
+  const parts: Node[] = [
+    icon(icons.usb),
+    el("div", { class: "drive-text" }, [el("strong", {}, [title]), el("span", {}, [detail])]),
+  ];
+  const children: Node[] = [el("div", { class: "drive-row" }, parts)];
+  if (ratio >= 0) {
+    children.push(progress(ratio, ratio > 0.9 ? "warn" : "accent"));
+  }
+  card.replaceChildren(...children);
+  card.title = title + (detail ? " · " + detail : "");
 }
 
 /** Alterna entre inglés y español desde la barra superior. */
@@ -126,7 +164,22 @@ function toggleLanguage(): void {
   prefs.language = prefs.language === "en" ? "es" : "en";
   savePrefs();
   relabel();
-  renderCurrent();
+  refreshCurrent();
+}
+
+/** Pliega o despliega el menú lateral. */
+function toggleSidebar(): void {
+  prefs.sidebar = prefs.sidebar === "full" ? "compact" : "full";
+  savePrefs();
+  drawSideToggle();
+}
+
+/** Dibuja el botón que pliega el menú lateral (su icono y su texto dependen del estado). */
+function drawSideToggle(): void {
+  const compact = prefs.sidebar === "compact";
+  byId("side-toggle-icon").innerHTML = compact ? icons.panelOpen : icons.panelClose;
+  byId("side-toggle-text").textContent = compact ? t("nav.expand") : t("nav.collapse");
+  byId("side-toggle").title = compact ? t("nav.expand") : t("nav.collapse");
 }
 
 /** Vuelve a traducir el marco tras un cambio de idioma. */
@@ -136,6 +189,7 @@ function relabel(): void {
   renderNav();
   renderShell();
   drawThemeSwitch();
+  drawSideToggle();
 }
 
 /** Indica si el selector de tema está desplegado. */
@@ -155,7 +209,11 @@ function drawThemeSwitch(): void {
       "aria-haspopup": "true",
       "aria-expanded": String(themeOpen),
     },
-    [miniTheme(prefs.theme, true), icon(icons.chevronRight, "icon theme-caret")],
+    [
+      icon(icons.palette),
+      el("span", { class: "theme-name" }, [t("theme." + prefs.theme)]),
+      icon(icons.chevronRight, "icon theme-caret"),
+    ],
   );
   current.addEventListener("click", toggleThemeMenu);
   const parts: HTMLElement[] = [current];
@@ -253,11 +311,6 @@ async function autoSelectUsb(): Promise<void> {
   }
 }
 
-/** Abre los ajustes. */
-function openSettings(): void {
-  navigate("settings");
-}
-
 /** Muestra la versión instalada. */
 async function loadVersion(): Promise<void> {
   try {
@@ -291,13 +344,13 @@ async function init(): Promise<void> {
   translateStatic(document);
   byId("lang-code").textContent = prefs.language.toUpperCase();
   byId("power-button").addEventListener("click", openPowerDialog);
-  byId("settings-button").addEventListener("click", openSettings);
   byId("lang-button").addEventListener("click", toggleLanguage);
+  byId("side-toggle").addEventListener("click", toggleSidebar);
+  drawSideToggle();
   document.addEventListener("rebootera:language", relabel);
   document.addEventListener("rebootera:theme", drawThemeSwitch);
   document.addEventListener("click", closeThemeMenu);
   document.addEventListener("keydown", closeThemeMenu);
-  byId("settings-icon").innerHTML = icons.settings;
   byId("power-icon").innerHTML = icons.power;
   drawThemeSwitch();
   // * El kiosco no ofrece menú contextual: no hay nada útil que mostrar en él.
@@ -326,6 +379,10 @@ async function init(): Promise<void> {
   const ready = Promise.all([loadVersion(), start(isDesktop()), applyVaultPrefs()]);
   startRouter(byId("view"), renderNav);
   playIntro(ready);
+  // * start-kiosk espera este aviso: la interfaz ya dibujó (dos fotogramas) y la sesión es buena.
+  window.requestAnimationFrame(function firstFrame() {
+    window.requestAnimationFrame(reportReady);
+  });
 }
 
 init();

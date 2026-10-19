@@ -32,6 +32,8 @@ const (
 	csrfHeader   = "X-Rebootera"
 	powerDelay   = 1500 * time.Millisecond
 	maxBodyBytes = 64 * 1024
+	// maxLookBytes admite la foto (ya reducida) que se le pone a una imagen de la biblioteca.
+	maxLookBytes = 256 * 1024
 )
 
 // Agent es lo que la API necesita del agente privilegiado.
@@ -177,7 +179,11 @@ func (g *csrfGuard) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Petición rechazada", http.StatusForbidden)
 		return
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+	limit := int64(maxBodyBytes)
+	if r.URL.Path == "/api/library/look" {
+		limit = maxLookBytes
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	g.next.ServeHTTP(w, r)
 }
 

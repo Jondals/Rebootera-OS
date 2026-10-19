@@ -3,6 +3,34 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.12.0] - 2026-10-20
+
+### Cambiado
+
+- **Rebootera OS arranca del tirón.** La imagen live ya no enseña su menú de arranque ni espera: va directa a la interfaz (mantén Mayús al encender en equipos BIOS para ver el menú con "safe graphics").
+- **La sesión gráfica ya no se queda en una pantalla negra.** La interfaz avisa cuando ha dibujado su primer fotograma y el arranque solo da por bueno un nivel de renderizado cuando eso ocurre. Si la ventana se cae o se queda en negro prueba el siguiente nivel (hardware, software, software simple) y, como última salida, vuelve al compositor más simple, `cage`, en lugar de repetir la ventana una y otra vez.
+- **Un logotipo completamente nuevo:** un amanecer (un sol saliendo del horizonte bajo dos arcos de señal: el "re" de reiniciar y la "era" de un nuevo comienzo) sobre una ficha oscura redondeada, recoloreado por cada tema, e iconos nuevos para la aplicación, el menú de arranque y Rebootera Desktop.
+- **Una intro nueva en lugar de una barra de carga:** amanece: las líneas del horizonte se abren, el sol sube desde detrás, los arcos se trazan y el nombre entra letra a letra; se puede saltar y en equipos modestos es un fundido simple.
+- **Un menú lateral nuevo:** una columna clara con iconos y texto (Ajustes abajo y, debajo, el USB con su espacio libre), con la sección activa resaltada. Se pliega a solo iconos, sin texto cortado, desde el botón de abajo o en Ajustes, y se pliega solo en pantallas estrechas.
+- **El selector de tema dice lo que es:** un botón con una paleta y el nombre del tema; la lista enseña una miniatura de cada uno. Desaparece el engranaje de la barra superior (Ajustes está en el menú).
+- **Cambiar de idioma ya no lo recarga todo:** la página conserva su sitio y no repite la animación de entrada.
+- **Crear USB enseña su progreso al instante** al volver a esa pestaña, en lugar de esperar a que se vuelvan a leer los discos.
+- **Los botones de Ajustes ya se quedan seleccionados** al pulsarlos (fondo, desenfoque, tamaño, menú).
+- **`out/` solo lleva la ISO y el .exe.** Los binarios de Linux y macOS van a `dist/`, que usa la publicación automática.
+
+### Corregido
+
+- **Pantalla negra con solo el puntero del ratón y pantallazos.** Dos causas. Core aplicaba en cada arranque unos ajustes de puntero "guardados" que no existían (todo a cero: velocidad 0, sin toque para clic), lo que reiniciaba a la fuerza la interfaz un segundo después de abrirla y dejaba el panel táctil sin toque para clic. Y al reiniciar la sesión, el compositor antiguo sobrevivía (systemd lo saca del grupo del servicio) y se quedaba con la pantalla, así que el nuevo no podía dibujar. Las dos están corregidas, con pruebas.
+
+### Añadido
+
+- **Seis temas más, todos oscuros:** se mantiene Zafiro y se suman Esmeralda, Amatista, Brasa, Grafito y Amoled a Obsidiana. El menú de temas enseña una miniatura de cada uno.
+- **Desenfoque del fondo configurable** (ninguno, suave, medio, fuerte) para calmar el fondo animado; se apaga solo en equipos modestos.
+- **Pestaña Placas e IoT** con Raspberry Pi OS (seis ediciones), Ubuntu para Raspberry Pi (26.04 y 24.04, server y desktop), DietPi (Raspberry Pi 1 a 5, ODROID-N2 y máquinas virtuales), OpenWrt (PC y Raspberry Pi 4) y Home Assistant OS (Raspberry Pi 3/4/5, Green y genérica). Se comprueban con su SHA-256 publicado. Arduino no es un sistema operativo, así que no está en la lista.
+- **Más versiones de sistemas que ya estaban:** Ubuntu 22.04 (desktop y server), Debian 12 (netinst y live GNOME, KDE y Xfce), Fedora 43, Linux Mint LMDE 7, AlmaLinux 9 y Windows 10 LTSC 2021 en inglés.
+- **Nombre y foto para tus imágenes:** "Personalizar" en Mis imágenes permite renombrar una imagen y ponerle una foto (reducida a 128 px; el archivo no se toca). El asistente de instalación enseña el nombre que elegiste.
+- Un tipo de fuente nuevo ("último enlace + suma") para imágenes cuyo enlace estable redirige al archivo más reciente y publica su SHA-256 al lado.
+
 ## [0.11.0] - 2026-10-19
 
 ### Cambiado

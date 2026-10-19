@@ -3,6 +3,34 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.12.0] - 2026-10-20
+
+### Changed
+
+- **Rebootera OS now starts straight away.** The live image no longer shows its boot menu or waits: it goes directly into the interface (hold Shift at power-on on BIOS computers to see the menu with "safe graphics").
+- **The graphical session no longer gets stuck on a black screen.** The interface now reports when it has drawn its first frame, and the start-up only trusts a rendering level once that happens. If the window crashes or stays black it tries the next level (hardware, software, plain software) and, as a last resort, goes back to the simpler `cage` compositor instead of repeating the window over and over.
+- **A completely new logo:** a sunrise (a sun rising over the horizon under two signal arcs: the "re" of restart and the "era" of a new start) on a dark rounded tile, recoloured by each theme, and new icons for the app, the boot menu and Rebootera Desktop.
+- **A new intro instead of a loading bar:** it dawns: the horizon lines open, the sun rises from behind them, the arcs are drawn and the name enters letter by letter; it is skippable and turns into a plain fade on modest computers.
+- **A new side menu:** a clear column with icons and text (Settings at the bottom, then the USB with its free space), with the active section highlighted. It folds down to icons only, with no cut-off text, from the button at the bottom or in Settings, and folds by itself on narrow screens.
+- **The theme selector says what it is:** a button with a palette and the theme name; the list shows a miniature of each theme. The gear in the top bar is gone (Settings is in the menu).
+- **Changing the language no longer reloads everything:** the page keeps its place and its entrance animation is not repeated.
+- **Make USB shows its progress at once** when you come back to it, instead of waiting for the disks to be read again.
+- **Settings buttons now stay selected** when you press them (background, blur, size, menu).
+- **`out/` only holds the ISO and the .exe.** The Linux and macOS binaries go to `dist/`, used by the automatic publication.
+
+### Fixed
+
+- **Black screen with only the mouse pointer, and screen flashes.** Two causes. Core applied "saved" pointer settings that did not exist (all zero: speed 0, tap to click off) at every start, which force-restarted the interface a second after it opened and left the touchpad without tap to click. And when the session was restarted, the old compositor survived (systemd moves it out of the service group) and kept the screen, so the new one could not draw. Both are fixed, with tests.
+
+### Added
+
+- **Six more themes, all dark:** Sapphire stays, and Emerald, Amethyst, Ember, Graphite and Amoled join Obsidian. The theme menu shows a miniature of each one.
+- **Configurable background blur** (none, soft, medium, strong) to calm the animated background; it is switched off by itself on modest computers.
+- **Boards & IoT tab** with Raspberry Pi OS (six editions), Ubuntu for Raspberry Pi (26.04 and 24.04, server and desktop), DietPi (Raspberry Pi 1 to 5, ODROID-N2 and virtual machines), OpenWrt (PC and Raspberry Pi 4) and Home Assistant OS (Raspberry Pi 3/4/5, Green and generic). They are checked with their published SHA-256. Arduino is not an operating system, so it is not in the list.
+- **More versions of existing systems:** Ubuntu 22.04 (desktop and server), Debian 12 (netinst and live GNOME, KDE and Xfce), Fedora 43, Linux Mint LMDE 7, AlmaLinux 9 and Windows 10 LTSC 2021 in English.
+- **Name and picture for your images:** "Customize" in My images lets you rename an image and give it a picture (resized to 128 px; the file is not touched). The installation wizard shows the name you chose.
+- A new kind of source ("latest + checksum") for images whose stable link redirects to the newest file and publishes its SHA-256 next to it.
+
 ## [0.11.0] - 2026-10-19
 
 ### Changed

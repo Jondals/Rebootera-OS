@@ -334,5 +334,65 @@
       "en": "A graphical system in 5 MB.",
       "es": "Un sistema gráfico en 5 MB."
     }
+  },
+  {
+    "id": "raspberrypi-os",
+    "name": "Raspberry Pi OS",
+    "vendor": "Raspberry Pi",
+    "group": "boards",
+    "icon": "raspberrypi",
+    "homepage": "https://www.raspberrypi.com/software/",
+    "summary": {
+      "en": "The official system for every Raspberry Pi, with desktop, lite or full software. Disk images for an SD card.",
+      "es": "El sistema oficial de todas las Raspberry Pi, con escritorio, ligero o completo. Imágenes de disco para tarjeta SD."
+    }
+  },
+  {
+    "id": "ubuntu-pi",
+    "name": "Ubuntu for Raspberry Pi",
+    "vendor": "Canonical",
+    "group": "boards",
+    "icon": "ubuntu",
+    "homepage": "https://ubuntu.com/download/raspberry-pi",
+    "summary": {
+      "en": "Ubuntu Server and Desktop ready to write to an SD card for Raspberry Pi 4 and 5.",
+      "es": "Ubuntu Server y Desktop listos para grabar en una tarjeta SD para Raspberry Pi 4 y 5."
+    }
+  },
+  {
+    "id": "dietpi",
+    "name": "DietPi",
+    "vendor": "DietPi",
+    "group": "boards",
+    "icon": "generic",
+    "homepage": "https://dietpi.com",
+    "summary": {
+      "en": "A tiny Debian for boards and old hardware, with one-click software.",
+      "es": "Un Debian mínimo para placas y equipos antiguos, con software de un clic."
+    }
+  },
+  {
+    "id": "openwrt",
+    "name": "OpenWrt",
+    "vendor": "OpenWrt",
+    "group": "boards",
+    "icon": "openwrt",
+    "homepage": "https://openwrt.org",
+    "summary": {
+      "en": "Linux for routers and network boxes. Images for PCs (x86-64) and Raspberry Pi 4.",
+      "es": "Linux para routers y cajas de red. Imágenes para PC (x86-64) y Raspberry Pi 4."
+    }
+  },
+  {
+    "id": "home-assistant",
+    "name": "Home Assistant OS",
+    "vendor": "Home Assistant",
+    "group": "boards",
+    "icon": "homeassistant",
+    "homepage": "https://www.home-assistant.io/installation/",
+    "summary": {
+      "en": "The home automation system as a ready-to-write image for Raspberry Pi, Green and PCs.",
+      "es": "El sistema de domótica como imagen lista para grabar en Raspberry Pi, Green y PC."
+    }
   }
 ]

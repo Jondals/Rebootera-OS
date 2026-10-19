@@ -25,11 +25,12 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 | **USB y discos** | Discos y particiones con su función y su uso. **Safe Disk Guard**: los discos internos y el USB de Rebootera están protegidos y solo se leen. |
 | **Discos y particiones** | Cada disco como una barra visual con tres acciones: crear o cambiar el tamaño de una partición, unirla con una vecina, borrarla (ext4 y NTFS se pueden redimensionar sin perder archivos). Cada cambio enseña antes los pasos exactos y pide escribir el nombre del disco; el USB desde el que arranca Rebootera nunca se toca. |
 | **Rebootera Desktop** | Aplicación para Windows, Linux y macOS. En Windows, su opción **Crear USB** enseña cada USB una sola vez y ofrece lo que le corresponde: actualizar Rebootera, añadirlo conservando tus archivos o borrar y empezar de cero, con la última versión de Rebootera descargada por ti o tu propia ISO. También descarga imágenes oficiales y gestiona la biblioteca sin USB (se guardan en la carpeta `Rebootera` de tu usuario). En Linux y macOS crear el USB desde la aplicación aún no está disponible. |
-| **Aspecto** | Tres temas (Obsidiana, Marfil, Zafiro), fondo animado que se puede apagar, tamaño de la interfaz, inglés y español. |
+| **Aspecto** | Ocho temas (siete oscuros: Obsidiana, Zafiro, Esmeralda, Amatista, Brasa, Grafito, Amoled; y Marfil), fondo animado con desenfoque configurable que se puede apagar, menú lateral plegable, tamaño de la interfaz, inglés y español. |
+| **Placas e IoT** | Raspberry Pi OS, Ubuntu para Raspberry Pi, DietPi, OpenWrt y Home Assistant OS, comprobados con su SHA-256 publicado (imágenes de disco para grabar en una tarjeta SD). Puedes renombrar cualquier imagen y ponerle una foto desde Mis imágenes. |
 
 | | |
 | --- | --- |
-| ![Discos y particiones](docs/images/disks.png) | ![Menú de arranque](docs/images/boot-menu.png) |
+| ![Discos y particiones](docs/images/disks.png) | ![Temas](docs/images/themes.png) |
 | ![Centro de descargas](docs/images/downloads.png) | ![Rebootera Desktop](docs/images/desktop.png) |
 
 ## Cómo conseguir un USB de Rebootera
@@ -43,7 +44,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 **Desde Linux**, como root:
 
 ```bash
-scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.11.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.12.0-amd64.iso
 ```
 
 El script rechaza los discos no extraíbles y el disco del sistema.
@@ -125,7 +126,7 @@ wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-d
 Tarda alrededor de un minuto. El script compila la interfaz, la incrusta junto con los archivos de un USB de Rebootera nuevo (ajustes y tema del menú de arranque), añade el icono y el manifiesto de Windows y compila para Windows. El resultado es:
 
 - `out/Rebootera Desktop.exe`: un único archivo, sin instalación. Necesita Microsoft Edge WebView2 Runtime, que ya viene con Windows 10 y 11. Cierra la aplicación antes de volver a construirla.
-- `out/rebootera-desktop-linux-amd64.tar.gz`, `-linux-arm64`, `-darwin-amd64` y `-darwin-arm64`: un binario cada uno, sin dependencias. Para tener ventana propia usa un navegador basado en Chromium si hay uno instalado; si no, abre tu navegador predeterminado.
+- Con `--all`, `dist/rebootera-desktop-linux-amd64.tar.gz`, `-linux-arm64`, `-darwin-amd64` y `-darwin-arm64`: un binario cada uno, sin dependencias (`out/` solo lleva la ISO y el .exe). Para tener ventana propia usa un navegador basado en Chromium si hay uno instalado; si no, abre tu navegador predeterminado.
 
 ### 4. Crear un USB de Rebootera
 

@@ -81,6 +81,7 @@ func (s *Server) registerVault(mux *http.ServeMux) {
 		"/api/transfers/clear":    s.handleTransferClear,
 		"/api/library/verify":     s.handleVerify,
 		"/api/library/delete":     s.handleDelete,
+		"/api/library/look":       s.handleLook,
 	}
 	// * Abrir discos del equipo y arrancar instaladores solo tiene sentido
 	// * dentro de Rebootera OS, donde existe el agente.
@@ -346,6 +347,27 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("biblioteca: %s borrada desde la interfaz", req.Path)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// lookRequest es el cuerpo de POST /api/library/look.
+type lookRequest struct {
+	Path  string `json:"path"`
+	Title string `json:"title"`
+	Image string `json:"image"`
+}
+
+// * handleLook guarda el nombre y la foto que el usuario le pone a una imagen.
+func (s *Server) handleLook(w http.ResponseWriter, r *http.Request) {
+	var req lookRequest
+	if err := decode(r, &req); err != nil {
+		fail(w, err)
+		return
+	}
+	if err := s.deps.Library.SetLook(req.Path, req.Title, req.Image); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error(), "code": codeInvalid})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "saved"})
 }
 
 // deviceRequest es el cuerpo de las peticiones sobre un medio externo.

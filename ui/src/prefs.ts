@@ -5,11 +5,28 @@
 import { getJSON, postJSON } from "./api.js";
 import { setLanguage, type Language } from "./i18n.js";
 
-/** Temas visuales: obsidiana (oscuro y latón), marfil (claro) y zafiro (azul oscuro). */
-export type Theme = "obsidian" | "ivory" | "sapphire";
+/** Temas visuales: siete oscuros (obsidiana, zafiro, esmeralda, amatista, brasa, grafito y amoled) y marfil (claro). */
+export type Theme =
+  | "obsidian"
+  | "sapphire"
+  | "emerald"
+  | "amethyst"
+  | "ember"
+  | "graphite"
+  | "amoled"
+  | "ivory";
 
 /** Todos los temas, en el orden en que se ofrecen. */
-export const THEMES: Theme[] = ["obsidian", "ivory", "sapphire"];
+export const THEMES: Theme[] = [
+  "obsidian",
+  "sapphire",
+  "emerald",
+  "amethyst",
+  "ember",
+  "graphite",
+  "amoled",
+  "ivory",
+];
 
 /** Preferencias disponibles. */
 export interface Prefs {
@@ -19,6 +36,10 @@ export interface Prefs {
   background: "auto" | "on" | "off";
   /** Tamaño de la interfaz en porcentaje. */
   scale: number;
+  /** Desenfoque del fondo animado. */
+  blur: "off" | "soft" | "medium" | "strong";
+  /** Menú lateral: con texto o solo iconos. */
+  sidebar: "full" | "compact";
   intro: boolean;
   reduceMotion: boolean;
 }
@@ -83,6 +104,8 @@ export const prefs: Prefs = {
   theme: "obsidian",
   background: "auto",
   scale: 100,
+  blur: "soft",
+  sidebar: "full",
   intro: true,
   reduceMotion: false,
 };
@@ -99,6 +122,17 @@ export function loadPrefs(): void {
     }
     if (saved.background === "auto" || saved.background === "on" || saved.background === "off") {
       prefs.background = saved.background;
+    }
+    if (
+      saved.blur === "off" ||
+      saved.blur === "soft" ||
+      saved.blur === "medium" ||
+      saved.blur === "strong"
+    ) {
+      prefs.blur = saved.blur;
+    }
+    if (saved.sidebar === "full" || saved.sidebar === "compact") {
+      prefs.sidebar = saved.sidebar;
     }
     if (typeof saved.scale === "number" && saved.scale >= 90 && saved.scale <= 130) {
       prefs.scale = saved.scale;
@@ -182,6 +216,9 @@ export function applyPrefs(): void {
   root.dataset.gfx = isLite() ? "lite" : "full";
   root.dataset.motion = prefs.reduceMotion || (isLite() && !keepMotion) ? "reduced" : "full";
   root.dataset.bg = backgroundState();
+  // * El desenfoque del fondo cuesta en equipos modestos: allí no se aplica nunca.
+  root.dataset.blur = isLite() && !keepMotion ? "off" : prefs.blur;
+  root.dataset.side = prefs.sidebar;
   if (document.body) {
     document.body.style.zoom = String(prefs.scale / 100);
   }

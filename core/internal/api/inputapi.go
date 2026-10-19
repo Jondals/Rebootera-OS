@@ -28,7 +28,9 @@ func LoadInput() *agentproto.InputSettings {
 	if !vault.Available() {
 		return nil
 	}
-	var saved agentproto.InputSettings
+	// ! Se parte de los valores por defecto: sin archivo guardado, ReadJSON deja el valor intacto y un valor vacío
+	// ! (velocidad 0, sin toque para clic) se aplicaría en cada arranque y reiniciaría el kiosco.
+	saved := agentproto.DefaultInput
 	if err := vault.ReadJSON(filepath.Join(vault.StateDir(), inputFile), &saved); err != nil || saved.Validate() != nil {
 		return nil
 	}

@@ -9,7 +9,8 @@
 # *
 # *   wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-desktop.sh"
 # *
-# * Los resultados quedan en out/.
+# * Por defecto solo se hace el .exe (en out/, junto a la ISO). Con --all se hacen además los binarios de Linux y
+# * macOS, que van a dist/ (no a out/) porque solo los usa la publicación automática.
 set -euo pipefail
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
@@ -47,6 +48,8 @@ build_unix() {
 
 # * main construye el ejecutable.
 main() {
+	ALL=0
+	[ "${1:-}" = "--all" ] && ALL=1
 	SRC="$(cd "$(dirname "$0")/../.." && pwd)"
 	local work=/root/rebootera-build/desktop version app kit
 	version="$(sed -n 's/^var Version = "\(.*\)"/\1/p' "$SRC/core/internal/version/version.go")"
@@ -94,8 +97,11 @@ main() {
 	cp "$work/RebooteraDesktop.exe" "$SRC/out/Rebootera Desktop.exe"
 	ls -lh "$SRC/out/Rebootera Desktop.exe"
 
-	log "Compilando Rebootera Desktop $version para Linux y macOS"
-	build_unix "$work" "$version" "$SRC/out"
+	if [ "$ALL" = "1" ]; then
+		log "Compilando Rebootera Desktop $version para Linux y macOS"
+		mkdir -p "$SRC/dist"
+		build_unix "$work" "$version" "$SRC/dist"
+	fi
 }
 
 main "$@"

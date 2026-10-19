@@ -65,6 +65,23 @@ export function renderCurrent(): void {
   onChange?.(currentRoute);
 }
 
+/**
+ * Vuelve a dibujar la página actual sin que se note: conserva el desplazamiento y no repite la animación de
+ * entrada. Se usa al cambiar de idioma o de tema, donde la página es la misma y solo cambian los textos.
+ */
+export function refreshCurrent(): void {
+  if (mainElement === null) {
+    return;
+  }
+  const top = mainElement.scrollTop;
+  mainElement.classList.add("keep");
+  renderCurrent();
+  mainElement.scrollTop = top;
+  window.requestAnimationFrame(function release() {
+    mainElement?.classList.remove("keep");
+  });
+}
+
 /** Navega a una ruta. */
 export function navigate(route: Route): void {
   if (window.location.hash === "#/" + route) {

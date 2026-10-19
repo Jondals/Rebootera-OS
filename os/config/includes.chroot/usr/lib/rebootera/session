@@ -2,7 +2,14 @@
 # * session: lo que labwc ejecuta al arrancar la sesión del kiosco. Mantiene abierta la interfaz de Rebootera
 # * (rebootera-shell): si se cierra o falla, se vuelve a abrir al segundo. El navegador (que la interfaz abre con
 # * /usr/lib/rebootera/browser) es otra ventana de la misma sesión; al cerrarlo se vuelve a la interfaz.
+# * Cuenta los cierres rápidos (menos de 10 s): start-kiosk los usa para saber que este nivel de renderizado no
+# * sirve y probar el siguiente, en lugar de repetir la ventana una y otra vez (pantallazos).
+CRASHES="${REBOOTERA_CRASHES:-/tmp/rebootera-shell-crashes}"
 while true; do
+	started=$(date +%s)
 	/usr/bin/rebootera-shell
+	if [ $(($(date +%s) - started)) -lt 10 ]; then
+		echo x >>"$CRASHES"
+	fi
 	sleep 1
 done

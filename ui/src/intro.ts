@@ -1,16 +1,15 @@
-// * Intro de Rebootera OS al abrir la interfaz: logotipo, nombre y una barra fina que avanza mientras
-// * llegan los primeros datos del sistema. Es ligera a propósito (solo opacity y transform) para que no
-// * vaya a tirones ni en equipos con renderizado por software. Dura lo que tarden esos datos (con un
-// * mínimo para que se vea y un máximo para no hacer esperar). Se salta con cualquier tecla o clic y
-// * respeta "reducir movimiento".
+// * Intro de Rebootera OS al abrir la interfaz: la insignia se dibuja sola y el nombre entra letra a letra (la
+// * animación está en intro.css). Dura lo que tarden los primeros datos del sistema, con un mínimo para que se
+// * vea entera y un máximo para no hacer esperar. Se salta con cualquier tecla o clic y respeta "reducir
+// * movimiento" y el modo ligero de los equipos modestos.
 
 import { isLite, prefs } from "./prefs.js";
 
 /** Duraciones en milisegundos. */
-const MIN_MS = 1200;
-const MAX_MS = 3500;
+const MIN_MS = 2800;
+const MAX_MS = 4600;
 const REDUCED_MS = 350;
-const LEAVE_MS = 450;
+const LEAVE_MS = 520;
 
 let finish: (() => void) | null = null;
 
@@ -21,15 +20,24 @@ function reducedMotion(): boolean {
   );
 }
 
-/** Escribe el nombre en dos tramos: "Rebootera" y "OS" en cursiva con el color de acento. */
+/** Escribe el nombre letra a letra ("Rebootera" y "OS" con el color de acento). */
 function buildWordmark(target: HTMLElement): void {
   target.replaceChildren();
-  const name = document.createElement("span");
-  name.textContent = "Rebootera";
-  const os = document.createElement("span");
-  os.className = "intro-os";
-  os.textContent = "OS";
-  target.append(name, os);
+  let index = 0;
+  for (const letter of "Rebootera OS") {
+    const span = document.createElement("span");
+    if (letter === " ") {
+      span.className = "intro-space";
+    } else {
+      span.textContent = letter;
+    }
+    if (index >= 10) {
+      span.classList.add("intro-os");
+    }
+    span.style.setProperty("--i", String(index));
+    target.append(span);
+    index++;
+  }
 }
 
 /** Espera unos milisegundos. */
@@ -63,11 +71,9 @@ export async function playIntro(ready: Promise<unknown>): Promise<void> {
   if (wordmark) {
     buildWordmark(wordmark);
   }
-  const bar = intro.querySelector<HTMLElement>(".intro-progress-fill");
-  // * Un fotograma después, para que la transición de entrada tenga un punto de partida.
+  // * Un fotograma después, para que la animación de entrada tenga un punto de partida.
   window.requestAnimationFrame(function startPlay() {
     intro.classList.add("intro-play");
-    bar?.classList.add("intro-progress-run");
   });
 
   const skipped = new Promise<void>(function skipResolver(resolve) {
@@ -78,7 +84,6 @@ export async function playIntro(ready: Promise<unknown>): Promise<void> {
 
   const dataAndMinimum = Promise.all([ready.catch(ignore), wait(reduced ? REDUCED_MS : MIN_MS)]);
   await Promise.race([dataAndMinimum, wait(MAX_MS), skipped]);
-  bar?.classList.add("intro-progress-done");
 
   intro.classList.add("intro-leave");
   await wait(reduced ? 120 : LEAVE_MS);

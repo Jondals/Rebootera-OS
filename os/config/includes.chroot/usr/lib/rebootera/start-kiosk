@@ -9,8 +9,8 @@
 # * los intentos fallidos si el servicio se reinicia.
 # * Antes de arrancar genera la configuración de labwc: teclado, sensibilidad del puntero, toque para clic y
 # * desplazamiento natural del panel táctil (los guarda el agente en /run/rebootera) y reglas de ventana (la ventana se pone a pantalla completa ella misma: una regla que alterne la pantalla completa la anularía).
-# ! labwc no sale cuando falla al crear el renderizador, así que no basta con mirar su código de salida: se da
-# ! por arrancado cuando existe el proceso rebootera-shell.
+# ! Que exista el proceso no basta (con algunas GPU la ventana se cae o se queda en negro y solo se ve el ratón): se da
+# ! por arrancado cuando la propia interfaz avisa de que dibujó su primer fotograma (archivo READY_FILE).
 set -u
 
 # * Distribución de teclado elegida en la interfaz (la escribe el agente).
@@ -23,7 +23,9 @@ esac
 RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
 LEVEL_FILE="$RUNTIME/rebootera-kiosk-level"
 CONFIG_DIR="$RUNTIME/rebootera-labwc"
-START_TIMEOUT=25
+START_TIMEOUT=40
+READY_FILE="$RUNTIME/rebootera-ready"
+CRASH_FILE="$RUNTIME/rebootera-shell-crashes"
 
 # * Sin nodo de renderizado de GPU (/dev/dri/renderD*) Mesa dibuja por software
 # * aunque se pida el nivel 1: la interfaz lo sabe por REBOOTERA_LITE y deja de
@@ -31,12 +33,15 @@ START_TIMEOUT=25
 LITE=0
 ls /dev/dri/renderD* >/dev/null 2>&1 || LITE=1
 
-# * level_env imprime las variables de entorno de cada nivel.
+# * level_env imprime las variables de entorno de cada nivel. Los niveles 1 a 3 usan labwc (con los ajustes del
+# * panel táctil); los 4 y 5 vuelven a cage, el compositor más simple, como última salida si labwc no dibuja.
 level_env() {
 	case "$1" in
 	1) echo "REBOOTERA_KIOSK_LEVEL=1 REBOOTERA_LITE=$LITE" ;;
 	2) echo "REBOOTERA_KIOSK_LEVEL=2 REBOOTERA_LITE=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe" ;;
 	3) echo "REBOOTERA_KIOSK_LEVEL=3 REBOOTERA_LITE=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 GSK_RENDERER=cairo WEBKIT_DISABLE_COMPOSITING_MODE=1" ;;
+	4) echo "REBOOTERA_KIOSK_LEVEL=4 REBOOTERA_LITE=$LITE" ;;
+	5) echo "REBOOTERA_KIOSK_LEVEL=5 REBOOTERA_LITE=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 GSK_RENDERER=cairo WEBKIT_DISABLE_COMPOSITING_MODE=1" ;;
 	esac
 }
 
@@ -93,33 +98,52 @@ EOF
 	printf '%s\n' '/usr/lib/rebootera/session &' >"$CONFIG_DIR/autostart"
 }
 
-# * try_level lanza labwc con un nivel y devuelve 0 si la interfaz arrancó
-# * (en ese caso se queda esperando a labwc), 1 si no.
+# * compositor_cmd imprime la orden del compositor de un nivel.
+compositor_cmd() {
+	if [ "$1" -le 3 ]; then
+		echo "/usr/bin/labwc -C $CONFIG_DIR"
+	else
+		echo "/usr/bin/cage -d -- /usr/lib/rebootera/session"
+	fi
+}
+
+# * kill_session cierra el compositor y la interfaz de un intento que no dibujó.
+kill_session() {
+	pkill -KILL -f /usr/lib/rebootera/session 2>/dev/null
+	pkill -KILL -f /usr/bin/rebootera-shell 2>/dev/null
+	kill -KILL "$1" 2>/dev/null
+	wait "$1" 2>/dev/null
+}
+
+# * try_level lanza el compositor de un nivel y devuelve 0 si la interfaz DIBUJÓ (avisó con su primer fotograma),
+# * 1 si no: el compositor se cierra, la interfaz se cae varias veces seguidas o pasa el tiempo sin dibujar.
 try_level() {
 	local level="$1" pid waited=0
 	echo "rebootera-kiosk: probando el nivel $level de renderizado" >&2
+	rm -f "$READY_FILE" "$CRASH_FILE"
 	# shellcheck disable=SC2046
-	env $(level_env "$level") /usr/bin/labwc -C "$CONFIG_DIR" &
+	env $(level_env "$level") REBOOTERA_READY="$READY_FILE" REBOOTERA_CRASHES="$CRASH_FILE" $(compositor_cmd "$level") &
 	pid=$!
 	while [ "$waited" -lt "$START_TIMEOUT" ]; do
 		if ! kill -0 "$pid" 2>/dev/null; then
-			echo "rebootera-kiosk: labwc terminó con el nivel $level" >&2
+			echo "rebootera-kiosk: el compositor terminó con el nivel $level" >&2
 			return 1
 		fi
-		if pgrep -f /usr/bin/rebootera-shell >/dev/null; then
-			echo "rebootera-kiosk: interfaz arrancada con el nivel $level" >&2
+		if [ -s "$READY_FILE" ]; then
+			echo "rebootera-kiosk: interfaz dibujada con el nivel $level" >&2
 			echo "$level" >"$LEVEL_FILE" 2>/dev/null
 			wait "$pid"
 			return 0
 		fi
+		if [ -f "$CRASH_FILE" ] && [ "$(wc -l <"$CRASH_FILE")" -ge 3 ]; then
+			echo "rebootera-kiosk: la interfaz se cae con el nivel $level" >&2
+			break
+		fi
 		sleep 1
 		waited=$((waited + 1))
 	done
-	echo "rebootera-kiosk: labwc no arrancó la interfaz con el nivel $level" >&2
-	pkill -KILL -f /usr/lib/rebootera/session 2>/dev/null
-	pkill -KILL -f /usr/bin/rebootera-shell 2>/dev/null
-	kill -KILL "$pid" 2>/dev/null
-	wait "$pid" 2>/dev/null
+	echo "rebootera-kiosk: no se vio la interfaz con el nivel $level" >&2
+	kill_session "$pid"
 	return 1
 }
 
@@ -130,7 +154,7 @@ main() {
 	if [ -r "$LEVEL_FILE" ]; then
 		first="$(cat "$LEVEL_FILE")"
 	fi
-	for level in $(seq "$first" 3) $(seq 1 $((first - 1))); do
+	for level in $(seq "$first" 5) $(seq 1 $((first - 1))); do
 		if try_level "$level"; then
 			exit 0
 		fi

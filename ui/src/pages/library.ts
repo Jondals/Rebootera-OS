@@ -21,6 +21,7 @@ import { t } from "../i18n.js";
 import { icons } from "../icons.js";
 import { guessCategory, openImporter } from "../importer.js";
 import { installersSection } from "./installers.js";
+import { itemPicture, openLookDialog } from "./lookdialog.js";
 import { isDesktop } from "../mode.js";
 import { navigate, type Page } from "../router.js";
 import { refreshVault, snapshot } from "../state.js";
@@ -153,6 +154,20 @@ async function deleteItem(event: MouseEvent): Promise<void> {
   }
 }
 
+/** Abre el diálogo para ponerle nombre y foto a la imagen pulsada. */
+function editItem(event: MouseEvent): void {
+  const item = itemFor(event);
+  if (item) {
+    openLookDialog(item, refreshLibrary);
+  }
+}
+
+/** Vuelve a leer la biblioteca tras un cambio. */
+function refreshLibrary(): void {
+  lastSignature = "";
+  void refreshVault();
+}
+
 /** Texto del origen de una imagen. */
 function sourceText(item: LibraryItem): string {
   if (item.source === "manual") {
@@ -185,6 +200,7 @@ function itemRow(item: LibraryItem): HTMLElement {
       button(t("library.install"), installItem, { variant: "primary", iconPaths: icons.install }),
     );
   }
+  actions.push(button(t("look.edit"), editItem, { iconPaths: icons.sparkle }));
   actions.push(button(t("library.delete"), deleteItem, { iconPaths: icons.x }));
   for (const action of actions) {
     action.classList.add("btn-small");
@@ -195,12 +211,15 @@ function itemRow(item: LibraryItem): HTMLElement {
     "article",
     { class: "image-row" + (item.state === "mismatch" ? " image-damaged" : "") },
     [
-      el("span", { class: "device-icon" }, [
-        icon(item.kind === "iso" ? icons.library : icons.disk),
-      ]),
+      itemPicture(item),
       el("div", { class: "device-main" }, [
-        el("strong", { title: item.name }, [item.name]),
-        el("span", { class: "muted" }, [fmt.bytes(item.sizeBytes) + " · " + sourceText(item)]),
+        el("strong", { title: item.name }, [item.title || item.name]),
+        el("span", { class: "muted" }, [
+          (item.title ? item.name + " · " : "") +
+            fmt.bytes(item.sizeBytes) +
+            " · " +
+            sourceText(item),
+        ]),
         item.state === "hashing" ? progress(item.progress, "accent") : null,
       ]),
       el("div", { class: "image-state", title: t("library.stateHelp." + item.state) }, [
