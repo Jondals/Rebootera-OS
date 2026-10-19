@@ -227,6 +227,7 @@ Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el r
 | Resolvedor "latest-sum" y nombre y foto de las imágenes | pruebas Go |
 | `go vet`, `go test ./...`, `staticcheck`, `tsc`, `knip` | sin avisos |
 | `scripts/test/test-desktop-windows.ps1` y `test-installer-windows.ps1` con el exe real (sin ventana) | ISO y drivers copiados byte a byte, sistema intacto; ISO del instalador con El Torito BIOS + UEFI |
+| Navegación en cabecera con pestañas (sin barra lateral) y selector de tema: pulsar Amoled abre la lista y aplica el tema | comprobado pulsando en una ventana de prueba; el exe real sirve la cabecera nueva y no la barra lateral |
 | Icono del exe | el grupo de iconos 2 del ejecutable es el amanecer nuevo (comprobado extrayéndolo) |
 
 ### Errores encontrados y corregidos

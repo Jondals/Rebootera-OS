@@ -116,9 +116,7 @@ type Settings struct {
 	// Scale es el tamaño de la interfaz en porcentaje (90 a 130).
 	Scale int `json:"scale"`
 	// Blur es el desenfoque del fondo animado: "off", "soft", "medium" o "strong".
-	Blur string `json:"blur"`
-	// Sidebar es el menú lateral: "full" (iconos con texto) o "compact" (solo iconos).
-	Sidebar      string `json:"sidebar"`
+	Blur         string `json:"blur"`
 	Intro        bool   `json:"intro"`
 	ReduceMotion bool   `json:"reduceMotion"`
 }
@@ -129,7 +127,7 @@ var settingsMu sync.Mutex
 func LoadSettings() (Settings, error) {
 	settingsMu.Lock()
 	defer settingsMu.Unlock()
-	settings := Settings{Language: "en", Theme: "obsidian", Background: "auto", Scale: 100, Blur: "soft", Sidebar: "full", Intro: true}
+	settings := Settings{Language: "en", Theme: "obsidian", Background: "auto", Scale: 100, Blur: "soft", Intro: true}
 	if !Available() {
 		return settings, ErrUnavailable
 	}
@@ -155,13 +153,6 @@ func SaveSettings(settings Settings) error {
 	case "off", "soft", "medium", "strong":
 	default:
 		return fmt.Errorf("desenfoque no válido: %q", settings.Blur)
-	}
-	switch settings.Sidebar {
-	case "":
-		settings.Sidebar = "full"
-	case "full", "compact":
-	default:
-		return fmt.Errorf("menú lateral no válido: %q", settings.Sidebar)
 	}
 	if settings.Scale == 0 {
 		settings.Scale = 100

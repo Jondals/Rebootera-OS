@@ -61,11 +61,15 @@ class Preview:
         """Navega a la siguiente ruta (si la hay) y programa la captura."""
         route = self.queue[self.index]
         theme = os.environ.get("PREVIEW_THEME", "")
-        if theme:
+        if theme and not (route or "").startswith("js:"):
             self.view.evaluate_javascript("document.documentElement.dataset.theme = %r" % theme, -1, None, None, None, None, None)
         if os.environ.get("PREVIEW_DEBUG"):
             self.view.evaluate_javascript("JSON.stringify([localStorage.getItem('rebootera.prefs'), document.documentElement.dataset.theme, Array.from(document.querySelectorAll('[aria-pressed=true]')).map(function(e){return e.dataset.theme})])", -1, None, None, None, self.debug, None)
-        if route is not None:
+        if route is not None and route.startswith("js:"):
+            # * Un paso "js:CÓDIGO" ejecuta JavaScript en la página (por ejemplo, pulsar un botón) y hace una captura.
+            self.view.evaluate_javascript(route[3:], -1, None, None, None, None, None)
+            GLib.timeout_add(900, self.snapshot)
+        elif route is not None:
             self.view.evaluate_javascript("location.hash = %r" % route, -1, None, None, None, None, None)
             GLib.timeout_add(1500, self.snapshot)
         else:
@@ -85,7 +89,13 @@ class Preview:
     def on_snapshot(self, view, result, data):
         """Guarda la captura y pasa a la siguiente."""
         texture = view.get_snapshot_finish(result)
-        suffix = "" if self.index == 0 else "-" + self.queue[self.index].strip("#/").replace("/", "-")
+        step = self.queue[self.index]
+        if self.index == 0:
+            suffix = ""
+        elif step.startswith("js:"):
+            suffix = "-paso%d" % self.index
+        else:
+            suffix = "-" + step.strip("#/").replace("/", "-")
         path = OUTPUT.replace(".png", suffix + ".png")
         texture.save_to_png(path)
         print("captura: " + path, flush=True)

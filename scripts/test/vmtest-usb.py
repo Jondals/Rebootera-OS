@@ -159,10 +159,10 @@ def scenario(vm, checks):
     checks.check("ajustes guardados en el USB", status == 200, str(status))
 
     # Capturas de la interfaz con datos reales.
-    vm.click(vmtest.NAV_X, vmtest.NAV_Y["library"])
+    vm.click(*vmtest.NAV["library"])
     time.sleep(2)
     vm.screenshot("1-biblioteca")
-    vm.click(vmtest.NAV_X, vmtest.NAV_Y["downloads"])
+    vm.click(*vmtest.NAV["downloads"])
     time.sleep(4)
     vm.screenshot("2-descargas")
 

@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="styles/pages.css" />
     <link rel="stylesheet" href="styles/lux.css" />
     <link rel="stylesheet" href="styles/intro.css" />
-    <link rel="stylesheet" href="styles/sidebar.css" />
+    <link rel="stylesheet" href="styles/topnav.css" />
     <script type="module" src="js/main.js"></script>
   </head>
   <body>
@@ -176,50 +176,38 @@
     </div>
 
     <div class="app">
-      <aside class="sidebar">
+      <header class="topnav">
         <div class="brand">
-          <svg class="brand-logo" width="38" height="38"><use href="#rbt-logo" /></svg>
+          <svg class="brand-logo" width="34" height="34"><use href="#rbt-logo" /></svg>
           <div class="brand-text">
             <span class="brand-name">Rebootera <span class="accent">OS</span></span>
             <span class="brand-version" id="version"></span>
           </div>
         </div>
-        <nav id="nav" class="nav" data-i18n-label="nav.section"></nav>
-        <div class="side-foot">
-          <nav id="nav-foot" class="nav nav-foot" data-i18n-label="nav.section"></nav>
-          <div class="drive-card" id="drive-card"></div>
-          <button class="side-toggle" id="side-toggle" type="button">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" id="side-toggle-icon"></svg>
-            <span id="side-toggle-text"></span>
+        <nav id="nav" class="tabs" data-i18n-label="nav.section"></nav>
+        <div class="topnav-right">
+          <span id="status-chip"></span>
+          <div class="drive-chip" id="drive-card"></div>
+          <div class="theme-switch" id="theme-switch"></div>
+          <button
+            class="icon-button"
+            id="lang-button"
+            type="button"
+            data-i18n-label="topbar.language"
+          >
+            <span class="lang-code" id="lang-code">EN</span>
+          </button>
+          <button
+            class="icon-button icon-button-danger"
+            id="power-button"
+            type="button"
+            data-i18n-label="topbar.power"
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" id="power-icon"></svg>
           </button>
         </div>
-      </aside>
-
-      <div class="workspace">
-        <header class="topbar">
-          <span id="status-chip"></span>
-          <div class="topbar-right">
-            <div class="theme-switch" id="theme-switch"></div>
-            <button
-              class="icon-button"
-              id="lang-button"
-              type="button"
-              data-i18n-label="topbar.language"
-            >
-              <span class="lang-code" id="lang-code">EN</span>
-            </button>
-            <button
-              class="icon-button icon-button-danger"
-              id="power-button"
-              type="button"
-              data-i18n-label="topbar.power"
-            >
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" id="power-icon"></svg>
-            </button>
-          </div>
-        </header>
-        <main id="view" tabindex="-1"></main>
-      </div>
+      </header>
+      <main id="view" tabindex="-1"></main>
     </div>
 
     <div class="overlay" id="overlay" hidden>

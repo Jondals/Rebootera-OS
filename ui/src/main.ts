@@ -5,7 +5,7 @@
 // * (modo escritorio), con secciones distintas en cada modo.
 
 import { getJSON, postJSON } from "./api.js";
-import { miniTheme, progress } from "./components.js";
+import { miniTheme } from "./components.js";
 import { openPowerDialog } from "./dialogs.js";
 import { el, icon } from "./dom.js";
 import * as fmt from "./format.js";
@@ -75,14 +75,14 @@ function onNavClick(event: MouseEvent): void {
   navigate((event.currentTarget as HTMLElement).dataset.route as Route);
 }
 
-/** Botón de una sección del menú lateral. */
+/** Pestaña de una sección en la cabecera. */
 function navButton(route: string): HTMLElement {
   const active = activeRoute() === route;
   // * Botones y no enlaces: sin href, WebView2 no enseña la dirección abajo a la izquierda al pasar el ratón.
   const link = el(
     "button",
     {
-      class: "nav-item" + (active ? " nav-active" : ""),
+      class: "tab" + (active ? " tab-active" : ""),
       type: "button",
       "data-route": route,
       "aria-current": active ? "page" : "false",
@@ -94,10 +94,9 @@ function navButton(route: string): HTMLElement {
   return link;
 }
 
-/** Dibuja el menú lateral con la ruta activa marcada: las secciones arriba y Ajustes al pie. */
+/** Dibuja las pestañas de la cabecera con la sección activa marcada (Ajustes es la última). */
 function renderNav(): void {
-  byId("nav").replaceChildren(...routes.map(navButton));
-  byId("nav-foot").replaceChildren(navButton("settings"));
+  byId("nav").replaceChildren(...[...routes, "settings"].map(navButton));
 }
 
 /** Aviso de la barra superior con icono y texto. */
@@ -122,41 +121,23 @@ function renderShell(): void {
   renderDriveCard();
 }
 
-/** Tarjeta de estado al pie del menú lateral: el USB de Rebootera (con su espacio) o, en el sistema, el medio de arranque. */
+/** Indicador del USB en la cabecera: el USB de Rebootera con su espacio libre o, en el sistema, "sesión live". */
 function renderDriveCard(): void {
-  const card = byId("drive-card");
+  const chipNode = byId("drive-card");
   const vault = snapshot.vault;
-  let title = "";
-  let detail = "";
-  let ratio = -1;
+  let text: string;
   if (isDesktop()) {
-    title = appMode.usb ? t("sidebar.usbReady") : t("sidebar.noUsb");
-    if (appMode.usb && vault && vault.available) {
-      const total = vault.usedBytes + vault.freeBytes;
-      detail = t("sidebar.free", { size: fmt.bytes(vault.freeBytes) });
-      ratio = total > 0 ? vault.usedBytes / total : 0;
-    } else if (!appMode.usb) {
-      detail = t("sidebar.noUsbHint");
-    }
+    text =
+      appMode.usb && vault && vault.available
+        ? t("sidebar.free", { size: fmt.bytes(vault.freeBytes) })
+        : t("sidebar.noUsb");
   } else if (vault && vault.available) {
-    const total = vault.usedBytes + vault.freeBytes;
-    title = t("sidebar.usbReady");
-    detail = t("sidebar.free", { size: fmt.bytes(vault.freeBytes) });
-    ratio = total > 0 ? vault.usedBytes / total : 0;
+    text = t("sidebar.free", { size: fmt.bytes(vault.freeBytes) });
   } else {
-    title = t("sidebar.live");
-    detail = t("sidebar.readOnly");
+    text = t("sidebar.live");
   }
-  const parts: Node[] = [
-    icon(icons.usb),
-    el("div", { class: "drive-text" }, [el("strong", {}, [title]), el("span", {}, [detail])]),
-  ];
-  const children: Node[] = [el("div", { class: "drive-row" }, parts)];
-  if (ratio >= 0) {
-    children.push(progress(ratio, ratio > 0.9 ? "warn" : "accent"));
-  }
-  card.replaceChildren(...children);
-  card.title = title + (detail ? " · " + detail : "");
+  chipNode.replaceChildren(icon(icons.usb), el("span", {}, [text]));
+  chipNode.title = text;
 }
 
 /** Alterna entre inglés y español desde la barra superior. */
@@ -167,21 +148,6 @@ function toggleLanguage(): void {
   refreshCurrent();
 }
 
-/** Pliega o despliega el menú lateral. */
-function toggleSidebar(): void {
-  prefs.sidebar = prefs.sidebar === "full" ? "compact" : "full";
-  savePrefs();
-  drawSideToggle();
-}
-
-/** Dibuja el botón que pliega el menú lateral (su icono y su texto dependen del estado). */
-function drawSideToggle(): void {
-  const compact = prefs.sidebar === "compact";
-  byId("side-toggle-icon").innerHTML = compact ? icons.panelOpen : icons.panelClose;
-  byId("side-toggle-text").textContent = compact ? t("nav.expand") : t("nav.collapse");
-  byId("side-toggle").title = compact ? t("nav.expand") : t("nav.collapse");
-}
-
 /** Vuelve a traducir el marco tras un cambio de idioma. */
 function relabel(): void {
   translateStatic(document);
@@ -189,7 +155,6 @@ function relabel(): void {
   renderNav();
   renderShell();
   drawThemeSwitch();
-  drawSideToggle();
 }
 
 /** Indica si el selector de tema está desplegado. */
@@ -263,7 +228,9 @@ function closeThemeMenu(event: Event): void {
   if (event instanceof KeyboardEvent && event.key !== "Escape") {
     return;
   }
-  if (event instanceof MouseEvent && byId("theme-switch").contains(event.target as Node)) {
+  // ! composedPath se calcula al empezar el evento: sigue incluyendo el selector aunque el botón pulsado ya se
+  // ! haya vuelto a dibujar (con event.target, abrir el menú lo cerraba al instante y "no funcionaba").
+  if (event instanceof MouseEvent && event.composedPath().includes(byId("theme-switch"))) {
     return;
   }
   themeOpen = false;
@@ -345,8 +312,6 @@ async function init(): Promise<void> {
   byId("lang-code").textContent = prefs.language.toUpperCase();
   byId("power-button").addEventListener("click", openPowerDialog);
   byId("lang-button").addEventListener("click", toggleLanguage);
-  byId("side-toggle").addEventListener("click", toggleSidebar);
-  drawSideToggle();
   document.addEventListener("rebootera:language", relabel);
   document.addEventListener("rebootera:theme", drawThemeSwitch);
   document.addEventListener("click", closeThemeMenu);

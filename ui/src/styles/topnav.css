@@ -1,0 +1,321 @@
+/* * Navegación: una cabecera arriba con la marca a la izquierda, las secciones como pestañas en el centro y a la
+   * derecha el USB, el tema, el idioma y la energía. No hay barra lateral: todo el ancho es para el contenido. En
+   * ventanas estrechas las pestañas solo enseñan el icono (y el nombre de la activa). Se carga la última y manda
+   * sobre layout.css y lux.css. Además: desenfoque configurable del fondo, refresco suave y el selector de tema. */
+
+.app {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: transparent;
+}
+
+.topnav {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 18px;
+  height: 66px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
+}
+
+/* Marca */
+
+.brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.brand-logo {
+  flex: none;
+  width: 36px;
+  height: 36px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.brand-name {
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.brand-name .accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.brand-version {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+/* Pestañas */
+
+.tabs {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 9px;
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+/* Centrado que no recorta: los márgenes automáticos de los extremos reparten el espacio sobrante */
+.tab:first-child {
+  margin-left: auto;
+}
+
+.tab:last-child {
+  margin-right: auto;
+}
+
+.tab .icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.7;
+}
+
+.tab:hover {
+  background: var(--panel-hover);
+  color: var(--text);
+}
+
+.tab-active,
+.tab-active:hover {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
+/* Derecha: USB, tema, idioma y energía */
+
+.topnav-right {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.drive-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.drive-chip .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 32px 40px;
+}
+
+/* Ventanas algo justas: sin el nombre de la marca */
+
+@media (max-width: 1480px) {
+  .brand-text {
+    display: none;
+  }
+}
+
+/* Ventanas medianas: las pestañas enseñan solo el icono y la activa su nombre */
+
+@media (max-width: 1250px) {
+  .tab {
+    padding: 0 12px;
+  }
+  .tab:not(.tab-active) span {
+    display: none;
+  }
+}
+
+/* Ventanas estrechas: solo iconos, y el USB solo con su icono */
+
+@media (max-width: 860px) {
+  .topnav {
+    gap: 10px;
+    padding: 0 12px;
+  }
+  .tab span,
+  .drive-chip span,
+  .theme-name {
+    display: none;
+  }
+  .drive-chip {
+    padding: 0 10px;
+  }
+  main {
+    padding: 18px 16px 32px;
+  }
+}
+
+/* Desenfoque del fondo: se filtra la capa entera (una vez por fotograma de las órbitas). */
+
+.bg {
+  --bg-blur: 0px;
+  filter: blur(var(--bg-blur));
+  transform: scale(1.03);
+}
+
+:root[data-blur="off"] .bg {
+  filter: none;
+  transform: none;
+}
+
+:root[data-blur="soft"] .bg {
+  --bg-blur: 3px;
+}
+
+:root[data-blur="medium"] .bg {
+  --bg-blur: 8px;
+}
+
+:root[data-blur="strong"] .bg {
+  --bg-blur: 16px;
+}
+
+/* Refresco suave (cambio de idioma o de tema): sin repetir la animación de entrada */
+
+main.keep .page {
+  animation: none;
+}
+
+/* Selector de tema: un botón con paleta y nombre, y una lista de una columna con la miniatura de cada tema */
+
+.theme-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.theme-current .icon {
+  width: 17px;
+  height: 17px;
+  color: var(--accent);
+}
+
+.theme-current .theme-caret {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+}
+
+.theme-name {
+  white-space: nowrap;
+}
+
+.theme-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 14px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.theme-option .mini {
+  flex: none;
+  width: 56px;
+}
+
+.theme-option-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-option-text strong {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.theme-option[aria-checked="true"]::after {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.theme-cards {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}

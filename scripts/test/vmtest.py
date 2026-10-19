@@ -319,10 +319,17 @@ def test_system(vm, checks):
         handle.write(journal + "\n")
 
 
-# * Posiciones del menú lateral en pantallas de más de 1180 px de ancho
-# * (coinciden con sidebar.css): x del texto e y de cada entrada.
-NAV_X = 100
-NAV_Y = {"overview": 136, "install": 186, "library": 236, "drivers": 286, "downloads": 336, "storage": 386, "settings": 655}
+# * Posiciones de las pestañas de la cabecera en pantallas de 1280 px de ancho (coinciden con topnav.css):
+# * (x, y) del centro de cada una. Ajustes es la última.
+NAV = {
+    "overview": (138, 54),
+    "install": (240, 54),
+    "library": (357, 54),
+    "drivers": (479, 54),
+    "downloads": (597, 54),
+    "storage": (709, 54),
+    "settings": (817, 54),
+}
 
 
 def stable_screen_size(vm):
@@ -348,18 +355,18 @@ def test_ui(vm, checks, poweroff):
     checks.check("resolución de pantalla (informativo)", True, "%dx%d" % (width, height))
     vm.screenshot("2-resumen")
     for index, route in enumerate(("drivers", "storage", "install"), start=3):
-        vm.click(NAV_X, NAV_Y[route])
+        vm.click(*NAV[route])
         time.sleep(1.5)
         vm.screenshot("%d-%s" % (index, route))
 
     # * Botones de la barra superior, de derecha a izquierda: energía e idioma (Ajustes está al pie del menú lateral).
-    power_x, lang_x, top_y = width - 43, width - 85, 52
-    vm.click(NAV_X, NAV_Y["overview"])
+    power_x, lang_x, top_y = width - 39, width - 81, 54
+    vm.click(*NAV["overview"])
     vm.click(lang_x, top_y)
     time.sleep(1.5)
     vm.screenshot("6-espanol")
     vm.click(lang_x, top_y)
-    vm.click(NAV_X, NAV_Y["settings"])
+    vm.click(*NAV["settings"])
     time.sleep(1.5)
     vm.screenshot("7-ajustes")
     if not poweroff:

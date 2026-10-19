@@ -38,8 +38,6 @@ export interface Prefs {
   scale: number;
   /** Desenfoque del fondo animado. */
   blur: "off" | "soft" | "medium" | "strong";
-  /** Menú lateral: con texto o solo iconos. */
-  sidebar: "full" | "compact";
   intro: boolean;
   reduceMotion: boolean;
 }
@@ -105,7 +103,6 @@ export const prefs: Prefs = {
   background: "auto",
   scale: 100,
   blur: "soft",
-  sidebar: "full",
   intro: true,
   reduceMotion: false,
 };
@@ -130,9 +127,6 @@ export function loadPrefs(): void {
       saved.blur === "strong"
     ) {
       prefs.blur = saved.blur;
-    }
-    if (saved.sidebar === "full" || saved.sidebar === "compact") {
-      prefs.sidebar = saved.sidebar;
     }
     if (typeof saved.scale === "number" && saved.scale >= 90 && saved.scale <= 130) {
       prefs.scale = saved.scale;
@@ -218,7 +212,6 @@ export function applyPrefs(): void {
   root.dataset.bg = backgroundState();
   // * El desenfoque del fondo cuesta en equipos modestos: allí no se aplica nunca.
   root.dataset.blur = isLite() && !keepMotion ? "off" : prefs.blur;
-  root.dataset.side = prefs.sidebar;
   if (document.body) {
     document.body.style.zoom = String(prefs.scale / 100);
   }

@@ -101,12 +101,6 @@ function setBlur(value: string): void {
   savePrefs();
 }
 
-/** Cambia entre menú lateral con texto o solo iconos. */
-function setSidebar(value: string): void {
-  prefs.sidebar = value as typeof prefs.sidebar;
-  savePrefs();
-}
-
 /** Cambia el tamaño de la interfaz y lo aplica al momento. */
 function setScale(value: string): void {
   prefs.scale = Number(value);
@@ -142,18 +136,6 @@ function appearancePanel(): HTMLElement {
         ],
         prefs.blur,
         setBlur,
-      ),
-    ]),
-    el("div", { class: "setting-block" }, [
-      el("span", {}, [t("settings.sidebar")]),
-      choice(
-        t("settings.sidebar"),
-        [
-          ["full", t("settings.sidebarFull")],
-          ["compact", t("settings.sidebarCompact")],
-        ],
-        prefs.sidebar,
-        setSidebar,
       ),
     ]),
     el("div", { class: "setting-block" }, [

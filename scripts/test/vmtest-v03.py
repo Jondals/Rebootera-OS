@@ -412,7 +412,7 @@ def scenario_partitions(vm, checks):
         checks.check("particiones: no se puede planificar nada sobre el USB de Rebootera",
                      status == 400 and error.get("code") == "part-protected", "%s %s" % (status, error))
     # * Capturas de la página con una partición elegida (los clics son a ojo: solo sirven para mirarla).
-    vm.click(vmtest.NAV_X, vmtest.NAV_Y["storage"])
+    vm.click(*vmtest.NAV["storage"])
     time.sleep(3)
     vm.screenshot("particiones-lista")
     vm.click(490, 510)
