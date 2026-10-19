@@ -18,7 +18,7 @@ Set-Content "$src\drv\x64\net.inf" $inf -Encoding ascii
 Set-Content "$src\drv\x64\net.sys" "sys" -Encoding ascii
 $urlFile = Join-Path $env:TEMP "rbt-desktop-url.txt"
 Remove-Item $urlFile -ErrorAction SilentlyContinue
-$p = Start-Process (Join-Path (Split-Path (Split-Path $PSScriptRoot)) "out\Rebootera Desktop.exe") -ArgumentList "-no-window", "-url-file", $urlFile, "-usb-root", $tmp -PassThru
+$p = Start-Process (Get-ChildItem (Join-Path (Split-Path (Split-Path $PSScriptRoot)) "out") -Filter "Rebootera-Desktop-*.exe" | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName -ArgumentList "-no-window", "-url-file", $urlFile, "-usb-root", $tmp -PassThru
 for ($i = 0; $i -lt 30 -and -not (Test-Path $urlFile); $i++) { Start-Sleep -Milliseconds 500 }
 $url = (Get-Content $urlFile -Raw).Trim()
 $base = $url -replace "/auth\?token=.*", ""

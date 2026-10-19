@@ -3,7 +3,7 @@
 # *   1. Compila la interfaz con pnpm.
 # *   2. Prepara el contenido que va dentro del ejecutable: la interfaz (ui/) y
 # *      el kit de un USB nuevo (kit/: configuración y tema de Ventoy, README).
-# *   3. Compila "Rebootera Desktop.exe" sin consola (-H windowsgui) y, con la misma interfaz, los binarios de
+# *   3. Compila "Rebootera-Desktop-<versión>.exe" sin consola (-H windowsgui) y, con la misma interfaz, los binarios de
 # *      Linux y macOS (Go puro, sin CGO: se compilan desde cualquier sistema) empaquetados en .tar.gz.
 # * Se ejecuta en la distro WSL RebooteraBuild (no necesita root):
 # *
@@ -94,8 +94,11 @@ main() {
 		-ldflags "-H windowsgui -s -w -X rebootera/core/internal/version.Version=$version" \
 		-o "$work/RebooteraDesktop.exe" ./cmd/rebootera-desktop
 	mkdir -p "$SRC/out"
-	cp "$work/RebooteraDesktop.exe" "$SRC/out/Rebootera Desktop.exe"
-	ls -lh "$SRC/out/Rebootera Desktop.exe"
+	# * El nombre lleva la versión (como el de la ISO): así se ve siempre cuál es la última. Los de versiones
+	# * anteriores se borran, para que out/ solo tenga el .exe y la ISO de esta versión.
+	rm -f "$SRC"/out/Rebootera-Desktop-*.exe "$SRC/out/Rebootera Desktop.exe"
+	cp "$work/RebooteraDesktop.exe" "$SRC/out/Rebootera-Desktop-$version.exe"
+	ls -lh "$SRC/out/Rebootera-Desktop-$version.exe"
 
 	if [ "$ALL" = "1" ]; then
 		log "Compilando Rebootera Desktop $version para Linux y macOS"

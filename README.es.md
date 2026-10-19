@@ -125,7 +125,7 @@ wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-d
 
 Tarda alrededor de un minuto. El script compila la interfaz, la incrusta junto con los archivos de un USB de Rebootera nuevo (ajustes y tema del menú de arranque), añade el icono y el manifiesto de Windows y compila para Windows. El resultado es:
 
-- `out/Rebootera Desktop.exe`: un único archivo, sin instalación. Necesita Microsoft Edge WebView2 Runtime, que ya viene con Windows 10 y 11. Cierra la aplicación antes de volver a construirla.
+- `out/Rebootera-Desktop-<version>.exe`: un único archivo, sin instalación. Necesita Microsoft Edge WebView2 Runtime, que ya viene con Windows 10 y 11. Cierra la aplicación antes de volver a construirla.
 - Con `--all`, `dist/rebootera-desktop-linux-amd64.tar.gz`, `-linux-arm64`, `-darwin-amd64` y `-darwin-arm64`: un binario cada uno, sin dependencias (`out/` solo lleva la ISO y el .exe). Para tener ventana propia usa un navegador basado en Chromium si hay uno instalado; si no, abre tu navegador predeterminado.
 
 ### 4. Crear un USB de Rebootera

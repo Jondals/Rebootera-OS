@@ -3,8 +3,8 @@
 # * Crea una carpeta con el aspecto de un Windows extraído por Rufus, pide a la API que haga la ISO
 # * (IMAPI de Windows) y comprueba la ISO: firma ISO 9660, catálogo El Torito con BIOS y EFI, y la biblioteca.
 # *
-# *   scripts\test-installer-windows.ps1 [-Exe "ruta\Rebootera Desktop.exe"]
-param([string]$Exe = (Join-Path $PSScriptRoot "..\..\out\Rebootera Desktop.exe"))
+# *   scripts\test-installer-windows.ps1 [-Exe "ruta\Rebootera-Desktop-X.exe"]
+param([string]$Exe = (Get-ChildItem (Join-Path $PSScriptRoot "..\..\out") -Filter "Rebootera-Desktop-*.exe" | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName)
 $ErrorActionPreference = "Stop"
 $Exe = (Resolve-Path $Exe).Path
 $work = Join-Path $env:TEMP ("rbt-installer-" + [guid]::NewGuid().ToString("N").Substring(0, 8))
