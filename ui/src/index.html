@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="styles/components.css" />
     <link rel="stylesheet" href="styles/pages.css" />
     <link rel="stylesheet" href="styles/calm.css" />
+    <link rel="stylesheet" href="styles/aero.css" />
     <link rel="stylesheet" href="styles/intro.css" />
     <script type="module" src="js/main.js"></script>
   </head>
@@ -45,6 +46,20 @@
       <p class="intro-skip" data-i18n="intro.skip"></p>
     </div>
 
+    <!-- * Fondo animado: cielo, colina y burbujas (solo mueven capas, cuestan casi nada). -->
+    <div class="aero-bg" aria-hidden="true">
+      <span class="aero-ray aero-ray-a"></span>
+      <span class="aero-ray aero-ray-b"></span>
+      <span class="aero-hill"></span>
+      <span class="bubble"></span>
+      <span class="bubble"></span>
+      <span class="bubble"></span>
+      <span class="bubble"></span>
+      <span class="bubble"></span>
+      <span class="bubble"></span>
+      <span class="bubble"></span>
+    </div>
+
     <div class="app">
       <aside class="sidebar">
         <nav id="nav" class="nav" data-i18n-label="nav.section"></nav>
@@ -62,6 +77,7 @@
         <header class="topbar">
           <span id="status-chip"></span>
           <div class="topbar-right">
+            <div class="theme-switch" id="theme-switch" role="group"></div>
             <button
               class="icon-button"
               id="lang-button"

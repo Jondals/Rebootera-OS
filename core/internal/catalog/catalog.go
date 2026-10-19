@@ -88,6 +88,9 @@ type Resolver struct {
 	Type    string `json:"type"`
 	Index   string `json:"index,omitempty"`
 	Pattern string `json:"pattern,omitempty"`
+	// Link, si está, es la URL de la imagen cuando no cuelga del mismo directorio que el índice
+	// (por ejemplo, el enlace "latest" de NixOS, que redirige al archivo con nombre y versión).
+	Link string `json:"link,omitempty"`
 	// Signature describe cómo está firmado el índice (nil = sin firma).
 	Signature *SigSpec `json:"signature,omitempty"`
 	// ISOSignature describe la firma de la propia imagen, para los proyectos que
@@ -252,7 +255,11 @@ func resolveSums(r Resolver) (Resolved, error) {
 	if err != nil {
 		return Resolved{}, fmt.Errorf("%s: %w", r.Index, err)
 	}
-	return Resolved{URL: sibling(r.Index, name), FileName: name, SHA256: hashes[name], SignedBy: signedBy}, nil
+	link := sibling(r.Index, name)
+	if r.Link != "" {
+		link = r.Link
+	}
+	return Resolved{URL: link, FileName: name, SHA256: hashes[name], SignedBy: signedBy}, nil
 }
 
 // fedoraSum es una línea "SHA256 (archivo) = hash" de los CHECKSUM de Fedora.
@@ -487,6 +494,11 @@ func sibling(indexURL, name string) string {
 	u, err := url.Parse(indexURL)
 	if err != nil {
 		return ""
+	}
+	// * Algunos espejos listan los archivos con rutas absolutas ("/fedora/releases/..."): cuelgan del servidor.
+	if strings.HasPrefix(name, "/") {
+		u.Path = name
+		return u.String()
 	}
 	if !strings.HasSuffix(u.Path, "/") {
 		u.Path = path.Dir(u.Path) + "/"

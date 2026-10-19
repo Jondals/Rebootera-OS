@@ -3,6 +3,24 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.9.0] - 2026-10-19
+
+### Changed
+
+- **New look: Frutiger Aero.** Glass panels, glossy buttons, a sky with a green hill and bubbles that rise slowly (they only move layers, so they cost almost nothing), a compact icon sidebar and smaller, tighter pages. The whole interface was restyled.
+- **Three themes, remembered.** Sky (light), Night (dark glass) and Forest (light, green). Pick one from the three dots in the top bar or from Settings; the choice is saved (and on the USB, so Rebootera OS starts with it next time).
+- **Settings** now starts with the theme cards; accent color is gone (the themes replace it).
+- **Rebootera Desktop** keeps the animated background (it used to be switched off there to save CPU); blur and glow stay off.
+
+### Fixed
+
+- **A new USB made from Windows now uses an MBR partition table** (Ventoy's default), which starts on old BIOS PCs and on UEFI. Before it was always GPT, and some computers' boot menus do not list a GPT-only USB. GPT is only used for disks over 2 TiB.
+- Catalog links with absolute paths (some Fedora mirrors) no longer break the checksum lookup.
+
+### Added
+
+- **25 more systems** (65 in 24 families): Ubuntu Budgie, Cinnamon, Unity, Edubuntu and Studio; Debian Live Cinnamon, MATE, LXQt, LXDE and Standard; Fedora Budgie, LXQt, COSMIC, Sway, Silverblue and Kinoite; NixOS 26.05 (minimal and graphical); Void Linux (base and Xfce); CentOS Stream 10 (boot and DVD); Proxmox Backup Server and Mail Gateway; Alpine Extended. Every new entry was resolved against the real servers; where the project signs its checksums the signature is verified.
+
 ## [0.8.0] - 2026-10-19
 
 ### Changed

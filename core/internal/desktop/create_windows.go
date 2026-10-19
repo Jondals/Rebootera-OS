@@ -3,7 +3,7 @@
 // * Creación de un USB de Rebootera desde Windows:
 // *   1. Descarga Ventoy para Windows de su release oficial y comprueba su SHA-256.
 // *   2. Ejecuta Ventoy2Disk en modo línea de órdenes (VTOYCLI) como
-// *      administrador sobre el disco USB elegido: GPT y Secure Boot.
+// *      administrador sobre el disco USB elegido: tabla MBR (arranca en BIOS y UEFI) y Secure Boot.
 // *   3. Renombra la partición de datos a REBOOTERA (la CLI de Ventoy no tiene
 // *      opción de etiqueta).
 // *   4. Copia la estructura del USB, la configuración y Rebootera OS.
@@ -30,6 +30,9 @@ import (
 	"strings"
 	"time"
 )
+
+// maxMBRBytes es lo que direcciona una tabla MBR (2 TiB).
+const maxMBRBytes = 2 << 40
 
 // Versión de Ventoy que se usa (la misma que en las imágenes de Linux).
 const (
@@ -71,9 +74,11 @@ func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string, extras
 		return err
 	}
 	allowed := false
+	var diskSize uint64
 	for _, d := range disks {
 		if d.Number == diskNumber {
 			allowed = true
+			diskSize = d.SizeBytes
 		}
 	}
 	if !allowed {
@@ -95,7 +100,7 @@ func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string, extras
 			return err
 		}
 	}
-	job := &createJob{disk: diskNumber, iso: isoPath, kit: kit, desktopExe: desktopExe, extras: extras, keepData: keepData}
+	job := &createJob{disk: diskNumber, size: diskSize, iso: isoPath, kit: kit, desktopExe: desktopExe, extras: extras, keepData: keepData}
 	go job.run()
 	return nil
 }
@@ -103,6 +108,7 @@ func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string, extras
 // createJob guarda los datos de una creación.
 type createJob struct {
 	disk       int
+	size       uint64
 	iso        string
 	kit        fs.FS
 	desktopExe string
@@ -136,7 +142,13 @@ func (j *createJob) steps() (string, error) {
 	setPhase("ventoy-install", 0)
 	done := filepath.Join(ventoyDir, "cli_done.txt")
 	os.Remove(done)
-	args := fmt.Sprintf("VTOYCLI /I /PhyDrive:%d /GPT", j.disk)
+	// * MBR (el estilo por defecto de Ventoy) arranca en equipos con BIOS clásica y en UEFI: es lo más
+	// * compatible, y muchos menús de arranque no ofrecen un USB solo GPT en BIOS. GPT solo hace falta
+	// * en discos de más de 2 TiB, donde MBR no llega.
+	args := fmt.Sprintf("VTOYCLI /I /PhyDrive:%d", j.disk)
+	if j.size > maxMBRBytes {
+		args += " /GPT"
+	}
 	if j.keepData {
 		// * Sin /GPT: se respeta el estilo de particiones que ya tenga el disco. Ventoy mismo
 		// * encoge la primera partición si hace falta sitio para su partición de arranque.

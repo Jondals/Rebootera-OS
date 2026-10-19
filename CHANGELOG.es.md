@@ -3,6 +3,24 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.9.0] - 2026-10-19
+
+### Cambiado
+
+- **Aspecto nuevo: Frutiger Aero.** Paneles de cristal, botones con brillo, un cielo con una colina verde y burbujas que suben despacio (solo mueven capas, así que cuestan casi nada), una barra lateral compacta de iconos y páginas más pequeñas y apretadas. Toda la interfaz se rehízo.
+- **Tres temas, que se recuerdan.** Cielo (claro), Noche (cristal oscuro) y Bosque (claro, verde). Se elige con los tres puntos de la barra superior o en Ajustes; la elección se guarda (también en el USB, así que Rebootera OS arranca con él la próxima vez).
+- **Ajustes** empieza ahora por las tarjetas de tema; el color de acento desaparece (los temas lo sustituyen).
+- **Rebootera Desktop** mantiene el fondo animado (antes allí estaba apagado para ahorrar CPU); el desenfoque y los brillos siguen apagados.
+
+### Corregido
+
+- **Un USB nuevo creado desde Windows usa ahora tabla de particiones MBR** (la de Ventoy por defecto), que arranca en PC antiguos con BIOS y en UEFI. Antes era siempre GPT y el menú de arranque de algunos equipos no lista un USB solo GPT. GPT solo se usa en discos de más de 2 TiB.
+- Los enlaces del catálogo con ruta absoluta (algunos espejos de Fedora) ya no rompen la búsqueda de la suma.
+
+### Añadido
+
+- **25 sistemas más** (65 en 24 familias): Ubuntu Budgie, Cinnamon, Unity, Edubuntu y Studio; Debian Live Cinnamon, MATE, LXQt, LXDE y Standard; Fedora Budgie, LXQt, COSMIC, Sway, Silverblue y Kinoite; NixOS 26.05 (mínimo y gráfico); Void Linux (base y Xfce); CentOS Stream 10 (boot y DVD); Proxmox Backup Server y Mail Gateway; Alpine Extended. Cada entrada nueva se resolvió contra los servidores reales; donde el proyecto firma sus sumas se verifica la firma.
+
 ## [0.8.0] - 2026-10-19
 
 ### Cambiado

@@ -5,7 +5,7 @@ import { more, pageHeader, panel } from "../components.js";
 import { el } from "../dom.js";
 import * as fmt from "../format.js";
 import { t, type Language } from "../i18n.js";
-import { prefs, savePrefs } from "../prefs.js";
+import { prefs, savePrefs, THEMES, type Theme } from "../prefs.js";
 import { renderCurrent, type Page } from "../router.js";
 import { isDesktop } from "../mode.js";
 import { snapshot } from "../state.js";
@@ -71,13 +71,6 @@ function setLanguage(value: string): void {
   renderCurrent();
 }
 
-/** Cambia el color de acento. */
-function setAccent(value: string): void {
-  prefs.accent = value as "aurora" | "nebula";
-  savePrefs();
-  renderCurrent();
-}
-
 /** Activa o desactiva la intro. */
 function setIntro(checked: boolean): void {
   prefs.intro = checked;
@@ -90,6 +83,42 @@ function setMotion(checked: boolean): void {
   savePrefs();
 }
 
+/** Cambia el tema, lo recuerda y avisa al marco para que actualice sus puntos. */
+function setTheme(event: MouseEvent): void {
+  prefs.theme = (event.currentTarget as HTMLElement).dataset.theme as Theme;
+  savePrefs();
+  document.dispatchEvent(new CustomEvent("rebootera:theme"));
+  renderCurrent();
+}
+
+/** Panel con los tres temas, cada uno con su muestra. */
+function themePanel(): HTMLElement {
+  return panel(t("theme.title"), [
+    el(
+      "div",
+      { class: "theme-cards" },
+      THEMES.map(function themeCard(name) {
+        const card = el(
+          "button",
+          {
+            class: "theme-card",
+            type: "button",
+            "aria-pressed": String(prefs.theme === name),
+            "data-theme": name,
+          },
+          [
+            el("span", { class: "theme-swatch theme-swatch-" + name }),
+            el("strong", {}, [t("theme." + name)]),
+            el("span", { class: "muted" }, [t("theme." + name + "Hint")]),
+          ],
+        );
+        card.addEventListener("click", setTheme);
+        return card;
+      }),
+    ),
+  ]);
+}
+
 /** Dibuja la página. */
 function render(root: HTMLElement): void {
   about = el("dl", { class: "about-list" });
@@ -97,6 +126,7 @@ function render(root: HTMLElement): void {
     el("div", { class: "page" }, [
       pageHeader(t("settings.title"), t("settings.subtitle")),
       el("div", { class: "settings-grid" }, [
+        themePanel(),
         panel(t("settings.language"), [
           choice(
             t("settings.language"),
@@ -112,17 +142,6 @@ function render(root: HTMLElement): void {
         isDesktop() ? null : wifiPanel(),
         // * Lo que casi nadie toca queda plegado.
         more(t("settings.advanced"), [
-          panel(t("settings.accent"), [
-            choice(
-              t("settings.accent"),
-              [
-                ["aurora", t("settings.accentAurora")],
-                ["nebula", t("settings.accentNebula")],
-              ],
-              prefs.accent,
-              setAccent,
-            ),
-          ]),
           panel(t("settings.title"), [
             toggle(t("settings.intro"), prefs.intro, setIntro),
             toggle(t("settings.motion"), prefs.reduceMotion, setMotion),

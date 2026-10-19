@@ -9,6 +9,7 @@
 # *
 # * Cada RUTA (por ejemplo "#/drivers") genera una captura más.
 
+import os
 import sys
 
 import gi
@@ -45,12 +46,20 @@ class Preview:
     def capture_next(self):
         """Navega a la siguiente ruta (si la hay) y programa la captura."""
         route = self.queue[self.index]
+        theme = os.environ.get("PREVIEW_THEME", "")
+        if theme:
+            self.view.evaluate_javascript("document.documentElement.dataset.theme = %r" % theme, -1, None, None, None, None, None)
+        if os.environ.get("PREVIEW_DEBUG"):
+            self.view.evaluate_javascript("JSON.stringify([localStorage.getItem('rebootera.prefs'), document.documentElement.dataset.theme, [...document.querySelectorAll('[aria-pressed=true]')].map(e=>e.dataset.theme)])", -1, None, None, None, self.debug, None)
         if route is not None:
             self.view.evaluate_javascript("location.hash = %r" % route, -1, None, None, None, None, None)
             GLib.timeout_add(1500, self.snapshot)
         else:
             self.snapshot()
         return GLib.SOURCE_REMOVE
+
+    def debug(self, view, result, data):
+        print("DEBUG", view.evaluate_javascript_finish(result).to_string(), flush=True)
 
     def snapshot(self):
         """Pide a WebKit una captura de la parte visible."""

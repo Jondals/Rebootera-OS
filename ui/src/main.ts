@@ -24,7 +24,15 @@ import { storagePage } from "./pages/storage.js";
 import { downloadsPage } from "./pages/downloads.js";
 import { libraryPage } from "./pages/library.js";
 import { wizardPage } from "./pages/wizard.js";
-import { forceLite, loadPrefs, loadVaultPrefs, prefs, savePrefs } from "./prefs.js";
+import {
+  forceLite,
+  loadPrefs,
+  loadVaultPrefs,
+  prefs,
+  savePrefs,
+  THEMES,
+  type Theme,
+} from "./prefs.js";
 import {
   activeRoute,
   desktopRoutes,
@@ -163,6 +171,33 @@ function relabel(): void {
   byId("lang-code").textContent = prefs.language.toUpperCase();
   renderNav();
   renderShell();
+  drawThemeSwitch();
+}
+
+/** Dibuja los tres puntos de color de la barra superior para cambiar de tema. */
+function drawThemeSwitch(): void {
+  byId("theme-switch").replaceChildren(
+    ...THEMES.map(function themeDot(name) {
+      const dot = el("button", {
+        class: "theme-dot theme-dot-" + name,
+        type: "button",
+        title: t("theme." + name),
+        "aria-label": t("theme." + name),
+        "aria-pressed": String(prefs.theme === name),
+        "data-theme": name,
+      });
+      dot.addEventListener("click", pickTheme);
+      return dot;
+    }),
+  );
+}
+
+/** Aplica el tema del punto pulsado y lo recuerda. */
+function pickTheme(event: MouseEvent): void {
+  prefs.theme = (event.currentTarget as HTMLElement).dataset.theme as Theme;
+  savePrefs();
+  drawThemeSwitch();
+  document.dispatchEvent(new CustomEvent("rebootera:theme"));
 }
 
 /** Abre los ajustes. */
@@ -206,6 +241,8 @@ async function init(): Promise<void> {
   byId("settings-button").addEventListener("click", openSettings);
   byId("lang-button").addEventListener("click", toggleLanguage);
   document.addEventListener("rebootera:language", relabel);
+  document.addEventListener("rebootera:theme", drawThemeSwitch);
+  drawThemeSwitch();
   // * El kiosco no ofrece menú contextual: no hay nada útil que mostrar en él.
   document.addEventListener("contextmenu", preventDefault);
 

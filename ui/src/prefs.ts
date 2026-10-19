@@ -5,10 +5,17 @@
 import { getJSON, postJSON } from "./api.js";
 import { setLanguage, type Language } from "./i18n.js";
 
+/** Temas visuales: cielo (claro), noche (oscuro) y bosque (claro, verde). */
+export type Theme = "sky" | "night" | "forest";
+
+/** Todos los temas, en el orden en que se ofrecen. */
+export const THEMES: Theme[] = ["sky", "night", "forest"];
+
 /** Preferencias disponibles. */
 export interface Prefs {
   language: Language;
   accent: "aurora" | "nebula";
+  theme: Theme;
   intro: boolean;
   reduceMotion: boolean;
 }
@@ -20,6 +27,7 @@ const SLOW_RENDERERS =
   /llvmpipe|softpipe|swiftshader|software|basic render|virtualbox|vmware|svga|virgl|bochs|cirrus/i;
 
 let lite: boolean | null = null;
+let keepMotion = false;
 
 /**
  * Indica si hay que usar el modo ligero: sin GPU real (renderizado por
@@ -62,12 +70,15 @@ export function isLite(): boolean {
  */
 export function forceLite(): void {
   lite = true;
+  // * Sin desenfoques ni brillos, pero el fondo con burbujas sigue animado: solo mueve capas y cuesta poco.
+  keepMotion = true;
   applyPrefs();
 }
 
 export const prefs: Prefs = {
   language: "en",
   accent: "aurora",
+  theme: "sky",
   intro: true,
   reduceMotion: false,
 };
@@ -81,6 +92,9 @@ export function loadPrefs(): void {
     }
     if (saved.accent === "aurora" || saved.accent === "nebula") {
       prefs.accent = saved.accent;
+    }
+    if (saved.theme === "sky" || saved.theme === "night" || saved.theme === "forest") {
+      prefs.theme = saved.theme;
     }
     if (typeof saved.intro === "boolean") {
       prefs.intro = saved.intro;
@@ -113,6 +127,9 @@ export async function loadVaultPrefs(): Promise<boolean> {
       return false;
     }
     Object.assign(prefs, data.settings);
+    if (!THEMES.includes(prefs.theme)) {
+      prefs.theme = "sky";
+    }
     applyPrefs();
     return true;
   } catch {
@@ -127,6 +144,8 @@ function ignore(): void {}
 export function applyPrefs(): void {
   setLanguage(prefs.language);
   document.documentElement.dataset.accent = prefs.accent;
+  document.documentElement.dataset.theme = THEMES.includes(prefs.theme) ? prefs.theme : "sky";
   document.documentElement.dataset.gfx = isLite() ? "lite" : "full";
-  document.documentElement.dataset.motion = prefs.reduceMotion || isLite() ? "reduced" : "full";
+  document.documentElement.dataset.motion =
+    prefs.reduceMotion || (isLite() && !keepMotion) ? "reduced" : "full";
 }

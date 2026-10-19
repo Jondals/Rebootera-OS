@@ -59,6 +59,15 @@ const en: Dictionary = {
     readOnly: "Read-only media",
     readOnlyHint: "Create a Rebootera USB to keep images and settings.",
   },
+  theme: {
+    title: "Theme",
+    sky: "Sky",
+    skyHint: "Light, bright aqua",
+    night: "Night",
+    nightHint: "Dark glass",
+    forest: "Forest",
+    forestHint: "Light, green",
+  },
   home: {
     title: "What do you want to do?",
     subtitle: "Nothing is written to any disk until you confirm.",
@@ -785,6 +794,15 @@ const es: Dictionary = {
     usedFree: "{used} usados · {free} libres",
     readOnly: "Medio de solo lectura",
     readOnlyHint: "Crea un USB de Rebootera para guardar imágenes y ajustes.",
+  },
+  theme: {
+    title: "Tema",
+    sky: "Cielo",
+    skyHint: "Claro, aqua brillante",
+    night: "Noche",
+    nightHint: "Cristal oscuro",
+    forest: "Bosque",
+    forestHint: "Claro, verde",
   },
   home: {
     title: "¿Qué quieres hacer?",

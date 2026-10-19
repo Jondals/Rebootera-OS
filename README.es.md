@@ -41,7 +41,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 **Desde Linux**, como root:
 
 ```bash
-scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.8.0-amd64.iso
+scripts/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.9.0-amd64.iso
 ```
 
 El script rechaza los discos no extraíbles y el disco del sistema.

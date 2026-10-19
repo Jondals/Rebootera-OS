@@ -141,3 +141,13 @@ func TestCompatibilidad(t *testing.T) {
 		}
 	}
 }
+
+// * TestSiblingRutaAbsoluta: un enlace con ruta absoluta cuelga del servidor, no de la carpeta del índice.
+func TestSiblingRutaAbsoluta(t *testing.T) {
+	if got := sibling("https://mirror.example/pub/iso/", "a.iso"); got != "https://mirror.example/pub/iso/a.iso" {
+		t.Fatalf("relativo: %s", got)
+	}
+	if got := sibling("https://mirror.example/pub/iso/", "/fedora/x/CHECKSUM"); got != "https://mirror.example/fedora/x/CHECKSUM" {
+		t.Fatalf("absoluto: %s", got)
+	}
+}

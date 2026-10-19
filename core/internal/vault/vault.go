@@ -129,8 +129,10 @@ func ReadJSON(path string, value any) error {
 
 // Settings son las preferencias que sobreviven al reinicio.
 type Settings struct {
-	Language     string `json:"language"`
-	Accent       string `json:"accent"`
+	Language string `json:"language"`
+	Accent   string `json:"accent"`
+	// Theme es el tema visual: "sky", "night" o "forest".
+	Theme        string `json:"theme"`
 	Intro        bool   `json:"intro"`
 	ReduceMotion bool   `json:"reduceMotion"`
 }
@@ -141,7 +143,7 @@ var settingsMu sync.Mutex
 func LoadSettings() (Settings, error) {
 	settingsMu.Lock()
 	defer settingsMu.Unlock()
-	settings := Settings{Language: "en", Accent: "aurora", Intro: true}
+	settings := Settings{Language: "en", Accent: "aurora", Theme: "sky", Intro: true}
 	if !Available() {
 		return settings, ErrUnavailable
 	}
@@ -156,6 +158,12 @@ func SaveSettings(settings Settings) error {
 	}
 	if settings.Accent != "aurora" && settings.Accent != "nebula" {
 		return fmt.Errorf("acento no válido: %q", settings.Accent)
+	}
+	if settings.Theme == "" {
+		settings.Theme = "sky"
+	}
+	if settings.Theme != "sky" && settings.Theme != "night" && settings.Theme != "forest" {
+		return fmt.Errorf("tema no válido: %q", settings.Theme)
 	}
 	settingsMu.Lock()
 	defer settingsMu.Unlock()

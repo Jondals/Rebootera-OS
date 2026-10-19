@@ -250,5 +250,41 @@
       "en": "Graphical disk cloning and backup.",
       "es": "Clonado y copias de seguridad de discos con interfaz gráfica."
     }
+  },
+  {
+    "id": "nixos",
+    "name": "NixOS",
+    "vendor": "NixOS Foundation",
+    "group": "linux",
+    "icon": "arch",
+    "homepage": "https://nixos.org",
+    "summary": {
+      "en": "Declarative Linux: describe your system in a file and rebuild it anywhere.",
+      "es": "Linux declarativo: describes tu sistema en un archivo y lo reconstruyes donde quieras."
+    }
+  },
+  {
+    "id": "void",
+    "name": "Void Linux",
+    "vendor": "Void Linux",
+    "group": "linux",
+    "icon": "arch",
+    "homepage": "https://voidlinux.org",
+    "summary": {
+      "en": "Independent, fast and light, with its own init system.",
+      "es": "Independiente, rápido y ligero, con su propio sistema de arranque."
+    }
+  },
+  {
+    "id": "centos",
+    "name": "CentOS Stream",
+    "vendor": "CentOS Project",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://www.centos.org/centos-stream/",
+    "summary": {
+      "en": "The upcoming Red Hat Enterprise Linux, for servers.",
+      "es": "El próximo Red Hat Enterprise Linux, para servidores."
+    }
   }
 ]
