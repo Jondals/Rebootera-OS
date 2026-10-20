@@ -71,6 +71,8 @@ function render(root: HTMLElement): void {
   );
   window.clearInterval(timer);
   timer = window.setInterval(tick, STATUS_MS);
+  // * Se enseña "Cargando…" al momento y, si ya se leyeron los discos antes, esos mismos mientras llegan los nuevos.
+  draw();
   reload();
 }
 

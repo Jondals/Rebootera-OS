@@ -1,0 +1,140 @@
+---
+// * Funciones en una cuadrícula de siete tarjetas (la primera y la cuarta son anchas, así las tres filas quedan
+// * llenas), cada una con su icono y, en las dos más visuales, un pequeño dibujo hecho con CSS.
+import L from "./L.astro";
+import Icon from "./Icon.astro";
+
+interface Feature {
+  icon: string;
+  wide?: boolean;
+  title: { en: string; es: string };
+  text: { en: string; es: string };
+  art?: "checks" | "disks";
+}
+
+const features: Feature[] = [
+  {
+    icon: "download",
+    wide: true,
+    art: "checks",
+    title: { en: "Checked downloads", es: "Descargas comprobadas" },
+    text: {
+      en: "Windows, Ubuntu, Debian, Fedora, Arch, Mint, Kali, the BSDs, Proxmox and plenty more, always from the official site. Each file is checked against its published SHA-256 (and its GPG signature, when the project signs it) before it reaches your USB.",
+      es: "Windows, Ubuntu, Debian, Fedora, Arch, Mint, Kali, los BSD, Proxmox y bastantes más, siempre desde su web oficial. Cada archivo se comprueba con su SHA-256 (y con su firma GPG, si el proyecto la publica) antes de llegar a tu USB.",
+    },
+  },
+  {
+    icon: "install",
+    title: { en: "Guided install", es: "Instalación guiada" },
+    text: {
+      en: "It checks that your computer meets the requirements, lets you pick the disk and can answer the installer's questions for you.",
+      es: "Comprueba que tu equipo cumple los requisitos, te deja elegir el disco y puede contestar por ti las preguntas del instalador.",
+    },
+  },
+  {
+    icon: "cpu",
+    title: { en: "Drivers without hunting", es: "Drivers sin buscarlos" },
+    text: {
+      en: "Every time it starts it looks in your USB, in the folders the maker left on the laptop and in an installed Windows, and tells you where each driver came from.",
+      es: "Cada vez que arranca mira en tu USB, en las carpetas que dejó el fabricante en el portátil y en el Windows instalado, y te cuenta de dónde sale cada driver.",
+    },
+  },
+  {
+    icon: "disk",
+    wide: true,
+    art: "disks",
+    title: { en: "Partitions without fear", es: "Particiones sin miedo" },
+    text: {
+      en: "Create, resize, merge or delete. You see the exact steps before anything changes, and your files are checked afterwards. The disk you booted from is never touched.",
+      es: "Crea, cambia de tamaño, une o borra. Ves los pasos exactos antes de que cambie nada y después se comprueban tus archivos. El disco desde el que arrancaste nunca se toca.",
+    },
+  },
+  {
+    icon: "usb",
+    title: { en: "Bring your own media", es: "Trae tus propios medios" },
+    text: {
+      en: "Add an install you made with Rufus or Ventoy, a folder or any ISO, and its answer files stay with it. Give every image the name and picture you want.",
+      es: "Añade una instalación hecha con Rufus o Ventoy, una carpeta o cualquier ISO, y sus archivos de respuestas se quedan con ella. Ponle a cada imagen el nombre y la foto que quieras.",
+    },
+  },
+  {
+    icon: "globe",
+    title: { en: "A browser on board", es: "Navegador incluido" },
+    text: {
+      en: "Firefox with uBlock Origin and Dark Reader already set up, handy for finding a driver or reading a guide mid-install. No extension store, no sync.",
+      es: "Firefox con uBlock Origin y Dark Reader ya preparados, útil para buscar un driver o leer una guía en plena instalación. Sin tienda de extensiones y sin sincronización.",
+    },
+  },
+  {
+    icon: "board",
+    title: { en: "Boards and IoT", es: "Placas e IoT" },
+    text: {
+      en: "Raspberry Pi OS, Ubuntu for Raspberry Pi, DietPi, OpenWrt and Home Assistant OS, each with its checksum.",
+      es: "Raspberry Pi OS, Ubuntu para Raspberry Pi, DietPi, OpenWrt y Home Assistant OS, cada uno con su suma de comprobación.",
+    },
+  },
+];
+
+const checks = [
+  { file: "ubuntu-desktop-amd64.iso", gpg: true },
+  { file: "debian-netinst-amd64.iso", gpg: true },
+  { file: "archlinux-x86_64.iso", gpg: true },
+];
+---
+
+<section id="features" class="relative z-10 mx-auto max-w-6xl px-5 py-24">
+  <div class="reveal mb-14 max-w-3xl">
+    <p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent"><L en="What it does" es="Qué hace" /></p>
+    <h2 class="font-display text-4xl tracking-tight md:text-5xl"><L en="Everything you ask of a boot USB" es="Todo lo que le pides a un USB de arranque" /></h2>
+    <p class="mt-4 text-lg text-muted"><L en="Nothing touches your disks until you say so." es="No se toca ningún disco hasta que tú lo confirmes." /></p>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-3">
+    {
+      features.map(function card(feature, index) {
+        return (
+          <article
+            class={"reveal group relative overflow-hidden rounded-3xl border border-line bg-panel/60 p-7 backdrop-blur transition hover:-translate-y-0.5 hover:border-line2 " + (feature.wide ? "md:col-span-2" : "")}
+            style={"--d: " + (index % 3) * 90 + "ms"}
+          >
+            <div class="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-accent/10 blur-3xl transition group-hover:bg-accent/20"></div>
+            <div class="mb-5 grid h-12 w-12 place-items-center rounded-xl border border-line2 bg-accent/10 text-accent">
+              <Icon name={feature.icon} size={24} />
+            </div>
+            <h3 class="font-display text-2xl">
+              <L en={feature.title.en} es={feature.title.es} />
+            </h3>
+            <p class="mt-3 text-[15px] leading-relaxed text-muted">
+              <L en={feature.text.en} es={feature.text.es} />
+            </p>
+            {feature.art === "checks" && (
+              <ul class="mt-6 divide-y divide-line overflow-hidden rounded-xl border border-line2 bg-bg/40 font-mono text-xs" aria-hidden="true">
+                {checks.map(function row(item) {
+                  return (
+                    <li class="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <span class="truncate text-muted">{item.file}</span>
+                      <span class="flex shrink-0 items-center gap-3 text-accent">
+                        <span class="flex items-center gap-1"><Icon name="check" size={13} />SHA-256</span>
+                        {item.gpg && (
+                          <span class="flex items-center gap-1"><Icon name="check" size={13} />GPG</span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {feature.art === "disks" && (
+              <div class="mt-6 flex h-12 gap-1.5 overflow-hidden rounded-xl border border-line2 p-1" aria-hidden="true">
+                <div class="flex-[2] rounded-lg bg-accent/70"></div>
+                <div class="flex-[5] rounded-lg bg-accent/40"></div>
+                <div class="flex-[3] rounded-lg border border-dashed border-accent/60 bg-accent/10"></div>
+                <div class="flex-[4] rounded-lg bg-accent/25"></div>
+              </div>
+            )}
+          </article>
+        );
+      })
+    }
+  </div>
+</section>

@@ -1,0 +1,946 @@
+/* * Estilos globales de la landing: Tailwind 4, las fuentes de la aplicación (Inter y Fraunces, incluidas en la
+   * página), los colores como variables (los cambia el tema activo) y lo que Tailwind no trae: el fondo del
+   * amanecer, los menús, el carrusel de capturas y la fila de sistemas. */
+
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/inter.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("fonts/fraunces.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Los colores de Tailwind salen de las variables del tema activo (ver data/themes.ts) */
+@theme {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel-2);
+  --color-line: var(--border);
+  --color-line2: var(--border-strong);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
+  --color-accent: var(--accent);
+  --color-accent2: var(--accent-strong);
+  --color-onaccent: var(--on-accent);
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, monospace;
+
+  /* Esquinas entre 8 y 11 px en toda la página */
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 9px;
+  --radius-2xl: 10px;
+  --radius-3xl: 11px;
+
+  /* Todo lo que se mueve al pasar el ratón usa la misma curva, lenta al final */
+  --default-transition-duration: 320ms;
+  --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:root {
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@layer base {
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="radio"],
+  summary {
+    cursor: pointer;
+  }
+
+  a,
+  button,
+  summary {
+    transition-property: color, background-color, border-color, opacity, box-shadow, transform, filter;
+    transition-duration: 320ms;
+    transition-timing-function: var(--ease);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings:
+    "cv11" 1,
+    "ss03" 1;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(var(--accent-rgb), 0.35);
+}
+
+/* Idiomas: cada texto lleva sus dos versiones y el atributo data-lang del <body> enseña la que toca */
+[data-lang="es"] .en,
+[data-lang="en"] .es {
+  display: none;
+}
+
+/* Cambios de idioma y de tema: fundido entre las dos versiones de la página */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 450ms;
+  animation-timing-function: var(--ease);
+}
+
+body.swapping main,
+body.swapping footer,
+body.swapping header nav,
+body.swapping header .menu-panel {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+main,
+footer,
+header nav {
+  transition:
+    opacity 220ms ease,
+    transform 220ms var(--ease);
+}
+
+/* Fondo: una ilustración grande de un pendrive con trazas de circuito. --p (0 a 1) es lo que has bajado por la
+   página y lo pone site.js: la ilustración cruza la página de derecha a izquierda girando un poco. Flota sola. */
+.dawn {
+  --p: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dawn-glow {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 95vmax;
+  height: 65vmax;
+  margin-left: -47vmax;
+  background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.16), transparent);
+  transform: translate3d(0, calc(var(--p) * 60vh - 28vmax), 0);
+}
+
+.dawn-art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(1200px, 130vw);
+  margin: calc(min(1200px, 130vw) * -0.375) 0 0 calc(min(1200px, 130vw) * -0.5);
+  opacity: 0.62;
+  transform: translate3d(calc(34vw - var(--p) * 68vw), calc(var(--p) * 22vh - 6vh), 0) rotate(calc(-12deg + var(--p) * 24deg));
+}
+
+.dawn-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  animation: float 13s ease-in-out infinite alternate;
+}
+
+.art-t1 {
+  stop-color: var(--accent);
+  stop-opacity: 0.6;
+}
+
+.art-t2 {
+  stop-color: var(--accent);
+  stop-opacity: 0.14;
+}
+
+.art-s1 {
+  stop-color: var(--accent);
+  stop-opacity: 0.22;
+}
+
+.art-s2 {
+  stop-color: #000;
+  stop-opacity: 0.55;
+}
+
+.art-h1 {
+  stop-color: var(--accent);
+  stop-opacity: 0.3;
+}
+
+.art-h2 {
+  stop-color: var(--accent);
+  stop-opacity: 0;
+}
+
+.art-u1 {
+  stop-color: #fff;
+  stop-opacity: 0.85;
+}
+
+.art-u2 {
+  stop-color: var(--accent);
+  stop-opacity: 0.9;
+}
+
+.art-edge {
+  stroke: rgba(var(--accent-rgb), 0.75);
+  stroke-width: 2;
+}
+
+.art-metal-edge {
+  stroke: rgba(255, 255, 255, 0.4);
+  stroke-width: 2;
+}
+
+.art-metal-side {
+  fill: rgba(255, 255, 255, 0.1);
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1.5;
+}
+
+.art-metal-line {
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.art-hole {
+  fill: rgba(0, 0, 0, 0.6);
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 1.5;
+}
+
+.art-shine {
+  stroke: rgba(255, 255, 255, 0.4);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.art-label {
+  fill: rgba(0, 0, 0, 0.34);
+  stroke: rgba(var(--accent-rgb), 0.5);
+  stroke-width: 1.5;
+}
+
+.art-mark {
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.art-mark-soft {
+  stroke-opacity: 0.5;
+}
+
+.art-ring {
+  fill: rgba(0, 0, 0, 0.35);
+  stroke: rgba(var(--accent-rgb), 0.7);
+  stroke-width: 2;
+}
+
+.art-led {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 8px var(--accent));
+}
+
+.art-arcs path {
+  stroke: rgba(var(--accent-rgb), 0.4);
+  stroke-width: 2;
+}
+
+.art-traces path {
+  stroke: rgba(var(--accent-rgb), 0.45);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.art-traces circle {
+  fill: rgba(var(--accent-rgb), 0.7);
+}
+
+@keyframes float {
+  from {
+    transform: translate3d(0, -14px, 0);
+  }
+  to {
+    transform: translate3d(0, 16px, 0);
+  }
+}
+
+@media (max-width: 640px) {
+  .dawn-art {
+    opacity: 0.45;
+  }
+}
+
+.dawn-shade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70% 60% at 50% 45%, rgba(0, 0, 0, 0.42), transparent 100%);
+}
+
+/* Aparición al desplazarse */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 450ms var(--ease),
+    transform 450ms var(--ease);
+  transition-delay: calc(var(--d, 0ms) * 0.4);
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Menús desplegables de la cabecera (temas y menú del móvil) */
+.menu-panel {
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.97);
+  transform-origin: top right;
+  transition:
+    opacity 220ms ease,
+    transform 320ms var(--ease),
+    visibility 0s linear 320ms;
+}
+
+.menu-panel[data-open="true"] {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition-delay: 0s;
+}
+
+/* Tarjeta de un tema: miniatura de la aplicación con sus colores. Entran una tras otra al abrir el desplegable */
+.theme-card {
+  display: block;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  transition:
+    border-color 320ms var(--ease),
+    background-color 320ms var(--ease),
+    color 320ms var(--ease),
+    transform 320ms var(--ease);
+}
+
+.theme-card:hover,
+.theme-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.theme-card[aria-checked="true"] {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.theme-card .mock {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 7px;
+  border: 1px solid var(--m-edge);
+  background: var(--m-bg);
+}
+
+.mock i {
+  position: absolute;
+  display: block;
+}
+
+.mock .side {
+  inset: 0 auto 0 0;
+  width: 24%;
+  background: var(--m-surface);
+  border-right: 1px solid var(--m-edge);
+}
+
+.mock .bar {
+  left: 32%;
+  right: 8%;
+  height: 16%;
+  border-radius: 3px;
+  background: var(--m-surface);
+  border: 1px solid var(--m-edge);
+}
+
+.mock .bar.b1 {
+  top: 16%;
+}
+
+.mock .bar.b2 {
+  top: 40%;
+}
+
+.mock .btn {
+  left: 32%;
+  bottom: 14%;
+  width: 30%;
+  height: 15%;
+  border-radius: 3px;
+  background: var(--m-accent);
+  transition: box-shadow 320ms var(--ease);
+}
+
+.theme-card:hover .btn {
+  box-shadow: 0 0 14px var(--m-accent);
+}
+
+.mock .tick {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--m-accent);
+  color: var(--m-bg);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 500ms var(--ease),
+    transform 500ms var(--ease);
+}
+
+.theme-card[aria-checked="true"] .tick {
+  opacity: 1;
+  transform: none;
+}
+
+.menu-panel .theme-card {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.menu-panel[data-open="true"] .theme-card {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 350ms var(--ease) calc(30ms + var(--i) * 25ms),
+    transform 350ms var(--ease) calc(30ms + var(--i) * 25ms),
+    border-color 320ms var(--ease),
+    background-color 320ms var(--ease),
+    color 320ms var(--ease);
+}
+
+.menu-panel[data-open="true"] .theme-card:hover,
+.menu-panel[data-open="true"] .theme-card:focus-visible {
+  transform: translateY(-2px);
+  transition:
+    transform 320ms var(--ease),
+    border-color 320ms var(--ease),
+    background-color 320ms var(--ease),
+    color 320ms var(--ease);
+}
+
+/* Muestra de un tema (botón de la cabecera): mitad fondo, mitad acento */
+.swatch {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, var(--s-bg) 50%, var(--s-accent) 50%);
+}
+
+/* Selector de sistema de la descarga: tres opciones y un indicador que se desliza de una a otra */
+.seg {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.seg-ind {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  border: 1px solid rgba(var(--accent-rgb), 0.5);
+  border-radius: 7px;
+  background: rgba(var(--accent-rgb), 0.14);
+  transform: translateX(calc(var(--i, 0) * 100%));
+  transition: transform 380ms var(--ease);
+}
+
+.seg button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color 320ms var(--ease);
+}
+
+.seg button:hover {
+  color: var(--text);
+}
+
+.seg button[aria-pressed="true"] {
+  color: var(--accent);
+}
+
+/* Botones de variante (Apple silicon, Intel, x64, arm64) */
+.chip {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--muted);
+  transition:
+    border-color 320ms var(--ease),
+    color 320ms var(--ease),
+    background-color 320ms var(--ease);
+}
+
+.chip:hover {
+  color: var(--text);
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
+}
+
+/* Fila de sistemas: se desplaza sola, va a velocidad constante y cada logotipo es un enlace */
+.marquee {
+  display: flex;
+  width: max-content;
+  gap: 12px;
+  animation: marquee 80s linear infinite;
+}
+
+.marquee-reverse {
+  animation-direction: reverse;
+  animation-duration: 95s;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(calc(-50% - 6px));
+  }
+}
+
+.sys {
+  position: relative;
+  display: flex;
+  width: 140px;
+  height: 108px;
+  flex-shrink: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 60%, transparent);
+  color: var(--muted);
+  transition:
+    border-color 320ms var(--ease),
+    background-color 320ms var(--ease),
+    color 320ms var(--ease),
+    transform 320ms var(--ease);
+}
+
+.sys .logo {
+  fill: currentColor;
+  color: var(--brand);
+}
+
+.sys .go {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  opacity: 0;
+  transform: translate(-3px, 3px);
+  transition:
+    opacity 320ms var(--ease),
+    transform 320ms var(--ease);
+}
+
+.sys:hover,
+.sys:focus-visible {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  background: color-mix(in srgb, var(--brand) 11%, var(--panel));
+  color: var(--text);
+}
+
+
+.sys:hover .go,
+.sys:focus-visible .go {
+  opacity: 1;
+  transform: none;
+}
+
+/* Carrusel de capturas: pestañas con barra de progreso y las capturas apiladas, que se funden */
+.shot-stage > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0;
+  transform: scale(1.015);
+  transition:
+    opacity 700ms var(--ease),
+    transform 1100ms var(--ease);
+}
+
+.shot-stage > img[data-on="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+.show-tab {
+  display: block;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 50%, transparent);
+  color: var(--muted);
+  transition:
+    border-color 320ms var(--ease),
+    background-color 320ms var(--ease),
+    color 320ms var(--ease),
+    transform 320ms var(--ease);
+}
+
+.show-tab:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  transform: translateX(3px);
+}
+
+.show-tab[aria-selected="true"] {
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.07);
+}
+
+@media (max-width: 1023px) {
+  .show-tab {
+    padding: 10px 12px 10px;
+  }
+  .show-tab:hover {
+    transform: none;
+  }
+}
+
+.show-tab .bar {
+  display: block;
+  height: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.show-tab .bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+}
+
+.show-tab[aria-selected="true"] {
+  color: var(--text);
+}
+
+.showcase[data-live="true"] .show-tab[aria-selected="true"] .bar i {
+  animation: fill var(--slide, 6500ms) linear forwards;
+}
+
+.showcase:hover .show-tab .bar i,
+.showcase:focus-within .show-tab .bar i {
+  animation-play-state: paused;
+}
+
+.showcase[data-still="true"] .show-tab[aria-selected="true"] .bar i {
+  width: 100%;
+  animation: none;
+}
+
+@keyframes fill {
+  to {
+    width: 100%;
+  }
+}
+
+/* Desplegable de las preguntas frecuentes */
+:root {
+  interpolate-size: allow-keywords;
+}
+
+details.faq::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height 360ms var(--ease),
+    content-visibility 360ms allow-discrete;
+}
+
+details.faq[open]::details-content {
+  height: auto;
+}
+
+details.faq > div {
+  animation: faq-in 380ms var(--ease);
+}
+
+@keyframes faq-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+details.faq[open] .chev {
+  transform: rotate(180deg);
+}
+
+/* Logotipo: el amanecer toma los colores del tema, igual que en la aplicación */
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.lg-t1 {
+  stop-color: color-mix(in srgb, var(--panel) 82%, var(--accent));
+}
+
+.lg-t2 {
+  stop-color: var(--bg);
+}
+
+.lg-g1 {
+  stop-color: var(--accent);
+  stop-opacity: 0.4;
+}
+
+.lg-g2 {
+  stop-color: var(--accent);
+  stop-opacity: 0;
+}
+
+.lg-s1 {
+  stop-color: color-mix(in srgb, var(--accent) 55%, white);
+}
+
+.lg-s2 {
+  stop-color: var(--accent-strong);
+}
+
+.lg-edge {
+  stroke: rgba(var(--accent-rgb), 0.45);
+}
+
+.lg-ray {
+  stroke: var(--accent);
+}
+
+/* Sin movimiento: nada se anima */
+@media (prefers-reduced-motion: reduce) {
+  .dawn-art svg {
+    animation: none;
+  }
+  .marquee {
+    animation: none;
+    flex-wrap: wrap;
+    width: auto;
+    justify-content: center;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Logotipos de las tecnologías del pie: del color de la página, y de su marca al pasar el ratón */
+.tech {
+  color: var(--muted);
+  transition: color 320ms var(--ease);
+}
+
+.tech:hover {
+  color: var(--brand);
+}
+
+/* Botón de volver arriba: entra al bajar un poco */
+.totop {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.totop[data-show="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.totop[data-show="true"]:hover {
+  transform: translateY(-2px);
+}
+
+/* Sin selección de texto ni arrastrar imágenes (el hash de la ISO sí se puede copiar) */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+img,
+svg {
+  -webkit-user-drag: none;
+}
+
+#hash {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Versiones (arquitectura) de la descarga: el hueco está siempre reservado (así nada salta) y entran con un fundido */
+.variants-wrap {
+  height: 3.1rem;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition:
+    opacity 380ms var(--ease),
+    transform 380ms var(--ease);
+}
+
+.variants-wrap[data-open="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.chip {
+  animation: chip-in 380ms var(--ease) both;
+}
+
+.chip:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+[data-note]:not(.hidden) {
+  animation: chip-in 380ms var(--ease) both;
+}
+
+/* Icono del botón de tema: un anillo con los colores de todos los temas, que gira al señalarlo */
+.theme-ring {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ring);
+  -webkit-mask: radial-gradient(circle, transparent 5.2px, #000 5.6px);
+  mask: radial-gradient(circle, transparent 5.2px, #000 5.6px);
+  transition: transform 700ms var(--ease);
+}
+
+button:hover > .theme-ring {
+  transform: rotate(180deg);
+}
+
+/* Pastilla del botón de idioma */
+.lang-chip {
+  display: grid;
+  min-width: 30px;
+  height: 26px;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transition:
+    background-color 320ms var(--ease),
+    color 320ms var(--ease);
+}
+
+.lang-btn:hover .lang-chip {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Los enlaces no llevan href (para no enseñar su dirección), así que el cursor de mano se pone aquí */
+[data-href] {
+  cursor: pointer;
+}
+
+/* Preguntas: la fila se tiñe al señalarla */
+details.faq summary:hover {
+  background: var(--panel-2);
+  border-radius: inherit;
+}
+
+/* Botón de tema: un punto del color del tema activo con su halo */
+.theme-now {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 3px rgba(var(--accent-rgb), 0.22),
+    0 0 14px rgba(var(--accent-rgb), 0.7);
+  transition:
+    background-color 320ms var(--ease),
+    box-shadow 320ms var(--ease),
+    transform 320ms var(--ease);
+}
+
+button:hover > .theme-now {
+  transform: scale(1.15);
+}

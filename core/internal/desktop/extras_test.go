@@ -153,9 +153,10 @@ func TestApplyRejects(t *testing.T) {
 	}
 }
 
-// * TestApplyNewSystem instala una ISO de Rebootera nueva y deja la anterior de rescate.
+// * TestApplyNewSystem instala una ISO de Rebootera nueva y borra la anterior (también una copia "previous" de versiones viejas).
 func TestApplyNewSystem(t *testing.T) {
 	root := fakeUSB(t)
+	write(t, filepath.Join(root, "rebootera", "rebootera-os.previous.iso"), []byte("copia vieja de una version anterior"))
 	iso := filepath.Join(t.TempDir(), "rebootera-os-9.9.9-amd64.iso")
 	write(t, iso, []byte("iso nueva"))
 	if err := Apply(ApplyRequest{Root: root, System: SystemFile, ISO: iso}); err != nil {
@@ -165,9 +166,11 @@ func TestApplyNewSystem(t *testing.T) {
 		t.Fatalf("estado final: %+v", status)
 	}
 	current, _ := os.ReadFile(filepath.Join(root, "rebootera", "rebootera-os.iso"))
-	previous, _ := os.ReadFile(filepath.Join(root, "rebootera", "rebootera-os.previous.iso"))
-	if string(current) != "iso nueva" || string(previous) != "iso del sistema" {
-		t.Fatalf("actual %q, anterior %q", current, previous)
+	if string(current) != "iso nueva" {
+		t.Fatalf("actual %q", current)
+	}
+	if _, err := os.Stat(filepath.Join(root, "rebootera", "rebootera-os.previous.iso")); !os.IsNotExist(err) {
+		t.Fatal("la versión anterior debería haberse borrado")
 	}
 }
 

@@ -14,6 +14,7 @@ import {
   type Family,
   type Job,
 } from "../api.js";
+import { browserAvailable, openBrowser } from "../bridge.js";
 import { badge, button, errorBox, logoTile, progress, type Tone } from "../components.js";
 import { openModal } from "../dialogs.js";
 import { el, icon } from "../dom.js";
@@ -24,6 +25,7 @@ import { appMode } from "../mode.js";
 import { navigate, type Page } from "../router.js";
 import { refreshVault, snapshot } from "../state.js";
 import { linkPanel } from "./linkpanel.js";
+import { takePresetSearch } from "./search.js";
 
 /** Pestañas de la lista. */
 const TABS = ["all", "windows", "linux", "servers", "boards", "rescue", "other"] as const;
@@ -55,7 +57,7 @@ interface Drive {
 }
 
 /** Cuántas consultas de versión se hacen a la vez. */
-const RESOLVE_AT_ONCE = 3;
+const RESOLVE_AT_ONCE = 6;
 
 let page: HTMLElement | null = null;
 let message: HTMLElement | null = null;
@@ -74,16 +76,18 @@ let lastQueue = "";
 let doneCount = -1;
 const picked = new Map<string, string>();
 const resolved = new Map<string, Resolved | "error">();
+/** Entradas ya consultadas en esta sesión (las que vienen de la caché del disco aún se confirman una vez). */
+const confirmed = new Set<string>();
+let renderTimer = 0;
 const resolveQueue: string[] = [];
 let resolving = 0;
 
-/** Deja escrita la búsqueda con la que se abrirá la página (la usa el lanzador de la portada). */
-export function presetSearch(text: string): void {
-  query = text.trim().toLowerCase();
-}
-
 /** Dibuja la estructura y carga el catálogo. */
 function render(root: HTMLElement): void {
+  const preset = takePresetSearch();
+  if (preset !== null) {
+    query = preset;
+  }
   message = el("div", { class: "page-message", "aria-live": "polite" });
   destinationBody = el("div", { class: "dl-destination" });
   tabsBody = el("div", { class: "filter-row", role: "tablist" });
@@ -127,10 +131,23 @@ function render(root: HTMLElement): void {
 /** Lee el catálogo, las familias y (en el escritorio) el USB de destino. */
 async function loadAll(): Promise<void> {
   try {
-    [families, catalog] = await Promise.all([
+    let known: Record<string, Resolved> = {};
+    [families, catalog, known] = await Promise.all([
       getJSON<Family[]>("/api/catalog/families"),
       getJSON<CatalogEntry[]>("/api/catalog"),
+      getJSON<Record<string, Resolved>>("/api/catalog/known").catch(function none(): Record<
+        string,
+        Resolved
+      > {
+        return {};
+      }),
     ]);
+    // * Lo que se supo la última vez se enseña al instante; después se confirma en segundo plano.
+    for (const [id, info] of Object.entries(known)) {
+      if (!resolved.has(id)) {
+        resolved.set(id, info);
+      }
+    }
     if (appMode.mode === "desktop") {
       const drives = await getJSON<Drive[]>("/api/desktop/drives");
       drive =
@@ -170,19 +187,39 @@ function chooseTab(event: MouseEvent): void {
   renderList();
 }
 
+/** Cierra el selector de versión con una animación corta y después vuelve a dibujar la lista. */
+function closePickerAnimated(after: () => void): void {
+  const list = listBody?.querySelector<HTMLElement>(".ver-list");
+  if (!list || document.documentElement.dataset.motion === "reduced") {
+    after();
+    return;
+  }
+  list.classList.add("ver-closing");
+  window.setTimeout(after, 150);
+}
+
 /** Elige la versión de una familia y cierra el selector. */
 function chooseVersion(event: MouseEvent): void {
   const node = event.currentTarget as HTMLElement;
   picked.set(node.dataset.family ?? "", node.dataset.value ?? "");
-  openPicker = "";
-  renderList();
+  closePickerAnimated(function done(): void {
+    openPicker = "";
+    renderList();
+  });
 }
 
 /** Despliega o recoge el selector de versión de una familia. */
 function togglePicker(event: MouseEvent): void {
   event.stopPropagation();
   const family = (event.currentTarget as HTMLElement).dataset.family ?? "";
-  openPicker = openPicker === family ? "" : family;
+  if (openPicker === family) {
+    closePickerAnimated(function done(): void {
+      openPicker = "";
+      renderList();
+    });
+    return;
+  }
+  openPicker = family;
   renderList();
 }
 
@@ -193,14 +230,16 @@ function closePicker(): void {
     return;
   }
   if (openPicker !== "") {
-    openPicker = "";
-    renderList();
+    closePickerAnimated(function done(): void {
+      openPicker = "";
+      renderList();
+    });
   }
 }
 
 /** Pone en cola la consulta de la última versión de una entrada. */
 function queueResolve(id: string): void {
-  if (resolved.has(id) || resolveQueue.includes(id)) {
+  if (confirmed.has(id) || resolveQueue.includes(id)) {
     return;
   }
   resolveQueue.push(id);
@@ -218,14 +257,40 @@ function pumpResolve(): void {
 
 /** Consulta en la fuente oficial el archivo, el tamaño y la suma de una entrada. */
 async function resolveEntry(id: string): Promise<void> {
+  const before = resolved.get(id);
+  let changed = true;
   try {
-    resolved.set(id, await postJSON<Resolved>("/api/catalog/resolve", { id }));
+    const info = await postJSON<Resolved>("/api/catalog/resolve", { id });
+    changed =
+      before === undefined ||
+      before === "error" ||
+      before.sizeBytes !== info.sizeBytes ||
+      before.fileName !== info.fileName;
+    resolved.set(id, info);
   } catch {
-    resolved.set(id, "error");
+    // * Si falla pero ya se sabía un tamaño de otra vez, se conserva en vez de enseñar un error.
+    changed = before === undefined;
+    if (before === undefined) {
+      resolved.set(id, "error");
+    }
   }
+  confirmed.add(id);
   resolving -= 1;
-  renderList();
+  if (changed) {
+    scheduleRender();
+  }
   pumpResolve();
+}
+
+/** Redibuja la lista como mucho una vez cada pocos instantes: varias respuestas seguidas no hacen parpadear las tarjetas. */
+function scheduleRender(): void {
+  if (renderTimer !== 0) {
+    return;
+  }
+  renderTimer = window.setTimeout(function draw(): void {
+    renderTimer = 0;
+    renderList();
+  }, 200);
 }
 
 /** Añade una descarga a la cola. */
@@ -305,6 +370,11 @@ async function openVendor(event: MouseEvent): Promise<void> {
   try {
     if (appMode.mode === "desktop") {
       await postJSON("/api/desktop/open", { url });
+      return;
+    }
+    // * En Rebootera OS se abre en el navegador integrado.
+    if (browserAvailable()) {
+      openBrowser(url);
       return;
     }
   } catch {

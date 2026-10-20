@@ -10,13 +10,11 @@ import {
   type Disk,
   type Job,
   type LibraryItem,
+  type NetIf,
   type Reading,
   type SystemInfo,
   type VaultStatus,
 } from "./api.js";
-
-/** Número de muestras que se guardan para las gráficas. */
-const HISTORY = 40;
 
 /** Intervalo de sondeo del Vault en Rebootera Desktop (no hay nada más que vigilar). */
 const DESKTOP_MS = 5000;
@@ -27,17 +25,12 @@ export interface Snapshot {
   disks: Disk[] | null;
   devices: Device[] | null;
   sensors: Reading[] | null;
-  kernelLog: string[] | null;
   /** Estado del Vault del USB (null hasta la primera lectura). */
   vault: VaultStatus | null;
   /** Imágenes de la biblioteca (vacía si no hay Vault). */
   library: LibraryItem[];
   /** Cola de descargas e importaciones. */
   transfers: Job[];
-  /** Historial por sensor: clave "chip/etiqueta". */
-  tempHistory: Map<string, number[]>;
-  /** Bytes recibidos por segundo en todas las interfaces. */
-  rxHistory: number[];
   /** Momento del último análisis de hardware (ms). */
   hardwareScannedAt: number;
   /** Último error de conexión con Core, si lo hay. */
@@ -49,12 +42,9 @@ export const snapshot: Snapshot = {
   disks: null,
   devices: null,
   sensors: null,
-  kernelLog: null,
   vault: null,
   library: [],
   transfers: [],
-  tempHistory: new Map(),
-  rxHistory: [],
   hardwareScannedAt: 0,
   error: null,
 };
@@ -63,35 +53,56 @@ export const snapshot: Snapshot = {
 export type Listener = () => void;
 
 const listeners = new Set<Listener>();
-let lastRx: { bytes: number; at: number } | null = null;
+/** Huella de lo último que se avisó a las páginas: si no cambia nada visible, no se redibuja nada. */
+let lastFingerprint = "";
 
 /** Suscribe una función a los cambios de datos. */
 export function subscribe(listener: Listener): void {
   listeners.add(listener);
 }
 
-/** Avisa a todos los suscriptores. */
+/**
+ * Resume lo que se ve de los datos. Se dejan fuera lo que cambia siempre sin que importe (tiempo encendido, hora,
+ * contadores de red) y las temperaturas se redondean a 5 grados: así un sondeo que no trae nada nuevo no hace
+ * que las páginas se redibujen (en un USB lento cada redibujado se nota).
+ */
+function fingerprint(): string {
+  const system = snapshot.system;
+  return JSON.stringify([
+    system && {
+      ...system,
+      uptimeSeconds: 0,
+      time: "",
+      interfaces: system.interfaces.map(withoutCounters),
+    },
+    snapshot.sensors?.map(function rounded(reading) {
+      return [reading.chip, reading.label, Math.round(reading.celsius / 5)];
+    }),
+    snapshot.disks,
+    snapshot.devices,
+    snapshot.vault,
+    snapshot.library,
+    snapshot.transfers,
+    snapshot.hardwareScannedAt,
+    String(snapshot.error),
+  ]);
+}
+
+/** Interfaz de red sin sus contadores de tráfico. */
+function withoutCounters(iface: NetIf): NetIf {
+  return { ...iface, rxBytes: 0, txBytes: 0 };
+}
+
+/** Avisa a todos los suscriptores, solo si algo visible cambió desde la última vez. */
 function notify(): void {
+  const current = fingerprint();
+  if (current === lastFingerprint) {
+    return;
+  }
+  lastFingerprint = current;
   for (const listener of listeners) {
     listener();
   }
-}
-
-/** Añade una muestra a un historial acotado. */
-function push(list: number[], value: number): void {
-  list.push(value);
-  if (list.length > HISTORY) {
-    list.shift();
-  }
-}
-
-/** Suma los bytes recibidos de todas las interfaces conectadas. */
-function totalRx(system: SystemInfo): number {
-  let total = 0;
-  for (const iface of system.interfaces) {
-    total += iface.rxBytes;
-  }
-  return total;
 }
 
 /** Lee el sistema y los sensores (sondeo rápido). */
@@ -104,20 +115,6 @@ async function pollFast(): Promise<void> {
     snapshot.system = system;
     snapshot.sensors = sensors;
     snapshot.error = null;
-
-    const now = performance.now();
-    const rx = totalRx(system);
-    if (lastRx !== null && now > lastRx.at) {
-      push(snapshot.rxHistory, Math.max(0, ((rx - lastRx.bytes) * 1000) / (now - lastRx.at)));
-    }
-    lastRx = { bytes: rx, at: now };
-
-    for (const reading of sensors) {
-      const key = reading.chip + "/" + reading.label;
-      const history = snapshot.tempHistory.get(key) ?? [];
-      push(history, reading.celsius);
-      snapshot.tempHistory.set(key, history);
-    }
   } catch (error) {
     snapshot.error = error;
   }
@@ -145,18 +142,12 @@ async function pollVault(): Promise<void> {
   notify();
 }
 
-/** Lee los discos y el registro del kernel (sondeo lento). */
+/** Lee los discos (sondeo lento). */
 async function pollSlow(): Promise<void> {
   try {
     snapshot.disks = await getJSON<Disk[]>("/api/storage");
   } catch (error) {
     snapshot.error = error;
-  }
-  try {
-    const log = await getJSON<{ lines: string[] }>("/api/logs/kernel");
-    snapshot.kernelLog = log.lines;
-  } catch {
-    // * El registro es opcional: si el agente no responde se deja el último.
   }
   notify();
 }
@@ -189,20 +180,39 @@ function whenVisible(poll: () => Promise<void>): void {
   }
 }
 
+/**
+ * Sondea el Vault a un ritmo que depende de lo que pasa: rápido mientras haya una descarga en marcha (para ver su
+ * progreso) y tranquilo el resto del tiempo, porque cada lectura recorre la biblioteca del USB.
+ */
+function scheduleVaultPoll(idleMs: number): void {
+  const busy = snapshot.transfers.some(function active(job) {
+    return job.status === "running" || job.status === "verifying" || job.status === "queued";
+  });
+  window.setTimeout(
+    async function again(): Promise<void> {
+      if (!document.hidden) {
+        await pollVault();
+      }
+      scheduleVaultPoll(idleMs);
+    },
+    busy ? 1500 : idleMs,
+  );
+}
+
 /** Arranca el sondeo periódico y hace la primera lectura completa. */
 export async function start(desktop = false): Promise<void> {
   // * En el escritorio solo cambian el USB, la biblioteca y las descargas: no se sondean
-  // * ni sensores, ni discos, ni registro del kernel, ni hardware (no existen en Windows).
+  // * ni sensores, ni discos, ni hardware (no existen en Windows).
   if (desktop) {
-    window.setInterval(whenVisible, DESKTOP_MS, pollVault);
+    scheduleVaultPoll(DESKTOP_MS);
     await pollVault();
     return;
   }
   // * Equipos modestos: sondeos más espaciados. Con la ventana oculta no se sondea nada (ver whenVisible).
-  const fast = isLite() ? 6000 : 4000;
-  const slow = isLite() ? 30000 : 20000;
+  const fast = isLite() ? 10000 : 6000;
+  const slow = isLite() ? 45000 : 30000;
   window.setInterval(whenVisible, fast, pollFast);
-  window.setInterval(whenVisible, isLite() ? 4000 : 2500, pollVault);
+  scheduleVaultPoll(isLite() ? 10000 : 6000);
   window.setInterval(whenVisible, slow, pollSlow);
   await refreshAll();
 }

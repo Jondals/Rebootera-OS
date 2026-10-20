@@ -33,15 +33,25 @@ jobs:
             exit 1
           fi
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: site/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build the website
+        working-directory: site
+        run: |
+          mkdir -p public/images
+          cp ../docs/images/*.png public/images/
+          pnpm install --frozen-lockfile
+          pnpm build
       - name: Copy the website to the public repository
         run: |
           git clone --depth 1 "https://x-access-token:${RELEASES_TOKEN}@github.com/Jondals/Rebootera-OS-downloads.git" public
           rm -rf public/site
-          mkdir -p public/site/images public/site/fonts
-          cp site/index.html public/site/index.html
-          cp branding/logo.svg public/site/logo.svg
-          cp docs/images/*.png public/site/images/
-          cp site/fonts/* public/site/fonts/
+          mkdir -p public/site
+          cp -r site/dist/. public/site/
           cd public
           git config user.name "rebootera-bot"
           git config user.email "rebootera-bot@users.noreply.github.com"

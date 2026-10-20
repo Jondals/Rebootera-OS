@@ -7,8 +7,6 @@ import { errorBox } from "./components.js";
 import { el, icon } from "./dom.js";
 import { t } from "./i18n.js";
 import { icons } from "./icons.js";
-import { isProblemLine } from "./insights.js";
-import { snapshot } from "./state.js";
 
 /** Crea un diálogo con título y cuerpo, lo abre y lo elimina al cerrarse. */
 export function openModal(title: string, body: Node[], className = ""): HTMLDialogElement {
@@ -77,26 +75,6 @@ async function runPowerAction(event: MouseEvent): Promise<void> {
     overlay.hidden = true;
     openModal(t("power.title"), [errorBox(error)], "modal-small");
   }
-}
-
-/** Abre el registro completo del kernel. */
-export function openKernelLog(): void {
-  const lines = snapshot.kernelLog ?? [];
-  openModal(
-    t("overview.kernelTitle"),
-    [
-      el(
-        "pre",
-        { class: "log-full" },
-        lines.map(function logLine(line) {
-          return el("span", { class: isProblemLine(line) ? "log-line log-problem" : "log-line" }, [
-            line + "\n",
-          ]);
-        }),
-      ),
-    ],
-    "modal-wide",
-  );
 }
 
 /** Resolución pendiente del diálogo de confirmación abierto. */

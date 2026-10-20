@@ -1,7 +1,7 @@
 // * Página "Ajustes": idioma, color de acento, intro al arrancar, movimiento
 // * reducido y datos del sistema (versión, kernel, tiempo encendido).
 
-import { miniTheme, more, pageHeader, panel } from "../components.js";
+import { miniTheme, pageHeader, panel } from "../components.js";
 import { el } from "../dom.js";
 import * as fmt from "../format.js";
 import { t, type Language } from "../i18n.js";
@@ -198,6 +198,7 @@ function render(root: HTMLElement): void {
     el("div", { class: "page" }, [
       pageHeader(t("settings.title"), t("settings.subtitle")),
       el("div", { class: "settings-grid" }, [
+        isDesktop() ? null : wifiPanel(),
         themePanel(),
         appearancePanel(),
         panel(t("settings.language"), [
@@ -213,15 +214,11 @@ function render(root: HTMLElement): void {
         ]),
         isDesktop() ? null : pointerPanel(),
         isDesktop() ? null : keyboardPanel(),
-        isDesktop() ? null : wifiPanel(),
-        // * Lo que casi nadie toca queda plegado.
-        more(t("settings.advanced"), [
-          panel(t("settings.title"), [
-            toggle(t("settings.intro"), prefs.intro, setIntro),
-            toggle(t("settings.motion"), prefs.reduceMotion, setMotion),
-          ]),
-          panel(t("settings.about"), [about]),
+        panel(t("settings.more"), [
+          toggle(t("settings.intro"), prefs.intro, setIntro),
+          toggle(t("settings.motion"), prefs.reduceMotion, setMotion),
         ]),
+        panel(t("settings.about"), [about]),
       ]),
     ]),
   );

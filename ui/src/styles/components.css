@@ -236,13 +236,6 @@
   color: var(--text-muted);
 }
 
-.panel-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-muted);
-}
-
 /* Progreso y distribución de particiones */
 
 .progress {
@@ -286,22 +279,6 @@
   border-radius: 3px;
   min-width: 4px;
 }
-.segment-accent {
-  background: var(--accent);
-}
-.segment-amber {
-  background: var(--amber);
-}
-.segment-violet {
-  background: var(--violet);
-}
-.segment-ok {
-  background: var(--ok);
-}
-.segment-muted {
-  background: var(--text-dim);
-}
-
 /* Selector segmentado (filtros, idioma, acento) */
 
 .segmented {
@@ -544,22 +521,6 @@
 
 .power-danger .icon {
   color: var(--danger);
-}
-
-.log-full {
-  margin: 0;
-  max-height: 62vh;
-  overflow: auto;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--text-muted);
-  user-select: text;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.log-problem {
-  color: var(--warn);
 }
 
 /* Pantalla de espera al reiniciar o apagar */

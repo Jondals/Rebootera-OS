@@ -45,8 +45,3 @@ export function onlineInterface(system: SystemInfo | null): NetIf | null {
 function isOnline(iface: NetIf): boolean {
   return iface.state === "up" && iface.addresses.length > 0;
 }
-
-/** Indica si una línea del registro del kernel menciona un problema. */
-export function isProblemLine(line: string): boolean {
-  return /\b(error|fail(ed|ure)?|warn(ing)?|timeout|corrupt)\b/i.test(line);
-}

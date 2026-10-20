@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Root es donde el agente monta el Vault. Se puede cambiar en las pruebas.
@@ -109,7 +110,7 @@ func ReadJSON(path string, value any) error {
 // Settings son las preferencias que sobreviven al reinicio.
 type Settings struct {
 	Language string `json:"language"`
-	// Theme es el tema visual: siete oscuros (obsidian, sapphire, emerald, amethyst, ember, graphite, amoled) o "ivory" (claro).
+	// Theme es el tema visual, todos oscuros: amoled (por defecto), obsidian, sapphire, emerald, amethyst, ember, orange o graphite.
 	Theme string `json:"theme"`
 	// Background controla el fondo animado: "auto" (se apaga solo en equipos modestos), "on" u "off".
 	Background string `json:"background"`
@@ -127,7 +128,7 @@ var settingsMu sync.Mutex
 func LoadSettings() (Settings, error) {
 	settingsMu.Lock()
 	defer settingsMu.Unlock()
-	settings := Settings{Language: "en", Theme: "obsidian", Background: "auto", Scale: 100, Blur: "soft", Intro: true}
+	settings := Settings{Language: "en", Theme: "amoled", Background: "auto", Scale: 100, Blur: "soft", Intro: true}
 	if !Available() {
 		return settings, ErrUnavailable
 	}
@@ -137,36 +138,9 @@ func LoadSettings() (Settings, error) {
 
 // * SaveSettings valida y guarda los ajustes en el Vault.
 func SaveSettings(settings Settings) error {
-	if settings.Language != "en" && settings.Language != "es" {
-		return fmt.Errorf("idioma no válido: %q", settings.Language)
-	}
-	switch settings.Background {
-	case "":
-		settings.Background = "auto"
-	case "auto", "on", "off":
-	default:
-		return fmt.Errorf("fondo no válido: %q", settings.Background)
-	}
-	switch settings.Blur {
-	case "":
-		settings.Blur = "soft"
-	case "off", "soft", "medium", "strong":
-	default:
-		return fmt.Errorf("desenfoque no válido: %q", settings.Blur)
-	}
-	if settings.Scale == 0 {
-		settings.Scale = 100
-	}
-	if settings.Scale < 90 || settings.Scale > 130 {
-		return fmt.Errorf("tamaño de interfaz no válido: %d", settings.Scale)
-	}
-	// * Los temas de la 0.9 (sky, night, forest) pasan al oscuro por defecto.
-	switch settings.Theme {
-	case "", "sky", "night", "forest":
-		settings.Theme = "obsidian"
-	case "obsidian", "ivory", "sapphire", "emerald", "amethyst", "ember", "graphite", "amoled":
-	default:
-		return fmt.Errorf("tema no válido: %q", settings.Theme)
+	settings, err := ValidateSettings(settings)
+	if err != nil {
+		return err
 	}
 	settingsMu.Lock()
 	defer settingsMu.Unlock()
@@ -174,4 +148,92 @@ func SaveSettings(settings Settings) error {
 		return ErrUnavailable
 	}
 	return WriteJSON(filepath.Join(StateDir(), "settings.json"), settings)
+}
+
+// * ValidateSettings completa los valores vacíos con los de por defecto y comprueba que los demás son válidos.
+func ValidateSettings(settings Settings) (Settings, error) {
+	if settings.Language != "en" && settings.Language != "es" {
+		return settings, fmt.Errorf("idioma no válido: %q", settings.Language)
+	}
+	switch settings.Background {
+	case "":
+		settings.Background = "auto"
+	case "auto", "on", "off":
+	default:
+		return settings, fmt.Errorf("fondo no válido: %q", settings.Background)
+	}
+	switch settings.Blur {
+	case "":
+		settings.Blur = "soft"
+	case "off", "soft", "medium", "strong":
+	default:
+		return settings, fmt.Errorf("desenfoque no válido: %q", settings.Blur)
+	}
+	if settings.Scale == 0 {
+		settings.Scale = 100
+	}
+	if settings.Scale < 90 || settings.Scale > 130 {
+		return settings, fmt.Errorf("tamaño de interfaz no válido: %d", settings.Scale)
+	}
+	// * Los temas de la 0.9 (sky, night, forest) y el claro (ivory) pasan al oscuro por defecto.
+	switch settings.Theme {
+	case "", "sky", "night", "forest", "ivory":
+		settings.Theme = "amoled"
+	case "obsidian", "sapphire", "emerald", "amethyst", "ember", "orange", "graphite", "amoled":
+	default:
+		return settings, fmt.Errorf("tema no válido: %q", settings.Theme)
+	}
+	return settings, nil
+}
+
+// LocalPath es el archivo de ajustes de Rebootera Desktop en el PC (la lleva el escritorio; vacío en Rebootera OS).
+// Guarda el tema y el resto de preferencias aunque no haya un USB conectado, y sirve para llevarlas al USB cuando se conecte.
+var LocalPath string
+
+// * LoadLocalSettings lee los ajustes guardados en el PC y cuándo se guardaron. ok es false si no hay ninguno.
+func LoadLocalSettings() (settings Settings, saved time.Time, ok bool) {
+	settingsMu.Lock()
+	defer settingsMu.Unlock()
+	if LocalPath == "" {
+		return Settings{}, time.Time{}, false
+	}
+	settings = Settings{Language: "en", Theme: "amoled", Background: "auto", Scale: 100, Blur: "soft", Intro: true}
+	info, err := os.Stat(LocalPath)
+	if err != nil || ReadJSON(LocalPath, &settings) != nil {
+		return Settings{}, time.Time{}, false
+	}
+	checked, err := ValidateSettings(settings)
+	if err != nil {
+		return Settings{}, time.Time{}, false
+	}
+	return checked, info.ModTime(), true
+}
+
+// * SaveLocalSettings valida y guarda los ajustes en el PC.
+func SaveLocalSettings(settings Settings) error {
+	settings, err := ValidateSettings(settings)
+	if err != nil {
+		return err
+	}
+	settingsMu.Lock()
+	defer settingsMu.Unlock()
+	if LocalPath == "" {
+		return ErrUnavailable
+	}
+	if err := os.MkdirAll(filepath.Dir(LocalPath), 0o755); err != nil {
+		return err
+	}
+	return WriteJSON(LocalPath, settings)
+}
+
+// * VaultSettingsTime devuelve cuándo se guardaron los ajustes del Vault (cero si no hay).
+func VaultSettingsTime() time.Time {
+	if !Available() {
+		return time.Time{}
+	}
+	info, err := os.Stat(filepath.Join(StateDir(), "settings.json"))
+	if err != nil {
+		return time.Time{}
+	}
+	return info.ModTime()
 }

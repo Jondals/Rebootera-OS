@@ -14,14 +14,10 @@ package desktop
 
 import (
 	"archive/zip"
-	"bufio"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -34,12 +30,8 @@ import (
 // maxMBRBytes es lo que direcciona una tabla MBR (2 TiB).
 const maxMBRBytes = 2 << 40
 
-// Versión de Ventoy que se usa (la misma que en las imágenes de Linux).
-const (
-	ventoyVersion = "1.1.18"
-	ventoyBase    = "https://github.com/ventoy/Ventoy/releases/download/v" + ventoyVersion + "/"
-	ventoyZip     = "ventoy-" + ventoyVersion + "-windows.zip"
-)
+// ventoyZip es el archivo de Ventoy para Windows.
+const ventoyZip = "ventoy-" + ventoyVersion + "-windows.zip"
 
 // * Create empieza a crear un USB de Rebootera en segundo plano.
 func Create(diskNumber int, isoPath string, kit fs.FS, desktopExe string, extras Extras, keepData bool) error {
@@ -200,43 +192,16 @@ func PrepareVentoy() (string, error) {
 // * ensureVentoy descarga, verifica y extrae Ventoy para Windows en la
 // * carpeta de datos del usuario. Devuelve la carpeta con Ventoy2Disk.exe.
 func ensureVentoy() (string, error) {
-	base, err := os.UserCacheDir()
+	dir, err := cacheRoot()
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Join(base, "Rebootera")
 	target := filepath.Join(dir, "ventoy-"+ventoyVersion)
 	if _, err := os.Stat(filepath.Join(target, "Ventoy2Disk.exe")); err == nil {
 		return target, nil
 	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", err
-	}
-	sums, err := download(ventoyBase + "sha256.txt")
+	zipPath, err := fetchVentoyArchive(ventoyZip)
 	if err != nil {
-		return "", err
-	}
-	expected := ""
-	scanner := bufio.NewScanner(strings.NewReader(string(sums)))
-	for scanner.Scan() {
-		fields := strings.Fields(scanner.Text())
-		if len(fields) == 2 && fields[1] == ventoyZip {
-			expected = strings.ToLower(fields[0])
-		}
-	}
-	if expected == "" {
-		return "", errors.New("el release de Ventoy no publica la suma de su zip para Windows")
-	}
-	data, err := download(ventoyBase + ventoyZip)
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(data)
-	if hex.EncodeToString(sum[:]) != expected {
-		return "", errors.New("la suma SHA-256 de Ventoy no coincide con la publicada")
-	}
-	zipPath := filepath.Join(dir, ventoyZip)
-	if err := os.WriteFile(zipPath, data, 0o644); err != nil {
 		return "", err
 	}
 	if err := unzip(zipPath, dir); err != nil {
@@ -246,20 +211,6 @@ func ensureVentoy() (string, error) {
 		return "", errors.New("el zip de Ventoy no tiene la estructura esperada")
 	}
 	return target, nil
-}
-
-// * download descarga un archivo por HTTPS en memoria (como mucho 64 MB).
-func download(url string) ([]byte, error) {
-	client := &http.Client{Timeout: 5 * time.Minute}
-	resp, err := client.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("no se pudo descargar %s: %w", url, err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%s respondió %d", url, resp.StatusCode)
-	}
-	return io.ReadAll(io.LimitReader(resp.Body, 64<<20))
 }
 
 // * unzip extrae un zip sin permitir rutas que salgan de la carpeta destino.
@@ -335,22 +286,4 @@ func waitDriveLetter(disk int) (string, error) {
 		time.Sleep(time.Second)
 	}
 	return "", errors.New("Windows no asignó una letra al nuevo USB")
-}
-
-// * lastLines devuelve las últimas n líneas de un texto.
-func lastLines(text string, n int) string {
-	lines := strings.Split(strings.TrimSpace(text), "\n")
-	if len(lines) > n {
-		lines = lines[len(lines)-n:]
-	}
-	return strings.Join(lines, " | ")
-}
-
-// * copyFile copia un archivo pequeño (la propia aplicación).
-func copyFile(src, dst string) error {
-	data, err := os.ReadFile(src)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(dst, data, 0o755)
 }

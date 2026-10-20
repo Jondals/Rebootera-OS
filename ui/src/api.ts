@@ -107,15 +107,21 @@ export class ApiError extends Error {
 /** Construye el error de una respuesta, traduciendo su código si lo trae. */
 async function errorFrom(response: Response): Promise<ApiError> {
   let code = "";
+  let detail = "";
   try {
-    const body = (await response.json()) as { code?: string };
+    const body = (await response.json()) as { code?: string; error?: string };
     code = body.code ?? "";
+    detail = body.error ?? "";
   } catch {
     // * Respuesta sin JSON: solo se usa el código HTTP.
   }
   const key = "errors.codes." + code;
   const translated = code ? t(key) : "";
-  const message = translated && translated !== key ? translated : messageFor(response.status);
+  let message = translated && translated !== key ? translated : messageFor(response.status);
+  // * Un fallo al cambiar particiones trae el motivo concreto que dio la herramienta: se enseña tras el aviso genérico.
+  if (code === "part-failed" && detail) {
+    message += " " + detail;
+  }
   return new ApiError(response.status, message, code);
 }
 

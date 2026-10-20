@@ -28,7 +28,7 @@ func TestKit(t *testing.T) {
 	}
 }
 
-// * TestActualizar instala dos versiones y conserva la anterior para rescate.
+// * TestActualizar instala dos versiones y comprueba que la anterior se borra (y que una copia "previous" vieja también).
 func TestActualizar(t *testing.T) {
 	root := t.TempDir()
 	src := t.TempDir()
@@ -48,9 +48,11 @@ func TestActualizar(t *testing.T) {
 		t.Fatalf("el progreso debería acabar en 1, acabó en %v", progress.Last)
 	}
 	current, _ := os.ReadFile(filepath.Join(root, "rebootera", "rebootera-os.iso"))
-	previous, _ := os.ReadFile(filepath.Join(root, "rebootera", "rebootera-os.previous.iso"))
-	if string(current) != "version dos" || string(previous) != "version uno" {
-		t.Fatalf("actual %q, anterior %q", current, previous)
+	if string(current) != "version dos" {
+		t.Fatalf("actual %q", current)
+	}
+	if _, err := os.Stat(filepath.Join(root, "rebootera", "rebootera-os.previous.iso")); !os.IsNotExist(err) {
+		t.Fatal("la versión anterior debería haberse borrado")
 	}
 	if !IsRebootera(root) {
 		t.Fatal("el USB debería reconocerse como de Rebootera")

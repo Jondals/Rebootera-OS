@@ -98,65 +98,6 @@
   color-scheme: dark;
 }
 
-/* Tema Marfil: papel claro, tinta y latón oscuro */
-:root[data-theme="ivory"] {
-  --bg: #f2ede2;
-  --surface-solid: #fbf8f1;
-  --bg-elevated: rgba(60, 45, 20, 0.04);
-  --panel: rgba(255, 253, 248, 0.84);
-  --panel-2: rgba(60, 45, 20, 0.045);
-  --panel-hover: rgba(60, 45, 20, 0.07);
-  --border: rgba(60, 45, 20, 0.13);
-  --border-strong: rgba(60, 45, 20, 0.28);
-  --edge: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --lift: 0 12px 28px rgba(70, 50, 15, 0.14);
-
-  --text: #231d12;
-  --text-muted: #685e4b;
-  --text-dim: #978d77;
-
-  --accent: #8c6220;
-  --accent-strong: #70490f;
-  --accent-soft: rgba(140, 98, 32, 0.1);
-  --accent-border: rgba(140, 98, 32, 0.45);
-  --accent-contrast: #fff;
-  --primary: linear-gradient(180deg, #b08437, #8c6220);
-  --on-primary: #fffaf0;
-  --primary-edge: rgba(255, 240, 205, 0.5);
-
-  --ok: #1f7a46;
-  --warn: #8f5d0b;
-  --danger: #b23a34;
-  --amber: #96590a;
-  --violet: #5a45b0;
-  --teal: #2a7d72;
-  --teal-strong: #1f6a60;
-  --ok-bg: rgba(31, 122, 70, 0.12);
-  --warn-bg: rgba(143, 93, 11, 0.13);
-  --danger-bg: rgba(178, 58, 52, 0.12);
-  --violet-bg: rgba(90, 69, 176, 0.12);
-  --accent-bg: rgba(140, 98, 32, 0.12);
-  --badge-bg: rgba(60, 45, 20, 0.07);
-
-  --field-bg: rgba(255, 255, 255, 0.7);
-  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23685e4b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  --scrim: rgba(40, 28, 8, 0.4);
-  --modal-bg: #fbf8f1;
-
-  --bloom-a: rgba(196, 150, 70, 0.26);
-  --bloom-b: rgba(120, 150, 175, 0.22);
-  --bloom-c: rgba(196, 110, 100, 0.13);
-  --mote: rgba(140, 98, 32, 0.4);
-  --grain-opacity: 0.1;
-  --vignette: rgba(110, 80, 30, 0.14);
-
-  --logo-tile-b: #eadfc9;
-  --logo-edge: rgba(140, 98, 32, 0.4);
-  --ring: rgba(140, 98, 32, 0.22);
-  --beam: rgba(255, 255, 255, 0.6);
-  color-scheme: light;
-}
-
 /* Tema Zafiro: azul noche y plata azulada */
 :root[data-theme="sapphire"] {
   --bg: #070b17;
@@ -511,6 +452,64 @@
   color-scheme: dark;
 }
 
+/* Tema Naranja: oscuro con naranja intenso */
+:root[data-theme="orange"] {
+  --bg: #0d0905;
+  --surface-solid: #1a130b;
+  --bg-elevated: rgba(255, 170, 90, 0.05);
+  --panel: rgba(26, 19, 11, 0.78);
+  --panel-2: rgba(255, 170, 90, 0.055);
+  --panel-hover: rgba(255, 170, 90, 0.1);
+  --border: rgba(255, 170, 90, 0.12);
+  --border-strong: rgba(255, 170, 90, 0.25);
+  --edge: inset 0 1px 0 rgba(255, 225, 190, 0.07);
+  --lift: 0 14px 34px rgba(0, 0, 0, 0.5);
+
+  --text: #f6ece0;
+  --text-muted: #b9a28a;
+  --text-dim: #82705c;
+
+  --accent: #ff8a1f;
+  --accent-strong: #e5700a;
+  --accent-soft: rgba(255, 138, 31, 0.13);
+  --accent-border: rgba(255, 138, 31, 0.46);
+  --accent-contrast: #1f0e00;
+  --primary: linear-gradient(180deg, #ffaa55, #f07a0a);
+  --on-primary: #1f0e00;
+  --primary-edge: rgba(255, 225, 190, 0.55);
+
+  --ok: #7fd8b0;
+  --warn: #efca7c;
+  --danger: #f39aa6;
+  --amber: #efb572;
+  --violet: #bfa9ff;
+  --teal: #80d0e0;
+  --teal-strong: #5fbad0;
+  --ok-bg: rgba(127, 216, 176, 0.14);
+  --warn-bg: rgba(239, 202, 124, 0.14);
+  --danger-bg: rgba(243, 154, 166, 0.14);
+  --violet-bg: rgba(191, 169, 255, 0.15);
+  --accent-bg: rgba(255, 138, 31, 0.15);
+  --badge-bg: rgba(255, 170, 90, 0.1);
+
+  --field-bg: rgba(0, 0, 0, 0.42);
+  --select-arrow: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2716%27%20height%3D%2716%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%23b9a28a%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27m6%209%206%206%206-6%27%2F%3E%3C%2Fsvg%3E");
+  --scrim: rgba(0, 0, 0, 0.7);
+  --modal-bg: #1a130b;
+
+  --bloom-a: rgba(255, 140, 30, 0.22);
+  --bloom-b: rgba(200, 90, 20, 0.14);
+  --bloom-c: rgba(255, 200, 80, 0.09);
+  --mote: rgba(255, 225, 190, 0.5);
+  --grain-opacity: 0.06;
+  --vignette: rgba(10, 4, 0, 0.55);
+
+  --logo-edge: rgba(255, 138, 31, 0.4);
+  --ring: rgba(255, 138, 31, 0.24);
+  --beam: rgba(255, 138, 31, 0.1);
+  color-scheme: dark;
+}
+
 /* Base */
 
 body {
@@ -530,13 +529,10 @@ h3 {
   font-weight: 500;
   letter-spacing: -0.01em;
 }
-
 .mono-small,
-.mono-label,
 .badge,
 .chip,
 .brand-version,
-.lang-code,
 .segment-count,
 .guard-chip {
   font-family: var(--font);
@@ -545,9 +541,7 @@ h3 {
 }
 
 code,
-pre,
-.log-preview,
-.log-full {
+pre {
   font-family: var(--mono);
 }
 
@@ -774,12 +768,12 @@ main {
   --m-accent: #d8ae62;
 }
 
-.mini-ivory {
-  --m-bg: #f6f1e6;
-  --m-side: #ebe4d2;
-  --m-card: #fbf8f1;
-  --m-edge: rgba(35, 29, 18, 0.2);
-  --m-accent: #8c6220;
+.mini-orange {
+  --m-bg: #0d0905;
+  --m-side: #1a130b;
+  --m-card: #1a130b;
+  --m-edge: rgba(255, 170, 90, 0.3);
+  --m-accent: #ff8a1f;
 }
 
 .mini-sapphire {
@@ -828,96 +822,6 @@ main {
   --m-card: #0a0b0d;
   --m-edge: rgba(120, 220, 240, 0.3);
   --m-accent: #4fd8ee;
-}
-
-.theme-switch {
-  position: relative;
-}
-
-.theme-current {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 8px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-  cursor: pointer;
-  transition: border-color 140ms ease;
-}
-
-.theme-current:hover,
-.theme-current[aria-expanded="true"] {
-  border-color: var(--accent-border);
-}
-
-.theme-caret {
-  width: 14px;
-  height: 14px;
-  color: var(--text-muted);
-  transform: rotate(90deg);
-}
-
-.theme-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 270px;
-  padding: 6px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: var(--modal-bg);
-  box-shadow: var(--lift);
-  animation: pop-in 140ms ease-out;
-}
-
-.theme-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.theme-option:hover {
-  background: var(--panel-hover);
-}
-
-.theme-option[aria-checked="true"] {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-}
-
-.theme-option .mini {
-  width: 76px;
-  flex: none;
-}
-
-.theme-option-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.theme-option-text strong {
-  font-family: var(--display);
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.theme-option-text span {
-  font-size: 12px;
-  color: var(--text-muted);
 }
 
 @keyframes pop-in {
@@ -979,7 +883,6 @@ main {
 .image-row,
 .device-row,
 .target-card,
-.profile-card,
 .source-row {
   background: var(--panel-2);
   border: 1px solid var(--border);
@@ -999,7 +902,6 @@ main {
 .empty-icon,
 .device-icon,
 .disk-icon,
-.profile-icon,
 .usb-hero-icon,
 .dest-icon {
   background: var(--accent-soft);
@@ -1470,10 +1372,6 @@ select.text-input option,
   transition: transform 160ms ease;
 }
 
-.more[open] .more-arrow {
-  transform: rotate(90deg);
-}
-
 .more-body {
   display: flex;
   flex-direction: column;
@@ -1484,22 +1382,6 @@ select.text-input option,
 .more-actions {
   display: flex;
   gap: 10px;
-}
-
-.profile-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
-}
-
-.profile-card {
-  padding: 14px;
-}
-
-.profile-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
 }
 
 /* USB (Rebootera Desktop) */
@@ -1685,10 +1567,6 @@ select.text-input option,
   -webkit-box-orient: vertical;
   overflow: hidden;
   font-size: 12.5px;
-}
-
-.fam-select {
-  width: 100%;
 }
 
 .fam-edition {

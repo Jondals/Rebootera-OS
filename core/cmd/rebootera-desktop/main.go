@@ -68,6 +68,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// * Los discos USB se leen ya, en segundo plano: así "Crear USB" los tiene a mano cuando se abra.
+	desktop.PrewarmDisks()
+
 	// * Las imágenes solo se guardan en un USB de Rebootera: sin USB no hay dónde descargar y la
 	// * interfaz pide conectarlo (nunca se llena el disco del PC en silencio).
 	if *usbRoot != "" && desktop.IsRebootera(*usbRoot) {
@@ -80,6 +83,11 @@ func main() {
 		vault.Root = filepath.Join(os.TempDir(), "rebootera-no-usb")
 		log.Printf("sin USB de Rebootera: se espera a que se conecte uno")
 	}
+
+	// * Los ajustes (tema, idioma...) se guardan también en el PC: la dirección local cambia en cada arranque (puerto al azar),
+	// * así que el almacenamiento del navegador no los recuerda. Con un USB de Rebootera se ponen de acuerdo con los suyos.
+	vault.LocalPath = filepath.Join(dataDir(), "settings.json")
+	api.SyncSettings()
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

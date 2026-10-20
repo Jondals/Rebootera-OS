@@ -3,7 +3,9 @@ package desktop
 
 // USBDisk es un disco físico conectado por USB.
 type USBDisk struct {
-	Number       int         `json:"number"`
+	Number int `json:"number"`
+	// Path es el dispositivo en Linux (/dev/sdb) y macOS (/dev/disk4); vacío en Windows, que usa Number.
+	Path         string      `json:"path,omitempty"`
 	FriendlyName string      `json:"friendlyName"`
 	SizeBytes    uint64      `json:"sizeBytes"`
 	IsSystem     bool        `json:"isSystem"`

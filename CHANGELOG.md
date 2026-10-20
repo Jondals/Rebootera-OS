@@ -3,6 +3,82 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.17.0] - 2026-10-20
+
+### Added
+
+- **Unraid** and **Synology DSM** (official-page entries: Unraid is made with its own USB creator and DSM only installs on Synology devices, and the cards say so) and **Proxmox Backup Server**.
+
+### Fixed
+
+- **Partitions that sometimes could not be changed.** The search for drivers left every partition with Windows or driver folders open read-only, and any open partition locked its whole disk ("close the open drives"); `ntfsresize` also refuses a partition in use. Rebootera's own read-only mounts no longer lock the disk and the agent closes them before measuring or changing anything. A partition labelled DRIVERS is also kept open for the driver search (before, it was closed again right away when its files were loose in the root).
+- **Background blur works in Rebootera OS again** (the filter now goes on each moving piece of the background, so the GPU reuses it instead of filtering the whole screen every frame).
+- **"This PC"**: the cards are aligned in a 2 by 2 grid and the long "other devices" list (that is the Drivers page's job) is gone; graphics are now in the processor card. The "About this computer" block of Home (duplicated) and the collapsible "More options" of Settings are gone: its settings are shown directly.
+
+### Changed
+
+- **Much faster to open, especially from a USB:** each page is now its own file read only when opened (the first screen loads about 140 KB of JavaScript instead of 220 KB; the rest comes with each page), the HTML preloads the files it needs, text is sent compressed and the files with a hash in their name are cached for good. Free space of the mounted partitions is measured in the background and cached (NTFS drives could take seconds in every read of the Disks page, which now says "Loading…" at once). Lighthouse (mobile profile, local server): performance 88 to 97, accessibility 96 to 100, best practices 100. The splash screen is skipped when a program drives the window.
+
+## [0.16.0] - 2026-10-20
+
+### Added
+
+- **More systems in the Download Center** (all checked against their real sources, with size and SHA-256): **TrueNAS SCALE** (25.10 Goldeye and 25.04 Fangtooth), **XCP-ng** 8.3, **openmediavault**, **VyOS** (rolling), **Ubuntu Server cloud images** for VMs and VPS (24.04 and 22.04), the **Arduino IDE** for Windows, Linux and macOS (Intel and Apple silicon; the program to code Arduino boards, saved on the USB to install elsewhere, not an operating system), and **OPNsense** and **pfSense** as official-page entries (they ask for an image type or a form).
+- A new `manifest` resolver for projects that publish a JSON with the latest version and keep the image and its SHA-256 in that version's folder (TrueNAS).
+- The library also keeps programs (`.exe`, `.AppImage`, `.dmg`) and `.qcow2` disk images.
+
+### Changed
+
+- **Updating Rebootera now deletes the previous version** from the USB (and any old "previous" copy). The new copy is checked before it replaces the current one, so a cut in the middle never leaves the USB without a system. The "previous version" entry is gone from the boot menu.
+
+## [0.15.1] - 2026-10-20
+
+### Fixed
+
+- **The chosen theme is saved and reaches Rebootera OS.** Rebootera Desktop lost it at every start (the browser storage belongs to a local address whose port changes each time) and, with no USB selected, nothing was written anywhere. Now the settings are also kept in a file on the PC; when a Rebootera USB is chosen the most recent ones win and go to the USB, so the system that starts from it already opens with that theme, its intro and the boot menu colors.
+- **The logo and the intro animation follow the theme in the desktop app.** Chromium did not repaint the SVG gradients when only the theme variable changed; their colors are now set on the elements themselves at every change.
+- The saved theme and language are written into the first page, so nothing flashes the default theme before the intro.
+
+## [0.15.0] - 2026-10-20
+
+### Added
+
+- **Create USB now works on Linux and macOS too**, not only on Windows. On Linux it uses the official Ventoy package (downloaded and verified) with administrator permission asked through polkit, and mounts the new USB with udisks (or with a plain mount if udisks is missing). On macOS it builds Ventoy's layout with `diskutil` (GPT, exFAT "REBOOTERA" and the 32 MiB boot partition written from Ventoy's own image) and asks for the password with the system dialog; a USB made on a Mac starts UEFI computers. Only external USB disks that do not hold the system are offered. Adding Rebootera to a USB without erasing it stays Windows-only.
+- `scripts/test/test-create-linux.sh` creates a USB on a virtual disk through the real app and checks it (real Ventoy install, label, GPT, boot partition, Rebootera OS byte for byte).
+
+### Changed
+
+- The interface is now one minified JavaScript file and one stylesheet instead of about 30 files (a read of the USB each): from about 750 KB to about 450 KB, and far fewer files to open at start-up (esbuild).
+- A smaller image: no man pages, no docs apart from each package's licence text, and only the English and Spanish system languages.
+
+## [0.14.0] - 2026-10-20
+
+### Added
+
+- New "This PC" tab with everything Rebootera found about the computer (firmware, processor, memory, graphics, disks, network and other devices with their driver). It replaces the kernel log.
+- A missing network adapter driver is reported in Settings, with a button that searches the computer's disks.
+- The partition named like "DRIVERS" (or similar) is read as a whole and wins over the drivers store of an installed Windows (shown as "used only when nothing else matches"); the Windows installer takes matching drivers by default.
+- "Official page" opens the built-in browser (dark mode, no telemetry); the theme colors also reach the Ventoy menu on the USB.
+- Touchpad support for I2C/HID laptop panels (modules loaded at boot).
+
+### Changed
+
+- Erasing or changing a drive no longer asks to type a phrase: a "Continue" button with the warning replaces it (also for partition changes).
+- Wi-Fi is the first block in Settings; "Merge with a neighbor" is just "Merge".
+- Partition errors say why (hibernated Windows, pending chkdsk, drive in use, no space, failing disk...) with the tool's last lines.
+- Download sizes show instantly from a disk cache and refresh in the background without redrawing the cards.
+- Performance: the animated background stays still by default and is never blurred while moving in Rebootera OS; more read-ahead for the USB. The saved theme and language are written into the first page, so the intro already uses them.
+- Ventoy menu waits 1 s (it always shows its menu for at least that long).
+- Less lag: the interface only redraws when something visible changed (not for the uptime or traffic counters), the USB is polled every 6 s (every 1.5 s only while a download runs), the system and sensors every 6 s, and WebKit uses no smooth scrolling or page cache (and no GPU in light mode). Automatic updates, periodic disk checks and the network wait are masked at boot.
+- Clean-up: about 70 unused CSS rules, the temperature and traffic histories and the kernel log code are gone.
+
+## [0.13.0] - 2026-10-20
+
+### Changed
+
+- The website (`site/`) is rebuilt with Astro and Tailwind: animated particle background that follows the theme, eight live theme cards (no dropdown, no button icons), bento feature grid, screenshot gallery, per-platform downloads and an FAQ. `scripts/dev/site.ps1` now builds it before serving, and the sync workflow publishes `site/dist`.
+- `scripts/test/test-all.sh` is fast by default (under 3 minutes: both ISOs on UEFI + Secure Boot, rebuilding only when the source changed); the full battery is `--full`. The release-ISO test clicked at old header coordinates and failed to power off: fixed.
+
 ## [0.12.0] - 2026-10-20
 
 ### Changed
@@ -12,7 +88,14 @@ Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 - **A completely new logo:** a sunrise (a sun rising over the horizon under two signal arcs: the "re" of restart and the "era" of a new start) on a dark rounded tile, recoloured by each theme, and new icons for the app, the boot menu and Rebootera Desktop.
 - **A new intro instead of a loading bar:** it dawns: the horizon lines open, the sun rises from behind them, the arcs are drawn and the name enters letter by letter; it is skippable and turns into a plain fade on modest computers.
 - **No side menu any more: navigation is a header with tabs.** The brand is on the left, the sections are tabs in the middle (with their name, or just the icon on narrower windows) and on the right go the USB with its free space, the theme, the language and power. All the width is for the content, and Settings is the last tab.
-- **The theme selector says what it is** (a palette and the theme name) and its list is one column with a miniature of each theme. It also works now: opening it used to close it at the same instant, so choosing a theme (for example Amoled) did nothing.
+- **Themes: all dark, Amoled first and by default.** The light theme (Ivory) is gone (anyone who had it now gets Amoled) and a new **Orange** theme joins Obsidian, Sapphire, Emerald, Amethyst, Ember and Graphite.
+- **Drop-downs animate:** the collapsible sections and the version list open and close smoothly instead of jumping.
+- **"Make USB" opens at once:** the window used to stay empty for seconds while Windows listed the disks. Now the page appears immediately ("Looking for USB drives…"), the disks are read in the background from the moment the app starts and are shown as soon as they arrive.
+- **The website follows the app's themes** (the same eight dark themes, with a theme picker and the logo recoloured) and can be viewed with `scripts/dev/site.ps1`.
+- **Theme and language now live only in Settings** (cards with a preview for each theme, and the language choice), not in a drop-down in the header.
+- **The header sits at the very top** (a hidden 0-size icon sheet was taking a blank line above it), the download cards are all the same size with the buttons at the bottom, and the "Official page" button is short.
+- **The intro plays in full in Rebootera Desktop** (it used to be cut to a third of a second because the app counts as "light" for the background).
+- **More versions:** Ubuntu 25.10, Debian 11 and every Debian 12 live flavour, Fedora 42 and the 43 spins, Linux Mint 21.3, Alpine 3.22 and 3.21, Rocky and AlmaLinux 8, NixOS 25.11 and 25.05, CentOS Stream 9, FreeBSD 14.4, OpenBSD 7.8 and 7.7, Proxmox VE 8 and Windows Server 2019 and 2016 (evaluation).
 - **Changing the language no longer reloads everything:** the page keeps its place and its entrance animation is not repeated.
 - **Make USB shows its progress at once** when you come back to it, instead of waiting for the disks to be read again.
 - **Settings buttons now stay selected** when you press them (background, blur, size, menu).

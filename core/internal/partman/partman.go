@@ -204,7 +204,10 @@ func Build(disk storage.Disk) Layout {
 		}
 		layout.Segments = append(layout.Segments, segmentOf(part))
 		cursor = max(cursor, part.StartSector+part.Sectors)
-		if part.MountPoint != "" && part.MountPoint != "/run/live/medium" && layout.Locked == "" {
+		// * Los montajes de solo lectura que abre el propio Rebootera para buscar drivers (en /run/rebootera/media) no bloquean el
+		// * disco: el agente los cierra antes de cambiar nada. Antes cualquier equipo con Windows (o una partición de drivers)
+		// * dejaba su disco "en uso" y las particiones no se podían tocar.
+		if part.MountPoint != "" && part.MountPoint != "/run/live/medium" && !strings.HasPrefix(part.MountPoint, "/run/rebootera/media/") && layout.Locked == "" {
 			layout.Locked = ErrMounted.Error()
 		}
 		// * Una tabla MBR con partición extendida o lógica no se edita: es otro mundo.

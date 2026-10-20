@@ -3,11 +3,12 @@
 // * vea entera y un máximo para no hacer esperar. Se salta con cualquier tecla o clic y respeta "reducir
 // * movimiento" y el modo ligero de los equipos modestos.
 
+import { isDesktop } from "./mode.js";
 import { isLite, prefs } from "./prefs.js";
 
 /** Duraciones en milisegundos. */
-const MIN_MS = 2800;
-const MAX_MS = 4600;
+const MIN_MS = 3300;
+const MAX_MS = 5200;
 const REDUCED_MS = 350;
 const LEAVE_MS = 520;
 
@@ -15,8 +16,11 @@ let finish: (() => void) | null = null;
 
 /** Indica si hay que reducir el movimiento. */
 function reducedMotion(): boolean {
+  // * Rebootera Desktop se marca como "ligero" para el fondo, pero su ventana sí dibuja bien: la intro se ve entera.
   return (
-    prefs.reduceMotion || isLite() || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    prefs.reduceMotion ||
+    (isLite() && !isDesktop()) ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }
 
@@ -61,7 +65,9 @@ export async function playIntro(ready: Promise<unknown>): Promise<void> {
   if (intro === null) {
     return;
   }
-  if (!prefs.intro) {
+  // * Sin intro cuando la ventana la maneja un programa (pruebas automáticas, auditorías): no hay nadie que la mire y retrasaría
+  // * todas las mediciones.
+  if (!prefs.intro || navigator.webdriver) {
     intro.remove();
     return;
   }

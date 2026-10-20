@@ -1,0 +1,20 @@
+{
+  "name": "rebootera-site",
+  "version": "0.17.0",
+  "private": true,
+  "type": "module",
+  "description": "Rebootera OS landing page (Astro + Tailwind)",
+  "packageManager": "pnpm@12.9.1",
+  "scripts": {
+    "prebuild": "node scripts/copy-assets.mjs",
+    "predev": "node scripts/copy-assets.mjs",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "7.4.1",
+    "tailwindcss": "4.3.3",
+    "@tailwindcss/vite": "4.3.3"
+  }
+}

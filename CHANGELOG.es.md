@@ -3,6 +3,82 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.17.0] - 2026-10-20
+
+### Añadido
+
+- **Unraid** y **Synology DSM** (entradas de página oficial: Unraid se hace con su propio creador de USB y DSM solo se instala en los equipos de Synology, y las fichas lo dicen) y **Proxmox Backup Server**.
+
+### Corregido
+
+- **Particiones que a veces no se podían cambiar.** La búsqueda de drivers dejaba abierta en solo lectura cualquier partición con Windows o carpetas de drivers, y cualquier partición abierta bloqueaba su disco entero («cierra las unidades abiertas»); además `ntfsresize` se niega con una partición en uso. Los montajes de solo lectura de Rebootera ya no bloquean el disco y el agente los cierra antes de medir o cambiar nada. Una partición con etiqueta DRIVERS también se queda abierta para la búsqueda (antes se cerraba enseguida si sus archivos estaban sueltos en la raíz).
+- **El desenfoque del fondo vuelve a funcionar en Rebootera OS** (el filtro va en cada pieza que se mueve, así la GPU lo reutiliza en vez de filtrar toda la pantalla en cada fotograma).
+- **«Este equipo»**: las tarjetas están alineadas en una cuadrícula de 2 por 2 y desaparece la lista larga de «otros dispositivos» (eso es cosa de la página de Drivers); los gráficos van en la tarjeta del procesador. Desaparecen el bloque «Sobre este equipo» de Inicio (duplicado) y el desplegable «Más opciones» de Ajustes: sus ajustes se ven directamente.
+
+### Cambiado
+
+- **Mucho más rápido de abrir, sobre todo desde un USB:** cada página es ahora un archivo que se lee solo al abrirla (la primera pantalla carga unos 140 KB de JavaScript en vez de 220 KB; el resto llega con cada página), el HTML precarga lo que necesita, el texto se envía comprimido y los archivos con huella en el nombre se guardan para siempre. El espacio libre de las particiones montadas se mide en segundo plano y se guarda (las unidades NTFS podían tardar segundos en cada lectura de la página de Discos, que ahora dice «Cargando…» al instante). Lighthouse (perfil móvil, servidor local): rendimiento de 88 a 97, accesibilidad de 96 a 100, buenas prácticas 100. La intro se omite cuando un programa maneja la ventana.
+
+## [0.16.0] - 2026-10-20
+
+### Añadido
+
+- **Más sistemas en el Centro de descargas** (todos comprobados contra sus fuentes reales, con tamaño y SHA-256): **TrueNAS SCALE** (25.10 Goldeye y 25.04 Fangtooth), **XCP-ng** 8.3, **openmediavault**, **VyOS** (rolling), **imágenes de nube de Ubuntu Server** para máquinas virtuales y VPS (24.04 y 22.04), el **Arduino IDE** para Windows, Linux y macOS (Intel y Apple silicon; el programa para programar las placas Arduino, que se guarda en el USB para instalarlo en otro equipo, no es un sistema operativo), y **OPNsense** y **pfSense** como entradas de página oficial (piden elegir un tipo de imagen o rellenar un formulario).
+- Un resolvedor nuevo `manifest` para los proyectos que publican un JSON con la última versión y guardan la imagen y su SHA-256 en la carpeta de esa versión (TrueNAS).
+- La biblioteca también guarda programas (`.exe`, `.AppImage`, `.dmg`) e imágenes de disco `.qcow2`.
+
+### Cambiado
+
+- **Actualizar Rebootera ahora borra la versión anterior** del USB (y cualquier copia «previous» vieja). La copia nueva se comprueba antes de sustituir a la actual, así que un corte a mitad nunca deja el USB sin sistema. La entrada «versión anterior» ya no está en el menú de arranque.
+
+## [0.15.1] - 2026-10-20
+
+### Corregido
+
+- **El tema elegido se guarda y llega a Rebootera OS.** Rebootera Desktop lo perdía en cada arranque (el almacenamiento del navegador pertenece a una dirección local cuyo puerto cambia cada vez) y, sin USB elegido, no se escribía en ningún sitio. Ahora los ajustes también se guardan en un archivo del PC; al elegir un USB de Rebootera mandan los más recientes y pasan al USB, así que el sistema que arranca de él ya se abre con ese tema, su intro y los colores del menú de arranque.
+- **El logo y la animación de la intro siguen el tema en la aplicación de escritorio.** Chromium no repintaba los degradados SVG cuando solo cambiaba la variable del tema; ahora sus colores se fijan en los propios elementos en cada cambio.
+- El tema y el idioma guardados van escritos en la primera página, así que nada parpadea con el tema por defecto antes de la intro.
+
+## [0.15.0] - 2026-10-20
+
+### Añadido
+
+- **Crear USB funciona ahora también en Linux y macOS**, no solo en Windows. En Linux usa el paquete oficial de Ventoy (descargado y verificado) con permisos de administrador pedidos por polkit, y monta el USB nuevo con udisks (o con un montaje normal si no hay udisks). En macOS monta la disposición de Ventoy con `diskutil` (GPT, exFAT «REBOOTERA» y la partición de arranque de 32 MiB escrita desde la imagen del propio Ventoy) y pide la contraseña con el diálogo del sistema; un USB hecho en un Mac arranca equipos con UEFI. Solo se ofrecen discos USB externos que no contienen el sistema. Añadir Rebootera a un USB sin borrarlo sigue siendo solo de Windows.
+- `scripts/test/test-create-linux.sh` crea un USB en un disco virtual con la aplicación real y lo comprueba (instalación real de Ventoy, etiqueta, GPT, partición de arranque, Rebootera OS byte a byte).
+
+### Cambiado
+
+- La interfaz es ahora un solo JavaScript minimizado y una sola hoja de estilos en vez de unos 30 archivos (cada uno, una lectura del USB): de unos 750 KB a unos 450 KB y muchos menos archivos que abrir al arrancar (esbuild).
+- Imagen más pequeña: sin páginas de manual, sin documentación salvo el texto de la licencia de cada paquete y solo con los idiomas del sistema inglés y español.
+
+## [0.14.0] - 2026-10-20
+
+### Añadido
+
+- Pestaña nueva "Este equipo" con todo lo que Rebootera encontró del ordenador (firmware, procesador, memoria, gráficos, discos, red y otros dispositivos con su driver). Sustituye al registro del kernel.
+- Si falta el driver de la tarjeta de red, Ajustes lo dice y ofrece buscarlo en los discos del equipo.
+- La partición llamada «DRIVERS» (o parecido) se lee entera y gana al almacén de drivers de un Windows instalado (que sale como «solo se usa si nada más encaja»); el instalador de Windows lleva por defecto los drivers que casan.
+- «Página oficial» abre el navegador integrado (modo oscuro, sin telemetría); los colores del tema también llegan al menú de Ventoy del USB.
+- Panel táctil de portátiles I2C/HID (los módulos se cargan al arrancar).
+
+### Cambiado
+
+- Borrar o modificar una unidad ya no pide escribir una frase: un botón «Continuar» con el aviso la sustituye (también en los cambios de particiones).
+- El Wi-Fi es el primer bloque de Ajustes; «Fusionar con una vecina» es solo «Fusionar».
+- Los errores de particiones dicen el motivo (Windows hibernado, chkdsk pendiente, unidad en uso, sin espacio, disco con fallos...) con las últimas líneas de la herramienta.
+- Los tamaños de las descargas salen al instante desde una caché en disco y se actualizan en segundo plano sin redibujar las tarjetas.
+- Rendimiento: el fondo animado se queda quieto por defecto y nunca se desenfoca en movimiento en Rebootera OS; más lectura anticipada del USB. El tema y el idioma guardados van escritos en la primera página, así la intro ya los usa.
+- El menú de Ventoy espera 1 s (siempre enseña su menú al menos ese tiempo).
+- Menos lag: la interfaz solo se redibuja cuando cambia algo visible (no por el tiempo encendido ni los contadores de tráfico), el USB se consulta cada 6 s (cada 1,5 s solo mientras corre una descarga), el sistema y los sensores cada 6 s, y WebKit no usa desplazamiento animado ni caché de páginas (ni GPU en modo ligero). Las actualizaciones automáticas, las revisiones periódicas de discos y la espera de red se desactivan al arrancar.
+- Limpieza: unas 70 reglas de CSS sin uso, los historiales de temperatura y tráfico y el código del registro del kernel han desaparecido.
+
+## [0.13.0] - 2026-10-20
+
+### Cambiado
+
+- La web (`site/`) se rehace con Astro y Tailwind: fondo animado de partículas que sigue al tema, ocho tarjetas de tema en vivo (sin desplegable ni iconos en los botones), cuadrícula de funciones, galería de capturas, descargas por plataforma y preguntas frecuentes. `scripts/dev/site.ps1` ahora la compila antes de servirla y el workflow de sincronización publica `site/dist`.
+- `scripts/test/test-all.sh` es rápido por defecto (menos de 3 minutos: las dos ISO en UEFI + Secure Boot, recompilando solo si cambió el código); la batería completa es `--full`. La prueba de la ISO definitiva hacía clic en coordenadas antiguas de la cabecera y no conseguía apagar: arreglado.
+
 ## [0.12.0] - 2026-10-20
 
 ### Cambiado
@@ -12,7 +88,14 @@ Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 - **Un logotipo completamente nuevo:** un amanecer (un sol saliendo del horizonte bajo dos arcos de señal: el "re" de reiniciar y la "era" de un nuevo comienzo) sobre una ficha oscura redondeada, recoloreado por cada tema, e iconos nuevos para la aplicación, el menú de arranque y Rebootera Desktop.
 - **Una intro nueva en lugar de una barra de carga:** amanece: las líneas del horizonte se abren, el sol sube desde detrás, los arcos se trazan y el nombre entra letra a letra; se puede saltar y en equipos modestos es un fundido simple.
 - **Ya no hay menú lateral: la navegación es una cabecera con pestañas.** A la izquierda la marca, en el centro las secciones como pestañas (con su nombre o, en ventanas más estrechas, solo el icono) y a la derecha el USB con su espacio libre, el tema, el idioma y la energía. Todo el ancho es para el contenido y Ajustes es la última pestaña.
-- **El selector de tema dice lo que es** (una paleta y el nombre del tema) y su lista es de una columna con una miniatura de cada tema. Además funciona: antes, al abrirlo se cerraba en el mismo instante, así que elegir un tema (por ejemplo Amoled) no hacía nada.
+- **Temas: todos oscuros, Amoled el primero y el de por defecto.** El tema claro (Marfil) desaparece (quien lo tuviera pasa a Amoled) y entra un tema **Naranja** junto a Obsidiana, Zafiro, Esmeralda, Amatista, Brasa y Grafito.
+- **Los desplegables se animan:** las secciones plegables y la lista de versiones se abren y se cierran con suavidad en lugar de saltar.
+- **"Crear USB" se abre al instante:** la ventana se quedaba vacía varios segundos mientras Windows listaba los discos. Ahora la página sale enseguida ("Buscando pendrives…"), los discos se leen en segundo plano desde que arranca la aplicación y se enseñan en cuanto llegan.
+- **La página web sigue los temas de la aplicación** (los mismos ocho temas oscuros, con selector de tema y el logotipo recoloreado) y se puede ver con `scripts/dev/site.ps1`.
+- **El tema y el idioma viven solo en Ajustes** (tarjetas con vista previa de cada tema y la elección de idioma), no en un desplegable de la cabecera.
+- **La cabecera está arriba del todo** (una hoja de iconos oculta de tamaño cero ocupaba una línea en blanco encima), las tarjetas de descarga miden todas lo mismo con los botones abajo y el botón "Página oficial" es corto.
+- **La intro se ve entera en Rebootera Desktop** (antes se recortaba a un tercio de segundo porque la aplicación cuenta como "ligera" para el fondo).
+- **Más versiones:** Ubuntu 25.10, Debian 11 y todos los sabores live de Debian 12, Fedora 42 y los spins de la 43, Linux Mint 21.3, Alpine 3.22 y 3.21, Rocky y AlmaLinux 8, NixOS 25.11 y 25.05, CentOS Stream 9, FreeBSD 14.4, OpenBSD 7.8 y 7.7, Proxmox VE 8 y Windows Server 2019 y 2016 (evaluación).
 - **Cambiar de idioma ya no lo recarga todo:** la página conserva su sitio y no repite la animación de entrada.
 - **Crear USB enseña su progreso al instante** al volver a esa pestaña, en lugar de esperar a que se vuelvan a leer los discos.
 - **Los botones de Ajustes ya se quedan seleccionados** al pulsarlos (fondo, desenfoque, tamaño, menú).

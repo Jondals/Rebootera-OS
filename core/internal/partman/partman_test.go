@@ -372,3 +372,18 @@ func TestMBRLimit(t *testing.T) {
 		t.Fatalf("quinta primaria: %v", err)
 	}
 }
+
+// * TestMontajesDeRebooteraNoBloquean comprueba que un montaje de solo lectura abierto por Rebootera (búsqueda de drivers) no
+// * bloquea el disco, pero uno del usuario sí.
+func TestMontajesDeRebooteraNoBloquean(t *testing.T) {
+	own := disk(part(1, 1, 10, "ntfs"))
+	own.Partitions[0].MountPoint = "/run/rebootera/media/vda1"
+	if locked := Build(own).Locked; locked != "" {
+		t.Fatalf("un montaje de Rebootera no debe bloquear el disco: %q", locked)
+	}
+	users := disk(part(1, 1, 10, "ntfs"))
+	users.Partitions[0].MountPoint = "/mnt/datos"
+	if Build(users).Locked != ErrMounted.Error() {
+		t.Fatal("un montaje del usuario sí debe bloquear el disco")
+	}
+}

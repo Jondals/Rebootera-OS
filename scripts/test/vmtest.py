@@ -322,13 +322,14 @@ def test_system(vm, checks):
 # * Posiciones de las pestañas de la cabecera en pantallas de 1280 px de ancho (coinciden con topnav.css):
 # * (x, y) del centro de cada una. Ajustes es la última.
 NAV = {
-    "overview": (138, 54),
-    "install": (240, 54),
-    "library": (357, 54),
-    "drivers": (479, 54),
-    "downloads": (597, 54),
-    "storage": (709, 54),
-    "settings": (817, 54),
+    "overview": (176, 33),
+    "install": (277, 33),
+    "library": (394, 33),
+    "drivers": (516, 33),
+    "downloads": (648, 33),
+    "storage": (760, 33),
+    "computer": (866, 33),
+    "settings": (967, 33),
 }
 
 
@@ -359,13 +360,10 @@ def test_ui(vm, checks, poweroff):
         time.sleep(1.5)
         vm.screenshot("%d-%s" % (index, route))
 
-    # * Botones de la barra superior, de derecha a izquierda: energía e idioma (Ajustes está al pie del menú lateral).
-    power_x, lang_x, top_y = width - 39, width - 81, 54
+    # * En la cabecera solo queda el botón de energía (el idioma y el tema están en Ajustes, la última pestaña).
+    power_x, top_y = width - 39, 33
     vm.click(*NAV["overview"])
-    vm.click(lang_x, top_y)
-    time.sleep(1.5)
-    vm.screenshot("6-espanol")
-    vm.click(lang_x, top_y)
+    time.sleep(1)
     vm.click(*NAV["settings"])
     time.sleep(1.5)
     vm.screenshot("7-ajustes")

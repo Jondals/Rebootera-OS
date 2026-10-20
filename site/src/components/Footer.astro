@@ -1,0 +1,39 @@
+---
+// * Pie: marca, enlaces, una línea sobre las bibliotecas de terceros y con qué está hecha la página.
+import L from "./L.astro";
+---
+
+<footer class="relative z-10 border-t border-line bg-bg/60 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-5 py-12 md:flex-row md:items-center">
+    <div class="flex items-center gap-3">
+      <svg width="34" height="34" aria-hidden="true"><use href="#rbt-logo"></use></svg>
+      <div>
+        <div class="font-display text-lg">Rebootera <span class="italic text-accent">OS</span></div>
+        <div class="text-xs text-dim"><L en="Install and fix any system from one USB." es="Instala y arregla cualquier sistema desde un solo USB." /></div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
+      <a class="transition hover:text-accent" href="https://github.com/Jondals/Rebootera-OS-downloads/releases"><L en="All versions" es="Todas las versiones" /></a>
+      <a class="transition hover:text-accent" href="#download"><L en="Download" es="Descargar" /></a>
+      <a class="transition hover:text-accent" href="#faq"><L en="Questions" es="Preguntas" /></a>
+    </div>
+  </div>
+  <div class="mx-auto flex max-w-6xl flex-col gap-2 px-5 pb-10 text-xs text-dim md:flex-row md:items-center md:justify-between">
+    <p>
+      <L
+        en="Built on Debian GNU/Linux. The USB uses Ventoy (GPLv3) to boot several systems. Logos belong to their projects."
+        es="Construido sobre Debian GNU/Linux. El USB usa Ventoy (GPLv3) para arrancar varios sistemas. Los logotipos son de sus proyectos."
+      />
+    </p>
+    <p class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+      <L en="Made with" es="Hecha con" />
+      <a class="tech inline-flex items-center gap-1.5 font-medium" style="--brand: #ff5d01" href="https://astro.build" target="_blank" rel="noopener noreferrer">
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.358 20.162c-1.186-1.07-1.532-3.316-1.038-4.944.856 1.026 2.043 1.352 3.272 1.535 1.897.283 3.76.177 5.522-.678.202-.098.388-.229.608-.36.166.473.209.95.151 1.437-.14 1.185-.738 2.1-1.688 2.794-.38.277-.782.525-1.175.787-1.205.804-1.531 1.747-1.078 3.119l.044.148a3.158 3.158 0 0 1-1.407-1.188 3.31 3.31 0 0 1-.544-1.815c-.004-.32-.004-.642-.048-.958-.106-.769-.472-1.113-1.161-1.133-.707-.02-1.267.411-1.415 1.09-.012.053-.028.104-.045.165h.002zm-5.961-4.445s3.24-1.575 6.49-1.575l2.451-7.565c.092-.366.36-.614.662-.614.302 0 .57.248.662.614l2.45 7.565c3.85 0 6.491 1.575 6.491 1.575L16.088.727C15.93.285 15.663 0 15.303 0H8.697c-.36 0-.615.285-.784.727l-5.516 14.99z" fill="currentColor" /></svg>Astro
+      </a>
+      <L en="and" es="y" />
+      <a class="tech inline-flex items-center gap-1.5 font-medium" style="--brand: #06b6d4" href="https://tailwindcss.com" target="_blank" rel="noopener noreferrer">
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.001,4.8c-3.2,0-5.2,1.6-6,4.8c1.2-1.6,2.6-2.2,4.2-1.8c0.913,0.228,1.565,0.89,2.288,1.624 C13.666,10.618,15.027,12,18.001,12c3.2,0,5.2-1.6,6-4.8c-1.2,1.6-2.6,2.2-4.2,1.8c-0.913-0.228-1.565-0.89-2.288-1.624 C16.337,6.182,14.976,4.8,12.001,4.8z M6.001,12c-3.2,0-5.2,1.6-6,4.8c1.2-1.6,2.6-2.2,4.2-1.8c0.913,0.228,1.565,0.89,2.288,1.624 c1.177,1.194,2.538,2.576,5.512,2.576c3.2,0,5.2-1.6,6-4.8c-1.2,1.6-2.6,2.2-4.2,1.8c-0.913-0.228-1.565-0.89-2.288-1.624 C10.337,13.382,8.976,12,6.001,12z" fill="currentColor" /></svg>Tailwind CSS
+      </a>
+    </p>
+  </div>
+</footer>

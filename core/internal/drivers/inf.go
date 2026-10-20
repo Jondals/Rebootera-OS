@@ -38,6 +38,9 @@ type Package struct {
 	SourceID string  `json:"sourceId"`
 	Root     string  `json:"-"`
 	Models   []Model `json:"-"`
+	// Rank es la prioridad del origen: cuanto menor, antes se usa (el USB, luego las carpetas de fábrica y, al
+	// final, el almacén de un Windows instalado, que trae de todo y casi nunca es lo que se busca).
+	Rank int `json:"-"`
 	// ids es el índice de Hardware ID (en mayúsculas) del paquete.
 	ids map[string]string
 }

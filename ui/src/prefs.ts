@@ -5,27 +5,27 @@
 import { getJSON, postJSON } from "./api.js";
 import { setLanguage, type Language } from "./i18n.js";
 
-/** Temas visuales: siete oscuros (obsidiana, zafiro, esmeralda, amatista, brasa, grafito y amoled) y marfil (claro). */
+/** Temas visuales, todos oscuros: amoled (por defecto), obsidiana, zafiro, esmeralda, amatista, brasa, naranja y grafito. */
 export type Theme =
+  | "amoled"
   | "obsidian"
   | "sapphire"
   | "emerald"
   | "amethyst"
   | "ember"
-  | "graphite"
-  | "amoled"
-  | "ivory";
+  | "orange"
+  | "graphite";
 
 /** Todos los temas, en el orden en que se ofrecen. */
 export const THEMES: Theme[] = [
+  "amoled",
   "obsidian",
   "sapphire",
   "emerald",
   "amethyst",
   "ember",
+  "orange",
   "graphite",
-  "amoled",
-  "ivory",
 ];
 
 /** Preferencias disponibles. */
@@ -99,7 +99,7 @@ export function forceLite(): void {
 
 export const prefs: Prefs = {
   language: "en",
-  theme: "obsidian",
+  theme: "amoled",
   background: "auto",
   scale: 100,
   blur: "soft",
@@ -140,6 +140,18 @@ export function loadPrefs(): void {
   } catch {
     // * Sin almacenamiento disponible se usan los valores por defecto.
   }
+  // * Si core escribió en la página el tema y el idioma guardados (en el USB o en el PC), mandan sobre el almacenamiento
+  // * del navegador: así la intro y el primer fotograma ya salen con el tema elegido.
+  const page = document.documentElement.dataset;
+  if (page.saved === "1") {
+    if (THEMES.includes(page.theme as Theme)) {
+      prefs.theme = page.theme as Theme;
+    }
+    const lang = document.documentElement.lang;
+    if (lang === "en" || lang === "es") {
+      prefs.language = lang;
+    }
+  }
   applyPrefs();
 }
 
@@ -163,7 +175,7 @@ export async function loadVaultPrefs(): Promise<boolean> {
     }
     Object.assign(prefs, data.settings);
     if (!THEMES.includes(prefs.theme)) {
-      prefs.theme = "obsidian";
+      prefs.theme = "amoled";
     }
     applyPrefs();
     return true;
@@ -199,20 +211,60 @@ function backgroundState(): "on" | "still" | "off" {
   if ((isLite() && !keepMotion) || isModest()) {
     return "still";
   }
-  return "on";
+  // * Rebootera OS corre desde un USB: cada fotograma del fondo compite con la lectura del disco y la propia interfaz,
+  // * así que en el modo automático el fondo se queda quieto (se puede forzar a "siempre" en Ajustes).
+  return keepMotion ? "on" : "still";
 }
+
+/** Propiedades del logotipo que dependen del tema (colores de los degradados y de los trazos). */
+const LOGO_PROPERTIES = ["stop-color", "stop-opacity", "stroke"];
+
+/**
+ * Pinta el logotipo (la insignia, la de la cabecera y la de la intro) con los colores del tema. Sus colores salen de
+ * variables de CSS, pero Chromium (el motor de Rebootera Desktop) no vuelve a pintar un degradado SVG cuando solo cambia
+ * una variable heredada, así que se quedaba con los colores del tema anterior. Se lee el color ya calculado y se fija
+ * en el propio elemento, lo que sí obliga a repintarlo.
+ */
+function syncLogoColors(): void {
+  const parts = document.querySelectorAll<SVGElement>(
+    ".lg-t1, .lg-t2, .lg-g1, .lg-g2, .lg-s1, .lg-s2, .lg-edge, .lg-ray",
+  );
+  for (const part of parts) {
+    for (const property of LOGO_PROPERTIES) {
+      part.style.removeProperty(property);
+    }
+  }
+  for (const part of parts) {
+    const computed = getComputedStyle(part);
+    for (const property of LOGO_PROPERTIES) {
+      const value = computed.getPropertyValue(property);
+      if (value !== "") {
+        part.style.setProperty(property, value);
+      }
+    }
+  }
+}
+
+// * Cualquier cambio del tema (también los que no pasan por applyPrefs) vuelve a pintar el logotipo.
+new MutationObserver(syncLogoColors).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ["data-theme"],
+});
 
 /** Aplica idioma, tema, fondo, tamaño y movimiento al documento. */
 export function applyPrefs(): void {
   setLanguage(prefs.language);
   const root = document.documentElement;
-  root.dataset.theme = THEMES.includes(prefs.theme) ? prefs.theme : "obsidian";
+  root.dataset.theme = THEMES.includes(prefs.theme) ? prefs.theme : "amoled";
   root.dataset.gfx = isLite() ? "lite" : "full";
   root.dataset.motion = prefs.reduceMotion || (isLite() && !keepMotion) ? "reduced" : "full";
   root.dataset.bg = backgroundState();
   // * El desenfoque del fondo cuesta en equipos modestos: allí no se aplica nunca.
+  // * El desenfoque va en cada pieza del fondo (ver topnav.css) y con GPU cuesta poco aunque se mueva; sin GPU real (modo
+  // * ligero) se apaga porque ahí cada fotograma se filtra por software.
   root.dataset.blur = isLite() && !keepMotion ? "off" : prefs.blur;
   if (document.body) {
     document.body.style.zoom = String(prefs.scale / 100);
   }
+  syncLogoColors();
 }

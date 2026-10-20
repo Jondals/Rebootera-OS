@@ -1,0 +1,10 @@
+---
+// * Texto en los dos idiomas: dibuja las dos versiones y el CSS enseña solo la del idioma activo (data-lang).
+interface Props {
+  en: string;
+  es: string;
+}
+const { en, es } = Astro.props;
+---
+
+<span class="en" set:html={en}></span><span class="es" set:html={es}></span>

@@ -4,11 +4,19 @@
 // ! La contraseña solo vive en el campo del formulario y en la petición local
 // ! a Core; no se guarda en la interfaz ni en el almacenamiento del navegador.
 
-import { getJSON, postJSON, type WifiNetwork, type WifiStatus } from "../api.js";
+import {
+  getJSON,
+  postJSON,
+  type Device,
+  type DriverPlan,
+  type WifiNetwork,
+  type WifiStatus,
+} from "../api.js";
 import { badge, button, errorBox, panel } from "../components.js";
 import { el, icon } from "../dom.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
+import { snapshot } from "../state.js";
 
 /** Cada cuántos milisegundos se vuelve a pedir el estado como mucho. */
 const STATUS_EVERY_MS = 6000;
@@ -22,6 +30,62 @@ let selected: WifiNetwork | null = null;
 let hidden = false;
 let failure: unknown = null;
 let lastStatusAt = 0;
+let searching = false;
+/** Resultado de buscar drivers en los discos del equipo para los adaptadores de red sin driver (null: sin buscar). */
+let searchResult: string | null = null;
+
+/** Adaptadores de red o Wi-Fi que Linux ha detectado pero para los que no hay driver cargado. */
+function adaptersWithoutDriver(): Device[] {
+  return (snapshot.devices ?? []).filter(function noDriver(device) {
+    return (
+      (device.category === "network" || device.category === "wireless") && device.driver === ""
+    );
+  });
+}
+
+/** Busca drivers en los discos del equipo y cuenta si alguno sirve para los adaptadores sin driver. */
+async function searchDisks(): Promise<void> {
+  searching = true;
+  searchResult = null;
+  draw();
+  try {
+    await postJSON("/api/drivers/scan", {});
+    const plan = await getJSON<DriverPlan>("/api/drivers/plan");
+    const missing = adaptersWithoutDriver().map(function address(device) {
+      return device.address;
+    });
+    const found = plan.matches.filter(function forMissing(match) {
+      return missing.includes(match.address);
+    });
+    searchResult =
+      found.length > 0
+        ? t("wifi.searchFound", { name: found[0].name || found[0].address })
+        : t("wifi.searchNone");
+  } catch (error) {
+    failure = error;
+  }
+  searching = false;
+  draw();
+}
+
+/** Aviso de que falta el driver de un adaptador de red, con el botón para buscarlo en los discos. */
+function missingDriverNotice(): HTMLElement | null {
+  const missing = adaptersWithoutDriver();
+  if (missing.length === 0) {
+    return null;
+  }
+  return el("div", { class: "error-box wifi-driver" }, [
+    icon(icons.alert),
+    el("div", {}, [
+      el("strong", {}, [t("wifi.noDriver", { name: missing[0].name })]),
+      el("p", { class: "muted" }, [t("wifi.noDriverHint")]),
+      searchResult !== null ? el("p", {}, [searchResult]) : null,
+      button(searching ? t("wifi.searching") : t("wifi.searchDisks"), searchDisks, {
+        iconPaths: icons.disk,
+      }),
+    ]),
+  ]);
+}
 
 /** Nombre traducido del tipo de seguridad de una red. */
 function securityLabel(security: string): string {
@@ -197,7 +261,7 @@ function draw(): void {
       return;
     }
   }
-  const children: (Node | null)[] = [];
+  const children: (Node | null)[] = [missingDriverNotice()];
   if (status === null) {
     children.push(el("p", { class: "muted" }, [t("common.loading")]));
   } else if (!status.adapter) {

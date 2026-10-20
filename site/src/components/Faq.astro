@@ -1,0 +1,73 @@
+---
+// * Preguntas frecuentes: desplegables nativos (<details>) con un pequeño fundido al abrirse.
+import L from "./L.astro";
+import Icon from "./Icon.astro";
+
+const questions = [
+  {
+    q: { en: "Will it erase my USB drive?", es: "¿Me va a borrar el USB?" },
+    a: {
+      en: "Only if you decide so. If the drive already has your files (made with Rufus, for example), Rebootera can live next to them and nothing is erased. Updating a Rebootera USB doesn't erase anything either. And anything that does erase asks you to type a confirmation first.",
+      es: "Solo si tú lo decides. Si la unidad ya tiene tus archivos (por ejemplo, la hiciste con Rufus), Rebootera convive con ellos y no se borra nada. Actualizar un USB de Rebootera tampoco borra nada. Y todo lo que sí borra te pide antes que escribas una confirmación.",
+    },
+  },
+  {
+    q: { en: "Which systems can I download?", es: "¿Qué sistemas puedo descargar?" },
+    a: {
+      en: "Windows evaluation editions (Microsoft only hands out Home and Pro from its own page), Ubuntu and its flavours, Debian, Fedora, Arch, Mint, Kali, Alpine, NixOS, Proxmox, the BSDs and rescue tools, plus images for boards like Raspberry Pi OS, OpenWrt and Home Assistant OS. Got a link to something else? You can paste it too.",
+      es: "Ediciones de evaluación de Windows (Microsoft solo da Home y Pro desde su página), Ubuntu y sus sabores, Debian, Fedora, Arch, Mint, Kali, Alpine, NixOS, Proxmox, los BSD y herramientas de rescate, además de imágenes para placas como Raspberry Pi OS, OpenWrt y Home Assistant OS. ¿Tienes el enlace de otra cosa? También lo puedes pegar.",
+    },
+  },
+  {
+    q: { en: "Does it work on Linux and macOS?", es: "¿Funciona en Linux y macOS?" },
+    a: {
+      en: "Yes. The desktop app runs on Windows, Linux and macOS: it downloads images, manages your library and makes the USB. On Linux it asks for administrator permission when it needs it, and the USB made on macOS starts computers with UEFI. Rebootera OS itself boots from the USB on any PC.",
+      es: "Sí. La aplicación de escritorio funciona en Windows, Linux y macOS: descarga imágenes, gestiona tu biblioteca y crea el USB. En Linux pide permisos de administrador cuando hace falta, y el USB creado en macOS arranca equipos con UEFI. El propio Rebootera OS arranca desde el USB en cualquier PC.",
+    },
+  },
+  {
+    q: { en: "Does it work with Secure Boot?", es: "¿Funciona con Secure Boot?" },
+    a: {
+      en: "Yes, through Debian's signed shim. The first time on each computer you enroll the boot menu key (a blue screen walks you through it). The catch: after that, that computer will also start images without a verified signature, so only do it on computers you trust.",
+      es: "Sí, con el shim firmado de Debian. La primera vez en cada equipo tienes que inscribir la clave del menú de arranque (una pantalla azul te guía). La pega: después, ese equipo también arrancará imágenes sin firma comprobada, así que hazlo solo en equipos de confianza.",
+    },
+  },
+  {
+    q: { en: "Where do the drivers come from?", es: "¿De dónde salen los drivers?" },
+    a: {
+      en: "You don't have to add them. Every time it starts, Rebootera looks in your USB, in driver folders on the computer's partitions (the ones manufacturers leave) and in an installed Windows, always read-only. The Drivers page tells you where each package came from.",
+      es: "No tienes que añadirlos tú. Cada vez que arranca, Rebootera mira en tu USB, en las carpetas de drivers de las particiones del equipo (las que dejan los fabricantes) y en un Windows instalado, siempre en solo lectura. La página de Drivers te cuenta de dónde sale cada paquete.",
+    },
+  },
+  {
+    q: { en: "Has it been tested on real computers?", es: "¿Está probado en equipos reales?" },
+    a: {
+      en: "Mostly in virtual machines, so a real computer can behave differently.",
+      es: "Sobre todo en máquinas virtuales, así que un equipo real puede comportarse distinto.",
+    },
+  },
+];
+
+---
+
+<section id="faq" class="relative z-10 mx-auto max-w-3xl px-5 py-24">
+  <div class="reveal mb-10">
+    <p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent"><L en="Questions" es="Preguntas" /></p>
+    <h2 class="font-display text-4xl tracking-tight md:text-5xl"><L en="The usual questions" es="Las dudas de siempre" /></h2>
+  </div>
+  <div class="space-y-3">
+    {
+      questions.map(function item(entry) {
+        return (
+          <details class="faq reveal group rounded-xl border border-line bg-panel/60 backdrop-blur transition open:border-line2">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 font-medium [&::-webkit-details-marker]:hidden">
+              <span><L en={entry.q.en} es={entry.q.es} /></span>
+              <Icon name="chevron" size={20} class="chev shrink-0 text-accent transition-transform" />
+            </summary>
+            <div class="px-6 pb-6 text-[15px] leading-relaxed text-muted"><L en={entry.a.en} es={entry.a.es} /></div>
+          </details>
+        );
+      })
+    }
+  </div>
+</section>

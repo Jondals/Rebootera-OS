@@ -1,14 +1,6 @@
 /* * Marco de la aplicación: menú lateral, barra superior y área principal.
    * Por debajo de 1180 px el menú lateral se reduce a iconos. */
 
-/* Barra superior */
-
-.lang-code {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-}
-
 main {
   flex: 1;
   overflow-y: auto;

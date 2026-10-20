@@ -67,9 +67,9 @@ func (c *kitCopier) visit(path string, entry fs.DirEntry, err error) error {
 // Progress recibe el avance de una copia larga (0 a 1).
 type Progress func(fraction float64)
 
-// * InstallSystem copia la ISO de Rebootera OS al USB conservando la versión
-// * anterior como rebootera-os.previous.iso (entrada de rescate en el menú).
-// ! La copia se escribe primero como .new y se comprueba su hash antes de
+// * InstallSystem copia la ISO de Rebootera OS al USB y borra la versión anterior (no se guarda copia: un USB
+// * pequeño no debe llenarse de versiones viejas).
+// ! La copia se escribe primero como .new y se comprueba su tamaño y su hash antes de
 // ! sustituir nada: un corte a mitad no deja el USB sin sistema.
 func InstallSystem(root, isoPath string, progress Progress) error {
 	if !strings.EqualFold(filepath.Ext(isoPath), ".iso") {
@@ -102,7 +102,7 @@ func InstallSystem(root, isoPath string, progress Progress) error {
 }
 
 // * InstallLatest descarga la última Rebootera OS publicada directamente en el USB (sin pasar por el disco
-// * del PC) y la deja como versión actual, conservando la anterior. Si el USB ya tiene esa versión, no hace nada.
+// * del PC) y la deja como versión actual, borrando la anterior. Si el USB ya tiene esa versión, no hace nada.
 // * La descarga se reanuda si se corta y solo se da por buena si su SHA-256 coincide con el publicado.
 func InstallLatest(root string, progress Progress) error {
 	dir := filepath.Join(root, "rebootera")
@@ -117,25 +117,23 @@ func InstallLatest(root string, progress Progress) error {
 	return promoteSystem(dir, release.ISOName, hash)
 }
 
-// * promoteSystem convierte la copia preparada (.new) en la versión actual y guarda la anterior.
+// * promoteSystem convierte la copia preparada (.new) en la versión actual y borra la anterior, incluida la copia
+// * "previous" que dejaban las versiones 0.14 y anteriores.
 func promoteSystem(dir, versionName, hash string) error {
 	current := filepath.Join(dir, "rebootera-os.iso")
-	previous := filepath.Join(dir, "rebootera-os.previous.iso")
 	staged := current + ".new"
 	if have, err := os.ReadFile(current + ".sha256"); err == nil && strings.HasPrefix(string(have), hash) {
 		// * Ya es la versión instalada.
 		os.Remove(staged)
+		os.Remove(filepath.Join(dir, "rebootera-os.previous.iso"))
 		return nil
 	}
-	if _, err := os.Stat(current); err == nil {
-		os.Remove(previous)
-		if err := os.Rename(current, previous); err != nil {
-			return err
-		}
-	}
+	// * La nueva ocupa el sitio de la actual de una sola vez (renombrar sobre un archivo existente sustituye): no hay un
+	// * momento sin sistema. Después se libera el espacio de la copia anterior, si la hubiera.
 	if err := os.Rename(staged, current); err != nil {
 		return err
 	}
+	os.Remove(filepath.Join(dir, "rebootera-os.previous.iso"))
 	os.WriteFile(current+".sha256", []byte(hash+"  rebootera-os.iso\n"), 0o644)
 	return os.WriteFile(filepath.Join(dir, "VERSION"), []byte(versionName+"\n"), 0o644)
 }

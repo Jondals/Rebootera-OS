@@ -8,7 +8,7 @@ import { el, icon } from "../dom.js";
 import { getLanguage, t } from "../i18n.js";
 import { icons } from "../icons.js";
 import { navigate } from "../router.js";
-import { presetSearch } from "./downloads.js";
+import { presetSearch } from "./search.js";
 
 /** Una cosa que se puede hacer desde la portada. */
 export interface LauncherAction {
@@ -73,7 +73,7 @@ export function launcher(options: LauncherOptions): HTMLElement {
   let query = "";
   let selected = 0;
   let rows: Row[] = [];
-  const list = el("div", { class: "cmd-list", role: "listbox" });
+  const list = el("div", { class: "cmd-list", role: "listbox", "aria-label": options.title });
   const input = el("input", {
     class: "cmd-input",
     type: "text",

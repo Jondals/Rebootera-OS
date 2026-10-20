@@ -103,6 +103,19 @@ func loadDisk(name string) (partman.Layout, storage.Disk, error) {
 	return partman.Layout{}, storage.Disk{}, fmt.Errorf("no existe el disco %s", name)
 }
 
+// * closeMedia cierra los montajes de solo lectura que abrió Rebootera en los discos que se van a medir o cambiar (la
+// * búsqueda de drivers deja abierta cualquier partición con Windows o carpetas de drivers): ntfsresize, resize2fs y sfdisk
+// * se niegan a trabajar con una partición en uso. Los montajes de otro tipo (los del usuario) no se tocan: bloquean el disco.
+func closeMedia(disk storage.Disk) {
+	for _, part := range disk.Partitions {
+		if strings.HasPrefix(part.MountPoint, mediaRoot+"/") {
+			if err := unmountMedia("/dev/" + part.Name); err != nil {
+				log.Printf("particiones: no se pudo cerrar %s: %v", part.Name, err)
+			}
+		}
+	}
+}
+
 // * partInfo devuelve el tamaño mínimo (bytes) al que se puede encoger el sistema de archivos de una partición.
 func partInfo(diskName string, number int) ([]string, error) {
 	layout, disk, err := loadDisk(diskName)
@@ -112,6 +125,7 @@ func partInfo(diskName string, number int) ([]string, error) {
 	if layout.Locked != "" {
 		return nil, errors.New(layout.Locked)
 	}
+	closeMedia(disk)
 	for _, part := range disk.Partitions {
 		if part.Number != number {
 			continue
@@ -200,10 +214,11 @@ func partApply(op partman.Op, confirm string) ([]string, error) {
 	if confirm != "CHANGE "+op.Disk {
 		return nil, errors.New("falta la confirmación escrita del disco que se va a modificar")
 	}
-	layout, _, err := loadDisk(op.Disk)
+	layout, disk, err := loadDisk(op.Disk)
 	if err != nil {
 		return nil, err
 	}
+	closeMedia(disk)
 	// * Los mínimos solo hacen falta si algo se encoge.
 	info := partman.Info{}
 	for _, number := range minimumsNeeded(op) {
@@ -322,9 +337,49 @@ func (r *partRun) tool(stdin string, name string, args ...string) error {
 	}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("%s: %v: %s", name, err, lastLine(out))
+		return fmt.Errorf("%s", explainTool(name, out, err))
 	}
 	return nil
+}
+
+// * explainTool convierte el fallo de una herramienta de particiones en una frase útil: primero la causa que el
+// * usuario puede arreglar (si se reconoce) y, entre paréntesis, lo último que dijo la herramienta.
+func explainTool(name string, out []byte, err error) string {
+	detail := lastLines(out, 3)
+	text := strings.ToLower(string(out))
+	cause := ntfsHint(out)
+	switch {
+	case cause != "":
+	case strings.Contains(text, "device or resource busy") || strings.Contains(text, "is mounted") || strings.Contains(text, "in use"):
+		cause = "La partición está en uso (montada o abierta por otro programa). Cierra las unidades abiertas y vuelve a intentarlo."
+	case strings.Contains(text, "no space left") || strings.Contains(text, "not enough space") || strings.Contains(text, "too small"):
+		cause = "No hay espacio suficiente para ese cambio: libera archivos de la partición o elige un tamaño mayor."
+	case strings.Contains(text, "read-only") || strings.Contains(text, "write-protected"):
+		cause = "El disco está protegido contra escritura."
+	case strings.Contains(text, "input/output error") || strings.Contains(text, "i/o error") || strings.Contains(text, "bad sector"):
+		cause = "El disco da errores de lectura o escritura: puede estar fallando. Copia tus datos antes de seguir."
+	case name == "e2fsck" || strings.Contains(text, "run e2fsck") || strings.Contains(text, "filesystem has errors") || strings.Contains(text, "unclean"):
+		cause = "El sistema de archivos tiene errores y no se puede tocar hasta repararlo (desde Linux con «e2fsck -f» o desde Windows con «chkdsk /f»)."
+	case strings.Contains(text, "permission denied") || strings.Contains(text, "operation not permitted"):
+		cause = "El sistema no dejó escribir en el disco (permiso denegado)."
+	default:
+		cause = "La herramienta de particiones se detuvo sin explicar el motivo."
+	}
+	return fmt.Sprintf("%s (%s: %v: %s)", cause, name, err, detail)
+}
+
+// * lastLines devuelve las últimas n líneas no vacías de la salida de una herramienta, en una sola línea.
+func lastLines(out []byte, n int) string {
+	var kept []string
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			kept = append(kept, line)
+		}
+	}
+	if len(kept) > n {
+		kept = kept[len(kept)-n:]
+	}
+	return strings.Join(kept, " | ")
 }
 
 // * check revisa el sistema de archivos antes de tocarlo: no se cambia de tamaño uno dañado.
@@ -341,7 +396,7 @@ func (r *partRun) check(number int) error {
 		out, err := cmd.CombinedOutput()
 		var exit *exec.ExitError
 		if errors.As(err, &exit) && exit.ExitCode() > 1 {
-			return fmt.Errorf("e2fsck: %s", lastLine(out))
+			return fmt.Errorf("%s", explainTool("e2fsck", out, err))
 		}
 		return nil
 	case "ntfs":

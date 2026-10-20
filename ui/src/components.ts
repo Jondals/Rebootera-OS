@@ -98,6 +98,48 @@ export function button(
 }
 
 /** Tarjeta grande y pulsable: icono, título y una frase. Es la pieza de las portadas. */
+/** Indica si hay que evitar las animaciones (ajuste de movimiento reducido). */
+function motionReduced(): boolean {
+  return document.documentElement.dataset.motion === "reduced";
+}
+
+/**
+ * Abre o cierra una sección plegable con una animación corta (la altura crece o se encoge y el contenido se
+ * funde). El `<details>` nativo salta de golpe, así que se anima a mano; el estado queda en data-state para que la
+ * flecha gire al empezar, no al terminar.
+ */
+function animateMore(node: HTMLDetailsElement, bodyNode: HTMLElement): void {
+  if (node.dataset.busy === "1") {
+    return;
+  }
+  const opening = !node.open;
+  node.dataset.state = opening ? "open" : "closed";
+  if (motionReduced()) {
+    node.open = opening;
+    return;
+  }
+  node.dataset.busy = "1";
+  if (opening) {
+    node.open = true;
+  }
+  const full = bodyNode.scrollHeight;
+  const from = opening ? 0 : bodyNode.offsetHeight;
+  const to = opening ? full : 0;
+  bodyNode.style.overflow = "hidden";
+  const animation = bodyNode.animate(
+    [
+      { height: from + "px", opacity: opening ? 0 : 1 },
+      { height: to + "px", opacity: opening ? 1 : 0 },
+    ],
+    { duration: opening ? 240 : 190, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+  );
+  animation.onfinish = function finish(): void {
+    bodyNode.style.overflow = "";
+    node.open = opening;
+    delete node.dataset.busy;
+  };
+}
+
 /** Secciones plegables abiertas por el usuario (sobreviven a que la página se redibuje). */
 const openSections = new Set<string>();
 
@@ -106,12 +148,20 @@ const openSections = new Set<string>();
  * aunque la página se vuelva a dibujar.
  */
 export function more(summary: string, body: (Node | null)[], key = ""): HTMLElement {
-  const node = el("details", { class: "more" }, [
-    el("summary", {}, [el("span", {}, [summary]), icon(icons.chevronRight, "icon more-arrow")]),
-    el("div", { class: "more-body" }, body),
+  const bodyNode = el("div", { class: "more-body" }, body);
+  const head = el("summary", {}, [
+    el("span", {}, [summary]),
+    icon(icons.chevronRight, "icon more-arrow"),
   ]);
+  const node = el("details", { class: "more" }, [head, bodyNode]);
+  node.dataset.state = "closed";
+  head.addEventListener("click", function toggle(event: MouseEvent): void {
+    event.preventDefault();
+    animateMore(node, bodyNode);
+  });
   if (key !== "") {
     node.open = openSections.has(key);
+    node.dataset.state = node.open ? "open" : "closed";
     node.addEventListener("toggle", function remember() {
       if (node.open) {
         openSections.add(key);

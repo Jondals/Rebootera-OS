@@ -253,7 +253,7 @@ func readPartition(diskBase, name string, mounts []mount) Partition {
 		}
 	}
 	if part.MountPoint != "" && part.MountPoint != liveMediumMount {
-		part.UsedBytes, part.FreeBytes = FSUsage(part.MountPoint)
+		part.UsedBytes, part.FreeBytes = cachedUsage(part.MountPoint)
 	}
 	return part
 }

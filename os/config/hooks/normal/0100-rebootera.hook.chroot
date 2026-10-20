@@ -45,8 +45,21 @@ plymouth-set-default-theme rebootera
 systemctl mask plymouth-poweroff.service plymouth-reboot.service plymouth-halt.service plymouth-kexec.service
 
 # * Servicios: arranque directo a la interfaz y hora sincronizada por NTP.
-systemctl enable rebootera-agent.service rebootera-vault.service rebootera-core.service rebootera-ui.service NetworkManager.service systemd-timesyncd.service
+systemctl enable rebootera-input.service rebootera-agent.service rebootera-vault.service rebootera-core.service rebootera-ui.service NetworkManager.service systemd-timesyncd.service
 systemctl set-default graphical.target
+
+# * Imagen más pequeña (se lee desde un USB, y cada megabyte menos es tiempo de arranque menos): sin páginas de manual
+# * ni de info, sin documentación (se conserva el "copyright" de cada paquete, que exigen sus licencias) y sin los idiomas
+# * del sistema que no se usan (se queda inglés y español).
+rm -rf /usr/share/man/* /usr/share/info/* /usr/share/lintian /usr/share/groff
+find /usr/share/doc -type l -delete
+find /usr/share/doc -type f ! -name copyright -delete
+find /usr/share/doc -type d -empty -delete
+find /usr/share/locale -mindepth 1 -maxdepth 1 ! -name 'en*' ! -name 'es*' ! -name locale.alias -exec rm -rf {} +
+
+# * Arranque más ligero desde un USB: fuera lo que no sirve en un sistema que vive en memoria y se apaga entero (las
+# * actualizaciones automáticas, las revisiones periódicas de discos y la espera de red, que retrasaban la interfaz).
+systemctl mask apt-daily.timer apt-daily-upgrade.timer apt-daily.service apt-daily-upgrade.service man-db.timer e2scrub_all.timer e2scrub_reap.service fstrim.timer NetworkManager-wait-online.service systemd-networkd-wait-online.service 2>/dev/null || true
 
 # * Imagen de pruebas: consola root sin contraseña en el puerto serie, solo si
 # * scripts/build/build.sh dejó la marca de depuración.

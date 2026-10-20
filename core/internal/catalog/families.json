@@ -394,5 +394,125 @@
       "en": "The home automation system as a ready-to-write image for Raspberry Pi, Green and PCs.",
       "es": "El sistema de domótica como imagen lista para grabar en Raspberry Pi, Green y PC."
     }
+  },
+  {
+    "id": "truenas",
+    "name": "TrueNAS SCALE",
+    "vendor": "TrueNAS",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://www.truenas.com",
+    "summary": {
+      "en": "Storage (NAS) system with ZFS.",
+      "es": "Sistema de almacenamiento (NAS) con ZFS."
+    }
+  },
+  {
+    "id": "xcp-ng",
+    "name": "XCP-ng",
+    "vendor": "Vates",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://xcp-ng.org",
+    "summary": {
+      "en": "Open-source hypervisor for virtual machines.",
+      "es": "Hipervisor de código abierto para máquinas virtuales."
+    }
+  },
+  {
+    "id": "openmediavault",
+    "name": "openmediavault",
+    "vendor": "openmediavault",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://www.openmediavault.org",
+    "summary": {
+      "en": "Simple NAS based on Debian.",
+      "es": "NAS sencillo basado en Debian."
+    }
+  },
+  {
+    "id": "vyos",
+    "name": "VyOS",
+    "vendor": "VyOS",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://vyos.io",
+    "summary": {
+      "en": "Open-source router and firewall.",
+      "es": "Router y cortafuegos de código abierto."
+    }
+  },
+  {
+    "id": "opnsense",
+    "name": "OPNsense",
+    "vendor": "Deciso",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://opnsense.org",
+    "summary": {
+      "en": "Firewall and router with a web page.",
+      "es": "Cortafuegos y router con una web."
+    }
+  },
+  {
+    "id": "pfsense",
+    "name": "pfSense CE",
+    "vendor": "Netgate",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://www.pfsense.org",
+    "summary": {
+      "en": "Firewall and router based on FreeBSD.",
+      "es": "Cortafuegos y router basado en FreeBSD."
+    }
+  },
+  {
+    "id": "cloud-images",
+    "name": "Ubuntu cloud images",
+    "vendor": "Canonical",
+    "group": "servers",
+    "icon": "ubuntu",
+    "homepage": "https://cloud-images.ubuntu.com",
+    "summary": {
+      "en": "Ubuntu Server ready for virtual machines and VPS.",
+      "es": "Ubuntu Server listo para máquinas virtuales y VPS."
+    }
+  },
+  {
+    "id": "arduino",
+    "name": "Arduino IDE",
+    "vendor": "Arduino",
+    "group": "boards",
+    "icon": "generic",
+    "homepage": "https://www.arduino.cc",
+    "summary": {
+      "en": "The program to code Arduino boards.",
+      "es": "El programa para programar placas Arduino."
+    }
+  },
+  {
+    "id": "unraid",
+    "name": "Unraid",
+    "vendor": "Lime Technology",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://unraid.net",
+    "summary": {
+      "en": "NAS and home-server system with Docker.",
+      "es": "Sistema de NAS y servidor doméstico con Docker."
+    }
+  },
+  {
+    "id": "synology",
+    "name": "Synology DSM",
+    "vendor": "Synology",
+    "group": "servers",
+    "icon": "server",
+    "homepage": "https://www.synology.com",
+    "summary": {
+      "en": "The operating system of Synology NAS devices.",
+      "es": "El sistema operativo de los NAS de Synology."
+    }
   }
 ]

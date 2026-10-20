@@ -94,6 +94,7 @@ func (s *Server) handleSelectDrive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vault.Root = req.Root
+	SyncSettings()
 	log.Printf("escritorio: USB de Rebootera elegido en %s", req.Root)
 	writeJSON(w, http.StatusOK, map[string]string{"usb": req.Root})
 }
@@ -180,9 +181,10 @@ func (s *Server) handleApply(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": "running"})
 }
 
-// * handleUSBDisks lista los discos USB donde se puede crear un USB de Rebootera.
+// * handleUSBDisks lista los discos USB donde se puede crear un USB de Rebootera. Sin parámetros usa la lista
+// * guardada hace pocos segundos (sale al instante); con ?fresh=1 vuelve a leer los discos.
 func (s *Server) handleUSBDisks(w http.ResponseWriter, r *http.Request) {
-	disks, err := desktop.USBDisks()
+	disks, err := desktop.CachedUSBDisks(r.URL.Query().Get("fresh") == "1")
 	if err != nil {
 		fail(w, err)
 		return

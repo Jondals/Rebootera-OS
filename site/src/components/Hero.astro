@@ -1,0 +1,91 @@
+---
+// * Portada en dos columnas: a la izquierda el titular, una frase y la descarga (dos botones, un selector de sistema con
+// * indicador deslizante y una nota); a la derecha la captura de la aplicación, girada y saliéndose por el borde, que
+// * se mueve con el ratón. En móvil se apila y se centra. site.js cablea la descarga.
+import L from "./L.astro";
+import Icon from "./Icon.astro";
+
+const systems = [
+  { id: "windows", name: "Windows" },
+  { id: "macos", name: "macOS" },
+  { id: "linux", name: "Linux" },
+];
+
+const notes = [
+  { id: "windows", en: "A single file, nothing to install.", es: "Un solo archivo, sin instalar." },
+  { id: "macos", en: "Downloads images, manages your library and makes the USB (it starts computers with UEFI).", es: "Descarga imágenes, gestiona tu biblioteca y crea el USB (arranca equipos con UEFI)." },
+  { id: "linux", en: "A single binary. It makes the USB too and asks for administrator permission when needed.", es: "Un solo binario. También crea el USB y pide permisos de administrador cuando hace falta." },
+];
+---
+
+<section id="top" class="relative z-10 mx-auto grid min-h-[100svh] max-w-6xl content-center items-center gap-12 px-5 pb-12 pt-28 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-8 lg:pt-36">
+  <div class="min-w-0 text-center lg:text-left">
+    <h1 class="text-balance font-display text-[2.75rem] font-normal leading-[1.04] tracking-tight sm:text-6xl lg:text-[3.35rem] xl:text-[3.7rem]">
+      <L en="Install and fix any system from <em class='text-accent [text-shadow:0_0_60px_rgba(var(--accent-rgb),0.45)]'>one USB</em>" es="Instala y arregla cualquier sistema desde <em class='text-accent [text-shadow:0_0_60px_rgba(var(--accent-rgb),0.45)]'>un solo USB</em>" />
+    </h1>
+
+    <p class="mx-auto mt-6 max-w-md text-balance text-lg text-muted lg:mx-0">
+      <L
+        en="Pick a system and a disk and Rebootera does the rest: it downloads the image, checks it and finds your drivers."
+        es="Eliges un sistema y un disco, y Rebootera se encarga del resto: baja la imagen, la comprueba y busca tus drivers."
+      />
+    </p>
+
+    <div id="download" class="mx-auto mt-9 max-w-[32rem] scroll-mt-28 lg:mx-0">
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <a id="dl-main" href="#download" class="flex flex-[1.15] items-center justify-center gap-3 whitespace-nowrap rounded-xl bg-accent px-5 py-4 text-base font-semibold text-onaccent shadow-[0_18px_50px_-16px_rgba(var(--accent-rgb),0.85)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_56px_-14px_rgba(var(--accent-rgb),0.95)]">
+          <Icon name="download" size={20} />
+          <span><L en="Download for " es="Descargar para " /><span id="dl-os">Windows</span></span>
+        </a>
+        <a id="dl-iso" href="#download" class="flex flex-1 items-center justify-center gap-3 whitespace-nowrap rounded-xl border border-line2 bg-panel/60 px-5 py-4 text-base font-semibold backdrop-blur transition hover:-translate-y-0.5 hover:border-accent/70">
+          <Icon name="usb" size={20} class="text-accent" />
+          <span><L en="Download the ISO" es="Descargar la ISO" /><span id="iso-meta" class="font-medium text-muted"></span></span>
+        </a>
+      </div>
+
+      <div class="seg mt-4" role="group" aria-label="System" style="--i: 0">
+        <span class="seg-ind"></span>
+        {
+          systems.map(function system(item) {
+            return (
+              <button type="button" data-os={item.id} aria-pressed="false">
+                <Icon name="monitor" size={15} />{item.name}
+              </button>
+            );
+          })
+        }
+      </div>
+
+      <div id="dl-variants-wrap" class="variants-wrap" data-open="false">
+        <div class="min-h-0 overflow-hidden">
+          <div id="dl-variants" class="flex items-center justify-center gap-2 pb-1 pt-4 text-xs lg:justify-start"></div>
+        </div>
+      </div>
+
+      <div class="mt-3 min-h-[2.75rem] text-sm leading-snug text-muted">
+        {
+          notes.map(function note(item) {
+            return (
+              <p data-note={item.id} class="hidden">
+                <L en={item.en} es={item.es} />
+              </p>
+            );
+          })
+        }
+      </div>
+      <p id="dl-version" class="mt-1 text-xs text-dim empty:hidden"></p>
+      <p id="hash" class="mt-2 break-all font-mono text-[11px] text-dim empty:hidden"></p>
+    </div>
+  </div>
+
+  <div class="relative lg:-mr-[8vw]">
+    <div id="tilt" class="relative">
+      <div id="tilt-glow" class="absolute -inset-10 -z-10 rounded-3xl bg-accent/25 blur-3xl"></div>
+      <div class="rounded-[11px] bg-gradient-to-b from-line2 via-line to-transparent p-px">
+        <div class="overflow-hidden rounded-[10px] bg-panel shadow-[0_50px_120px_-30px_rgba(0,0,0,0.95)]">
+          <img data-shot="downloads" src="images/amoled/downloads.webp" srcset="images/amoled/downloads-sm.webp 800w, images/amoled/downloads.webp 1440w" sizes="(min-width: 1024px) 760px, 100vw" alt="Rebootera Desktop: download page" width="1440" height="900" fetchpriority="high" decoding="async" class="block aspect-[16/10] w-full" />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

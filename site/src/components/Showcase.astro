@@ -1,0 +1,71 @@
+---
+// * Recorrido por la aplicación: a la izquierda tres tarjetas (Inicio, Descargar, Discos) con su barra de progreso y, a
+// * la derecha, la captura grande. Pasan solas, se detienen al pasar el ratón y se pueden pulsar o deslizar. Las
+// * imágenes cambian con el tema de la página (site.js pone la ruta de cada una), así que siempre coinciden con los
+// * colores elegidos. En móvil las tarjetas se quedan en una fila de títulos y la descripción va bajo la captura.
+import L from "./L.astro";
+
+interface Slide {
+  shot: string;
+  title: { en: string; es: string };
+  text: { en: string; es: string };
+}
+
+const slides: Slide[] = [
+  { shot: "home", title: { en: "Home", es: "Inicio" }, text: { en: "Type a system's name and go. Everything else is one key away.", es: "Escribe el nombre de un sistema y listo. Todo lo demás está a una tecla." } },
+  { shot: "downloads", title: { en: "Download", es: "Descargar" }, text: { en: "Every system with its logo and versions. Pick one and it arrives checked.", es: "Cada sistema con su logo y sus versiones. Eliges uno y llega ya comprobado." } },
+  { shot: "disks", title: { en: "Disks", es: "Discos" }, text: { en: "Your partitions as a bar. Tap one to resize, merge or delete it.", es: "Tus particiones en una barra. Toca una para cambiarla de tamaño, unirla o borrarla." } },
+];
+---
+
+<section id="showcase" class="showcase relative z-10 mx-auto max-w-6xl px-5 py-24" data-live="false" data-still="false">
+  <div class="reveal mb-10 max-w-2xl">
+    <p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent"><L en="A look" es="Así se ve" /></p>
+    <h2 class="font-display text-4xl tracking-tight md:text-5xl"><L en="Easy on the eyes, easy to use" es="Cómoda de ver y de usar" /></h2>
+  </div>
+
+  <div class="reveal grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8" style="--d: 80ms">
+    <div class="grid grid-cols-3 gap-2 lg:grid-cols-1 lg:content-center lg:gap-3" role="tablist">
+      {
+        slides.map(function tab(slide, index) {
+          return (
+            <button type="button" role="tab" data-slide-tab aria-selected={index === 0 ? "true" : "false"} class="show-tab text-left">
+              <span class="block font-display text-lg md:text-xl"><L en={slide.title.en} es={slide.title.es} /></span>
+              <span class="mt-1 hidden text-sm leading-snug lg:block"><L en={slide.text.en} es={slide.text.es} /></span>
+              <span class="bar"><i></i></span>
+            </button>
+          );
+        })
+      }
+    </div>
+
+    <div>
+      <div class="relative">
+        <div class="absolute -inset-8 -z-10 rounded-3xl bg-accent/15 blur-3xl"></div>
+        <div class="rounded-[11px] bg-gradient-to-b from-line2 via-line to-transparent p-px" id="show-frame">
+          <div class="overflow-hidden rounded-[10px] bg-panel shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9)]">
+            <div class="shot-stage relative aspect-[16/10]">
+              {
+                slides.map(function image(slide, index) {
+                  return <img data-slide data-shot={slide.shot} src={"images/amoled/" + slide.shot + ".webp"} srcset={"images/amoled/" + slide.shot + "-sm.webp 800w, images/amoled/" + slide.shot + ".webp 1440w"} sizes="(min-width: 1152px) 780px, 100vw" data-on={index === 0 ? "true" : "false"} alt={"Rebootera Desktop: " + slide.title.en} width="1440" height="900" loading="lazy" decoding="async" />;
+                })
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5 min-h-12 text-[15px] text-muted lg:hidden">
+        {
+          slides.map(function caption(slide, index) {
+            return (
+              <p data-slide-text class={index === 0 ? "" : "hidden"}>
+                <L en={slide.text.en} es={slide.text.es} />
+              </p>
+            );
+          })
+        }
+      </div>
+    </div>
+  </div>
+</section>

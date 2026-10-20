@@ -25,7 +25,12 @@ export function reportReady(): void {
   channel()?.postMessage(JSON.stringify({ action: "ready" }));
 }
 
-/** Pide a la sesión que abra el navegador del sistema (Firefox, solo para navegar, con uBlock Origin y Dark Reader). */
-export function openBrowser(): void {
-  channel()?.postMessage(JSON.stringify({ action: "browser" }));
+/**
+ * Pide a la sesión que abra el navegador del sistema (Firefox, solo para navegar, en modo oscuro, sin telemetría y
+ * con uBlock Origin y Dark Reader), si se indica en una página https concreta.
+ */
+export function openBrowser(url?: string): void {
+  channel()?.postMessage(
+    JSON.stringify({ action: "browser", url: typeof url === "string" ? url : undefined }),
+  );
 }

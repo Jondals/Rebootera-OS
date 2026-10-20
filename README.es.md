@@ -24,8 +24,8 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 | **Wi-Fi** | Conecta la sesión a una red inalámbrica desde Ajustes (WPA2/WPA3 y redes abiertas, también ocultas). |
 | **USB y discos** | Discos y particiones con su función y su uso. **Safe Disk Guard**: los discos internos y el USB de Rebootera están protegidos y solo se leen. |
 | **Discos y particiones** | Cada disco como una barra visual con tres acciones: crear o cambiar el tamaño de una partición, unirla con una vecina, borrarla (ext4 y NTFS se pueden redimensionar sin perder archivos). Cada cambio enseña antes los pasos exactos y pide escribir el nombre del disco; el USB desde el que arranca Rebootera nunca se toca. |
-| **Rebootera Desktop** | Aplicación para Windows, Linux y macOS. En Windows, su opción **Crear USB** enseña cada USB una sola vez y ofrece lo que le corresponde: actualizar Rebootera, añadirlo conservando tus archivos o borrar y empezar de cero, con la última versión de Rebootera descargada por ti o tu propia ISO. También descarga imágenes oficiales y gestiona la biblioteca sin USB (se guardan en la carpeta `Rebootera` de tu usuario). En Linux y macOS crear el USB desde la aplicación aún no está disponible. |
-| **Aspecto** | Ocho temas (siete oscuros: Obsidiana, Zafiro, Esmeralda, Amatista, Brasa, Grafito, Amoled; y Marfil), fondo animado con desenfoque configurable que se puede apagar, cabecera con pestañas, tamaño de la interfaz, inglés y español. |
+| **Rebootera Desktop** | Aplicación para Windows, Linux y macOS. Su opción **Crear USB** enseña cada USB una sola vez y ofrece lo que le corresponde: actualizar Rebootera o borrar y empezar de cero, con la última versión de Rebootera descargada por ti o tu propia ISO, y (solo en Windows) añadirlo conservando tus archivos. En Linux pide permisos de administrador con polkit; en macOS el USB arranca equipos con UEFI. También descarga imágenes oficiales y gestiona la biblioteca sin USB (se guardan en la carpeta `Rebootera` de tu usuario). |
+| **Aspecto** | Ocho temas oscuros (Amoled, Obsidiana, Zafiro, Esmeralda, Amatista, Brasa, Naranja, Grafito), fondo animado con desenfoque configurable que se puede apagar, cabecera con pestañas, tamaño de la interfaz, inglés y español. |
 | **Placas e IoT** | Raspberry Pi OS, Ubuntu para Raspberry Pi, DietPi, OpenWrt y Home Assistant OS, comprobados con su SHA-256 publicado (imágenes de disco para grabar en una tarjeta SD). Puedes renombrar cualquier imagen y ponerle una foto desde Mis imágenes. |
 
 | | |
@@ -44,7 +44,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 **Desde Linux**, como root:
 
 ```bash
-scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.12.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.17.0-amd64.iso
 ```
 
 El script rechaza los discos no extraíbles y el disco del sistema.
@@ -130,7 +130,7 @@ Tarda alrededor de un minuto. El script compila la interfaz, la incrusta junto c
 
 ### 4. Crear un USB de Rebootera
 
-- **Pendrive real**: abre `Rebootera Desktop.exe` → **Crear USB** y elige la ISO del paso 2, o usa `scripts/usb/make-usb.sh --device` en Linux (ver [Cómo conseguir un USB de Rebootera](#cómo-conseguir-un-usb-de-rebootera)).
+- **Pendrive real**: abre `Rebootera Desktop.exe` → **Crear USB** y elige la ISO del paso 2, (también disponible en Rebootera Desktop para Linux y macOS), o usa `scripts/usb/make-usb.sh --device` en Linux (ver [Cómo conseguir un USB de Rebootera](#cómo-conseguir-un-usb-de-rebootera)).
 - **Imagen de disco para máquinas virtuales**: `wsl -d RebooteraBuild -u root --exec bash "/mnt/d/dev/Rebootera OS/scripts/usb/make-usb.sh" --image /root/usb.img --iso "/mnt/d/dev/Rebootera OS/out/rebootera-os-<versión>-amd64.iso"`.
 
 ### Desarrollo de la interfaz (pnpm)
@@ -149,15 +149,17 @@ pnpm run build
 | --- | --- |
 | `go test ./...` (en `core/`) | Protecciones de la API, inventario de discos y hardware, resolución del catálogo, descargas (reanudación, suma incorrecta), biblioteca, elección del arranque y kit del USB |
 | `go test -tags online ./internal/catalog/` | Cada entrada del catálogo contra las fuentes oficiales reales |
-| `scripts/test/test-all.sh [--quick] [--no-build]` | **Todo de una vez**: compila las dos ISO y ejecuta todas las pruebas de VM en paralelo (tres VM de 1,5 GB a la vez). Unos 8 minutos de pruebas; `--quick` arranca las dos ISO en 1 minuto |
+| `scripts/test/test-all.sh [--full] [--build] [--no-build]` | **Rápido por defecto** (menos de 3 minutos): arranca las dos ISO en UEFI + Secure Boot y solo recompila una ISO si el código cambió. `--full` ejecuta todas las pruebas de VM en paralelo (tres VM de 1,5 GB a la vez, unos 17 minutos): úsalo antes de publicar |
 | `scripts/test/cpu-probe.py URL` | CPU en reposo de cada página de la interfaz con el mismo WebKitGTK de la imagen (caza animaciones infinitas) |
 | `scripts/test/vmtest.py MODO ISO SALIDA` | Arranca la ISO en QEMU/KVM (`uefi`, `uefi-sb`, `bios`): servicios, aislamiento, permisos, Secure Boot, capturas de la interfaz y apagado desde ella |
 | `scripts/test/vmtest-v03.py USB.img SALIDA` | Funciones de la 0.3.0 de extremo a extremo: descarga con firma GPG verificada, casado de drivers con INF reales de virtio-win, Wi-Fi con radios simuladas y un punto de acceso virtual, preseed de Debian con arranque único, preparación y limpieza de Windows |
+| `scripts/test/test-create-linux.sh` | Linux (en la distro WSL, como root): ejecuta el Rebootera Desktop real y crea un USB en un **disco virtual** (un dispositivo loop) por su API: instalación real de Ventoy, etiqueta, GPT, partición de arranque, Rebootera OS byte a byte y la estructura del USB |
 | `scripts/test/test-desktop-windows.ps1` | Solo Windows: ejecuta el `Rebootera Desktop.exe` real contra un USB **falso** (una carpeta temporal) y comprueba que la imagen y los drivers se copian byte a byte, que el sistema no se toca y que las peticiones malas se rechazan |
 | `scripts/test/make-partman-disk.sh SALIDA.qcow2` | Disco de pruebas del gestor de particiones: ext4 + NTFS con datos y sumas (solo archivos de imagen y un dispositivo loop) |
 | `REBOOTERA_LOOP_TESTS=1 go test ./cmd/rebootera-agent -run TestLoop` | Como root en WSL: ejecuta el gestor de particiones sobre discos loop reales (cambiar tamaño, mover un límite en las dos direcciones, fusionar, crear, borrar) y comprueba los archivos por hash y la salud de los sistemas de archivos |
 | `scripts/test/vmtest-interactive.py MODO IMG SALIDA` | Controla una VM desde fuera (teclas, clics, capturas), por ejemplo para recorrer MokManager |
 | `scripts/test/vmtest-usb.py MODO USB.img DISCO.qcow2 SALIDA` | USB de Rebootera de extremo a extremo: Vault, descarga real, importación desde otro disco, ajustes, arranque de la imagen elegida y persistencia tras reiniciar |
+| `scripts/dev/site.ps1` | Windows: enseña la página web (`site/`) en el navegador con un servidor local mínimo (`-Port`, `-NoOpen`) |
 | `scripts/dev/ui-preview.py URL SALIDA` | Capturas de la interfaz con el mismo WebKitGTK de la imagen |
 
 Los resultados están en [docs/PRUEBAS.md](docs/PRUEBAS.md).

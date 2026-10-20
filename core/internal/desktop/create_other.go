@@ -1,7 +1,7 @@
-//go:build !windows
+//go:build !windows && !linux && !darwin
 
-// * Fuera de Windows, crear un USB desde la aplicación no está disponible: en Linux se hace con
-// * scripts/usb/make-usb.sh (necesita root y herramientas como losetup) y la aplicación lo indica.
+// * En sistemas distintos de Windows, Linux y macOS (por ejemplo FreeBSD), crear un USB desde la aplicación no está
+// * disponible y la aplicación lo indica.
 package desktop
 
 import (
@@ -9,20 +9,20 @@ import (
 	"io/fs"
 )
 
-// ErrUnsupported indica una función que solo existe en Windows.
-var ErrUnsupported = errors.New("crear el USB desde la aplicación solo está disponible en Windows; en Linux usa scripts/usb/make-usb.sh")
+// ErrUnsupported indica una función que solo existe en Windows, Linux y macOS.
+var ErrUnsupported = errors.New("crear el USB desde la aplicación solo está disponible en Windows, Linux y macOS")
 
-// * Create no está disponible fuera de Windows.
+// * Create no está disponible en este sistema.
 func Create(int, string, fs.FS, string, Extras, bool) error {
 	return ErrUnsupported
 }
 
-// * USBDisks no está disponible fuera de Windows.
+// * USBDisks no está disponible en este sistema.
 func USBDisks() ([]USBDisk, error) {
 	return nil, ErrUnsupported
 }
 
-// * PrepareVentoy no está disponible fuera de Windows.
+// * PrepareVentoy no está disponible en este sistema.
 func PrepareVentoy() (string, error) {
 	return "", ErrUnsupported
 }

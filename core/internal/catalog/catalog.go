@@ -167,6 +167,8 @@ func Resolve(entry Entry) (Resolved, error) {
 		resolved, err = resolveDirect(entry.Resolver)
 	case "archive":
 		resolved, err = resolveArchive(entry.Resolver)
+	case "manifest":
+		resolved, err = resolveManifest(entry.Resolver)
 	case "latest-sum":
 		resolved, err = resolveLatestSum(entry.Resolver)
 	case "manual":

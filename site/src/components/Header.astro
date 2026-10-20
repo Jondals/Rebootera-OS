@@ -1,0 +1,76 @@
+---
+// * Cabecera fija: marca, enlaces a las secciones, desplegable de temas, idioma y botón de descarga. En el móvil, los
+// * enlaces, los temas y el idioma se juntan en un único menú desplegable.
+import L from "./L.astro";
+import Icon from "./Icon.astro";
+import ThemePicker from "./ThemePicker.astro";
+import LangSwitch from "./LangSwitch.astro";
+
+const links = [
+  { href: "#features", en: "Features", es: "Funciones" },
+  { href: "#systems", en: "Systems", es: "Sistemas" },
+  { href: "#how", en: "How it works", es: "Cómo funciona" },
+  { href: "#faq", en: "Questions", es: "Preguntas" },
+];
+---
+
+<header id="header" data-scrolled="false" class="fixed inset-x-0 top-0 z-50 border-b border-transparent transition-[background-color,border-color,backdrop-filter] duration-500 data-[scrolled=true]:border-line data-[scrolled=true]:bg-bg/35 data-[scrolled=true]:backdrop-blur-2xl">
+  <div class="mx-auto flex h-[68px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-5">
+    <a href="#top" class="flex items-center gap-3">
+      <svg width="34" height="34" class="shrink-0" aria-hidden="true"><use href="#rbt-logo"></use></svg>
+      <span class="whitespace-nowrap font-display text-lg font-medium tracking-tight sm:text-xl">Rebootera <span class="italic text-accent">OS</span></span>
+    </a>
+
+    <nav class="hidden items-center gap-1 text-sm text-muted md:flex" aria-label="Main">
+      {
+        links.map(function link(item) {
+          return (
+            <a class="rounded-lg px-3 py-2 transition hover:bg-panel2 hover:text-ink" href={item.href}>
+              <L en={item.en} es={item.es} />
+            </a>
+          );
+        })
+      }
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <div class="relative hidden md:block">
+        <button type="button" data-menu-btn="themes" aria-expanded="false" aria-haspopup="true" class="flex items-center gap-2.5 rounded-lg border border-line2 py-2 pl-2.5 pr-3 text-sm text-xs font-semibold text-muted transition hover:text-ink">
+          <span class="theme-now"></span>
+          <span class="min-w-[4.5rem] text-left"><span class="en" data-theme-name-en></span><span class="es" data-theme-name-es></span></span>
+          <Icon name="chevron" size={14} />
+        </button>
+        <div data-menu="themes" data-open="false" class="menu-panel absolute right-0 top-[calc(100%+10px)] w-[236px] rounded-xl border border-line2 bg-panel/95 p-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+          <ThemePicker />
+        </div>
+      </div>
+
+      <div class="hidden md:block"><LangSwitch /></div>
+
+      <a href="#download" class="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-onaccent shadow-[0_8px_30px_-8px_rgba(var(--accent-rgb),0.7)] transition hover:-translate-y-px hover:brightness-110"><L en="Download" es="Descargar" /></a>
+
+      <button type="button" data-menu-btn="mobile" aria-expanded="false" aria-label="Menu" class="grid h-10 w-10 place-items-center rounded-lg border border-line2 text-muted transition hover:text-ink md:hidden">
+        <span data-icon-open><Icon name="menu" size={20} /></span>
+        <span data-icon-close class="hidden"><Icon name="close" size={20} /></span>
+      </button>
+    </div>
+  </div>
+
+  <div data-menu="mobile" data-open="false" class="menu-panel absolute inset-x-3 top-[76px] max-h-[calc(100dvh-92px)] overflow-y-auto rounded-xl border border-line2 bg-panel/95 p-3 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl md:hidden">
+    <nav class="grid gap-0.5 text-[15px]" aria-label="Mobile">
+      {
+        links.map(function link(item) {
+          return (
+            <a class="rounded-lg px-3 py-2.5 text-muted transition hover:bg-panel2 hover:text-ink" href={item.href} data-close-menu>
+              <L en={item.en} es={item.es} />
+            </a>
+          );
+        })
+      }
+    </nav>
+    <p class="mb-2 mt-4 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-dim"><L en="Theme" es="Tema" /></p>
+    <ThemePicker />
+    <p class="mb-2 mt-4 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-dim"><L en="Language" es="Idioma" /></p>
+    <div class="px-1 pb-1"><LangSwitch /></div>
+  </div>
+</header>

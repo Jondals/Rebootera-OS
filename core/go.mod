@@ -5,6 +5,7 @@ go 1.24
 require (
 	github.com/ProtonMail/go-crypto v1.5.2
 	github.com/jchv/go-webview2 v0.0.0-20260205173254-56598839c808
+	github.com/ulikunitz/xz v0.5.12
 )
 
 require (

@@ -60,6 +60,7 @@ func (s *Server) registerVault(mux *http.ServeMux) {
 		"/api/settings":           s.handleGetSettings,
 		"/api/catalog":            s.handleCatalog,
 		"/api/catalog/families":   s.handleFamilies,
+		"/api/catalog/known":      s.handleKnownResolves,
 		"/api/catalog/link":       s.handleInspectLink,
 		"/api/transfers/settings": s.handleGetBandwidth,
 		"/api/transfers":          s.handleTransfers,
@@ -142,12 +143,12 @@ func (s *Server) handleVault(w http.ResponseWriter, r *http.Request) {
 
 // * handleGetSettings devuelve los ajustes guardados en el Vault.
 func (s *Server) handleGetSettings(w http.ResponseWriter, r *http.Request) {
-	settings, err := vault.LoadSettings()
-	if err != nil && !errors.Is(err, vault.ErrUnavailable) {
+	settings, persistent, err := s.currentSettings()
+	if err != nil {
 		fail(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"persistent": err == nil, "settings": settings})
+	writeJSON(w, http.StatusOK, map[string]any{"persistent": persistent, "settings": settings})
 }
 
 // * handleSaveSettings guarda los ajustes en el Vault.
@@ -157,10 +158,25 @@ func (s *Server) handleSaveSettings(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	if err := vault.SaveSettings(settings); err != nil {
+	// * Rebootera Desktop guarda siempre los ajustes en el PC (aunque no haya USB) y, si hay USB de Rebootera, también en él:
+	// * así el tema elegido sobrevive al cierre de la aplicación y llega a Rebootera OS al arrancar desde el USB.
+	if s.mode() == ModeDesktop {
+		if err := vault.SaveLocalSettings(settings); err != nil {
+			fail(w, err)
+			return
+		}
+		if vault.Available() {
+			if err := vault.SaveSettings(settings); err != nil {
+				fail(w, err)
+				return
+			}
+		}
+	} else if err := vault.SaveSettings(settings); err != nil {
 		fail(w, err)
 		return
 	}
+	// * El menú de arranque del USB toma los colores del tema (es solo estética: no puede fallar).
+	boot.ApplyTheme(settings.Theme)
 	writeJSON(w, http.StatusOK, settings)
 }
 
@@ -221,6 +237,12 @@ func (s *Server) handleResolve(w http.ResponseWriter, r *http.Request) {
 	}
 	resolutions.store(entry.ID, resolved)
 	writeJSON(w, http.StatusOK, resolved)
+}
+
+// * handleKnownResolves devuelve lo último que se supo de cada entrada (aunque esté caducado): solo para mostrar
+// * tamaños al abrir el Centro de descargas sin esperar a la red.
+func (s *Server) handleKnownResolves(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, resolutions.known())
 }
 
 // * handleTransfers devuelve la cola de transferencias.

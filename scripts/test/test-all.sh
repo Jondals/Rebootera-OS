@@ -3,17 +3,18 @@
 # * propia máquina virtual, y muestra un resumen. Se ejecuta como root en la
 # * distro WSL RebooteraBuild:
 # *
-# *   test-all.sh [--quick] [--no-build]
+# *   test-all.sh [--full] [--build] [--no-build]
 # *
-# *   --quick     solo arranque en UEFI + Secure Boot de la ISO de depuración y
-# *               de la definitiva (1 o 2 minutos).
-# *   --no-build  usa las ISO que ya hay (la de depuración en
-# *               /root/rebootera-build/out y la definitiva en out/).
+# *   (sin opciones)  rápido (menos de 3 minutos): arranque en UEFI + Secure Boot de la ISO de
+# *                   depuración y de la definitiva, a la vez. Solo recompila una ISO si el código
+# *                   fuente cambió desde la última vez que se compiló.
+# *   --full          todo: arranque en UEFI + Secure Boot y BIOS, el USB de extremo a extremo y los
+# *                   escenarios (Wi-Fi, Debian con preseed, Windows, particiones, adopción), unos 17
+# *                   minutos con compilación. Úsalo antes de publicar una versión.
+# *   --build         recompila siempre las ISO.
+# *   --no-build      no compila: usa las ISO que ya hay (la de depuración en
+# *                   /root/rebootera-build/out y la definitiva en out/).
 # *
-# * Completo (unos 8 minutos con las ISO ya compiladas): arranque de la ISO de
-# * depuración en UEFI + Secure Boot y BIOS, arranque de la definitiva en las
-# * dos, el USB de extremo a extremo y los tres escenarios de la 0.3.0 (Wi-Fi,
-# * Debian con preseed y Windows), todo a la vez.
 # ! Cada VM usa 1,5 GB y 2 CPU y nunca hay más de tres a la vez (unos 5 GB); el USB y los
 # ! escenarios escriben solo en capas temporales de QEMU, nunca en la imagen.
 set -uo pipefail
@@ -22,11 +23,13 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 SRC="$(cd "$(dirname "$0")/../.." && pwd)"
 WORK=/root/rebootera-build
 OUT="$WORK/tests/$(date +%Y%m%d-%H%M%S)"
-QUICK=0
-BUILD=1
+QUICK=1
+BUILD=auto
 for arg in "$@"; do
 	case "$arg" in
+	--full) QUICK=0 ;;
 	--quick) QUICK=1 ;;
+	--build) BUILD=1 ;;
 	--no-build) BUILD=0 ;;
 	*)
 		echo "Opción desconocida: $arg" >&2
@@ -43,20 +46,28 @@ log() {
 	printf '[%3ds] %s\n' $(($(date +%s) - START)) "$*"
 }
 
-# * build compila las ISO que hagan falta.
+# * source_stamp resume el estado del código fuente que entra en las ISO (rutas, tamaños y fechas).
+source_stamp() {
+	(cd "$SRC" && find core ui os scripts/build -type f -not -path "*/node_modules/*" -not -path "*/dist/*" -printf "%p %s %T@
+" | sort | sha1sum | cut -c1-16)
+}
+
+# * build compila las ISO que hagan falta: con BUILD=auto, solo si el código fuente cambió desde la última vez.
 build() {
-	log "compilando la ISO de depuración"
-	bash "$SRC/scripts/build/build.sh" --debug >"$OUT/build-debug.log" 2>&1 || {
-		tail -5 "$OUT/build-debug.log"
-		exit 1
-	}
-	if [ "$QUICK" = "0" ]; then
-		log "compilando la ISO definitiva"
-		bash "$SRC/scripts/build/build.sh" >"$OUT/build-final.log" 2>&1 || {
-			tail -5 "$OUT/build-final.log"
+	local stamp kind
+	stamp="$(source_stamp)"
+	for kind in debug final; do
+		if [ "$BUILD" = "auto" ] && [ "$(cat "$WORK/stamp-$kind" 2>/dev/null)" = "$stamp" ]; then
+			if [ "$kind" = "debug" ] && ls "$WORK"/out/*debug.iso >/dev/null 2>&1; then continue; fi
+			if [ "$kind" = "final" ] && ls "$SRC"/out/rebootera-os-*-amd64.iso >/dev/null 2>&1; then continue; fi
+		fi
+		log "compilando la ISO ($kind)"
+		bash "$SRC/scripts/build/build.sh" $([ "$kind" = "debug" ] && echo --debug) >"$OUT/build-$kind.log" 2>&1 || {
+			tail -5 "$OUT/build-$kind.log"
 			exit 1
 		}
-	fi
+		echo "$stamp" >"$WORK/stamp-$kind"
+	done
 }
 
 # * prepare_usb crea el USB de pruebas (con drivers y, si hace falta, el disco de usuario).
@@ -109,7 +120,7 @@ lane() {
 	log "lane $name terminada en $(($(date +%s) - begin)) s: $(tail -1 "$OUT/$name.log" | cut -c1-90)"
 }
 
-[ "$BUILD" = "1" ] && build
+[ "$BUILD" = "0" ] || build
 DBG="$(ls "$WORK"/out/*debug.iso 2>/dev/null | head -1)"
 FINAL="$(ls "$SRC"/out/rebootera-os-*-amd64.iso 2>/dev/null | head -1)"
 [ -n "$DBG" ] || {

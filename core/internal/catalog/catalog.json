@@ -4037,5 +4037,1702 @@
       "en": "Light, long-term Windows 10 for older hardware. Microsoft's official 90-day evaluation image, in Spanish.",
       "es": "Windows 10 ligero y de soporte largo para equipos antiguos. Imagen oficial de evaluación de 90 días de Microsoft, en español."
     }
+  },
+  {
+    "id": "ubuntu-25.10-desktop",
+    "name": "Ubuntu Desktop",
+    "vendor": "Canonical",
+    "version": "25.10",
+    "arch": "amd64",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/download/desktop",
+    "resolver": {
+      "type": "sums",
+      "index": "https://releases.ubuntu.com/25.10/SHA256SUMS",
+      "pattern": "^ubuntu-25\\.10(\\.\\d+)?-desktop-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://releases.ubuntu.com/25.10/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "notes": {
+      "en": "Interim release (nine months of support).",
+      "es": "Versión intermedia (nueve meses de soporte)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "ubuntu",
+    "group": "linux",
+    "edition": "Desktop 25.10",
+    "tags": []
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "ubuntu-25.10-server",
+    "name": "Ubuntu Server",
+    "vendor": "Canonical",
+    "version": "25.10",
+    "category": "linux",
+    "homepage": "https://ubuntu.com/download/server",
+    "resolver": {
+      "type": "sums",
+      "index": "https://releases.ubuntu.com/25.10/SHA256SUMS",
+      "pattern": "^ubuntu-25\\.10(\\.\\d+)?-live-server-amd64\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://releases.ubuntu.com/25.10/SHA256SUMS.gpg",
+        "keys": [
+          "ubuntu.asc"
+        ],
+        "fingerprints": [
+          "843938DF228D22F7B3742BC0D94AA3F0EFE21092"
+        ]
+      }
+    },
+    "family": "ubuntu-server",
+    "group": "servers",
+    "edition": "Server 25.10",
+    "notes": {
+      "en": "Interim release (nine months of support).",
+      "es": "Versión intermedia (nueve meses de soporte)."
+    }
+  },
+  {
+    "id": "debian-11-netinst",
+    "name": "Debian",
+    "vendor": "Debian Project",
+    "version": "11 (netinst)",
+    "arch": "amd64",
+    "category": "linux",
+    "homepage": "https://www.debian.org/distrib/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldoldstable/amd64/iso-cd/SHA256SUMS",
+      "pattern": "^debian-11\\.\\d+\\.\\d+-amd64-netinst\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldoldstable/amd64/iso-cd/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "notes": {
+      "en": "Previous-previous stable release (security updates only).",
+      "es": "Versión estable anterior a la anterior (solo actualizaciones de seguridad)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "11 netinst (installs over the network)",
+    "tags": [
+      "light"
+    ]
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "debian-12-live-cinnamon",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "12 live (Cinnamon)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-12\\.\\d+\\.\\d+-amd64-cinnamon\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 12 (Cinnamon)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the GNOME desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio GNOME."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "debian-12-live-lxde",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "12 live (LXDE)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-12\\.\\d+\\.\\d+-amd64-lxde\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 12 (LXDE)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the GNOME desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio GNOME."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "debian-12-live-lxqt",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "12 live (LXQt)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-12\\.\\d+\\.\\d+-amd64-lxqt\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 12 (LXQt)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the GNOME desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio GNOME."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "debian-12-live-mate",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "12 live (MATE)",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-12\\.\\d+\\.\\d+-amd64-mate\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 12 (MATE)",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the GNOME desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio GNOME."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "debian-12-live-standard",
+    "name": "Debian Live",
+    "vendor": "Debian Project",
+    "version": "12 live (Standard (no desktop))",
+    "category": "linux",
+    "homepage": "https://www.debian.org/CD/live/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS",
+      "pattern": "^debian-live-12\\.\\d+\\.\\d+-amd64-standard\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://cdimage.debian.org/cdimage/archive/latest-oldstable-live/amd64/iso-hybrid/SHA256SUMS.sign",
+        "keys": [
+          "debian.asc"
+        ],
+        "fingerprints": [
+          "DF9B9C49EAA9298432589D76DA87E80D6294BE9B"
+        ]
+      }
+    },
+    "family": "debian",
+    "group": "linux",
+    "edition": "Live 12 (Standard (no desktop))",
+    "notes": {
+      "en": "Try Debian from the USB without installing, with the GNOME desktop.",
+      "es": "Prueba Debian desde el USB sin instalar, con el escritorio GNOME."
+    }
+  },
+  {
+    "id": "fedora-42-workstation",
+    "name": "Fedora Workstation",
+    "vendor": "Fedora Project",
+    "version": "42",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://fedoraproject.org/workstation/download",
+    "resolver": {
+      "type": "fedora",
+      "index": "https://download.fedoraproject.org/pub/fedora/linux/releases/42/Workstation/x86_64/iso/",
+      "pattern": "^Fedora-Workstation-Live-42-\\d+\\.\\d+\\.x86_64\\.iso$"
+    },
+    "secureBoot": "signed",
+    "signature": "none",
+    "notes": {
+      "en": "Older release, supported until Fedora 44 is out a month later.",
+      "es": "Versión anterior, mantenida hasta un mes después de que salga Fedora 44."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "fedora",
+    "group": "linux",
+    "edition": "Workstation 42 (GNOME)",
+    "tags": []
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "fedora-43-xfce",
+    "name": "Fedora Xfce",
+    "vendor": "Fedora Project",
+    "version": "43",
+    "category": "linux",
+    "homepage": "https://fedoraproject.org/spins",
+    "resolver": {
+      "type": "fedora",
+      "index": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Spins/x86_64/iso/",
+      "pattern": "^Fedora-Xfce-Live-43-\\d+\\.\\d+\\.x86_64\\.iso$",
+      "signature": {
+        "type": "clearsign",
+        "keys": [
+          "fedora.asc"
+        ],
+        "fingerprints": [
+          "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+          "4F50A6114CD5C6976A7F1179655A4B02F577861E",
+          "C6E7F081CF80E13146676E88829B606631645531",
+          "D924B10D3E810DABDD8B56B596E7E91491211FCE"
+        ]
+      }
+    },
+    "family": "fedora",
+    "group": "linux",
+    "edition": "Xfce spin 43",
+    "notes": {
+      "en": "Fedora with the Xfce desktop.",
+      "es": "Fedora con el escritorio Xfce."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "fedora-43-lxqt",
+    "name": "Fedora LXQt",
+    "vendor": "Fedora Project",
+    "version": "43",
+    "category": "linux",
+    "homepage": "https://fedoraproject.org/spins",
+    "resolver": {
+      "type": "fedora",
+      "index": "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Spins/x86_64/iso/",
+      "pattern": "^Fedora-LXQt-Live-43-\\d+\\.\\d+\\.x86_64\\.iso$",
+      "signature": {
+        "type": "clearsign",
+        "keys": [
+          "fedora.asc"
+        ],
+        "fingerprints": [
+          "36F612DCF27F7D1A48A835E4DBFCF71C6D9F90A6",
+          "4F50A6114CD5C6976A7F1179655A4B02F577861E",
+          "C6E7F081CF80E13146676E88829B606631645531",
+          "D924B10D3E810DABDD8B56B596E7E91491211FCE"
+        ]
+      }
+    },
+    "family": "fedora",
+    "group": "linux",
+    "edition": "LXQt spin 43",
+    "notes": {
+      "en": "Fedora with the light LXQt desktop.",
+      "es": "Fedora con el escritorio LXQt, ligero."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "linuxmint-21.3-cinnamon",
+    "name": "Linux Mint",
+    "vendor": "Linux Mint",
+    "version": "21.3 (Cinnamon)",
+    "category": "linux",
+    "homepage": "https://linuxmint.com/download.php",
+    "resolver": {
+      "type": "sums",
+      "index": "https://mirrors.edge.kernel.org/linuxmint/stable/21.3/sha256sum.txt",
+      "pattern": "^linuxmint-21\\.3-cinnamon-64bit\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://mirrors.edge.kernel.org/linuxmint/stable/21.3/sha256sum.txt.gpg",
+        "keys": [
+          "mint.asc"
+        ],
+        "fingerprints": [
+          "27DEB15644C6B3CF3BD7D291300F846BA25BAE09"
+        ]
+      }
+    },
+    "family": "mint",
+    "group": "linux",
+    "edition": "21.3 Cinnamon",
+    "notes": {
+      "en": "Previous series, supported until 2027.",
+      "es": "Serie anterior, mantenida hasta 2027."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "linuxmint-21.3-xfce",
+    "name": "Linux Mint",
+    "vendor": "Linux Mint",
+    "version": "21.3 (Xfce)",
+    "category": "linux",
+    "homepage": "https://linuxmint.com/download.php",
+    "resolver": {
+      "type": "sums",
+      "index": "https://mirrors.edge.kernel.org/linuxmint/stable/21.3/sha256sum.txt",
+      "pattern": "^linuxmint-21\\.3-xfce-64bit\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://mirrors.edge.kernel.org/linuxmint/stable/21.3/sha256sum.txt.gpg",
+        "keys": [
+          "mint.asc"
+        ],
+        "fingerprints": [
+          "27DEB15644C6B3CF3BD7D291300F846BA25BAE09"
+        ]
+      }
+    },
+    "family": "mint",
+    "group": "linux",
+    "edition": "21.3 Xfce",
+    "notes": {
+      "en": "Previous series, supported until 2027.",
+      "es": "Serie anterior, mantenida hasta 2027."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "signed",
+    "signature": "gpg",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "linuxmint-21.3-mate",
+    "name": "Linux Mint",
+    "vendor": "Linux Mint",
+    "version": "21.3 (MATE)",
+    "category": "linux",
+    "homepage": "https://linuxmint.com/download.php",
+    "resolver": {
+      "type": "sums",
+      "index": "https://mirrors.edge.kernel.org/linuxmint/stable/21.3/sha256sum.txt",
+      "pattern": "^linuxmint-21\\.3-mate-64bit\\.iso$",
+      "signature": {
+        "type": "detached",
+        "url": "https://mirrors.edge.kernel.org/linuxmint/stable/21.3/sha256sum.txt.gpg",
+        "keys": [
+          "mint.asc"
+        ],
+        "fingerprints": [
+          "27DEB15644C6B3CF3BD7D291300F846BA25BAE09"
+        ]
+      }
+    },
+    "family": "mint",
+    "group": "linux",
+    "edition": "21.3 MATE",
+    "notes": {
+      "en": "Previous series, supported until 2027.",
+      "es": "Serie anterior, mantenida hasta 2027."
+    }
+  },
+  {
+    "id": "alpine-standard-3.22",
+    "name": "Alpine Linux",
+    "vendor": "Alpine Linux",
+    "version": "3.22 Standard",
+    "arch": "x86_64",
+    "category": "tools",
+    "homepage": "https://alpinelinux.org/downloads/",
+    "resolver": {
+      "type": "alpine",
+      "index": "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/latest-releases.yaml",
+      "pattern": "alpine-standard",
+      "isoSignature": {
+        "type": "iso-detached",
+        "suffix": ".asc",
+        "keys": [
+          "alpine.asc"
+        ],
+        "fingerprints": [
+          "0482D84022F52DF1C4E7CD43293ACD0907D9495A"
+        ]
+      }
+    },
+    "secureBoot": "unsigned",
+    "signature": "gpg",
+    "notes": {
+      "en": "Very small system, useful as a rescue console.",
+      "es": "Sistema muy pequeño, útil como consola de rescate."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "alpine",
+    "group": "rescue",
+    "edition": "3.22 Standard",
+    "tags": []
+  },
+  {
+    "id": "alpine-standard-3.21",
+    "name": "Alpine Linux",
+    "vendor": "Alpine Linux",
+    "version": "3.21 Standard",
+    "arch": "x86_64",
+    "category": "tools",
+    "homepage": "https://alpinelinux.org/downloads/",
+    "resolver": {
+      "type": "alpine",
+      "index": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/latest-releases.yaml",
+      "pattern": "alpine-standard",
+      "isoSignature": {
+        "type": "iso-detached",
+        "suffix": ".asc",
+        "keys": [
+          "alpine.asc"
+        ],
+        "fingerprints": [
+          "0482D84022F52DF1C4E7CD43293ACD0907D9495A"
+        ]
+      }
+    },
+    "secureBoot": "unsigned",
+    "signature": "gpg",
+    "notes": {
+      "en": "Very small system, useful as a rescue console.",
+      "es": "Sistema muy pequeño, útil como consola de rescate."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "alpine",
+    "group": "rescue",
+    "edition": "3.21 Standard",
+    "tags": []
+  },
+  {
+    "id": "alpine-virt-3.22",
+    "name": "Alpine Linux (virtual)",
+    "vendor": "Alpine Linux",
+    "version": "3.22 Virtual (for virtual machines)",
+    "arch": "x86_64",
+    "category": "tools",
+    "homepage": "https://alpinelinux.org/downloads/",
+    "resolver": {
+      "type": "alpine",
+      "index": "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/latest-releases.yaml",
+      "pattern": "alpine-virt",
+      "isoSignature": {
+        "type": "iso-detached",
+        "suffix": ".asc",
+        "keys": [
+          "alpine.asc"
+        ],
+        "fingerprints": [
+          "0482D84022F52DF1C4E7CD43293ACD0907D9495A"
+        ]
+      }
+    },
+    "secureBoot": "unsigned",
+    "signature": "gpg",
+    "notes": {
+      "en": "Tiny image for virtual machines and quick tests.",
+      "es": "Imagen mínima para máquinas virtuales y pruebas rápidas."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "alpine",
+    "group": "rescue",
+    "edition": "3.22 Virtual (for virtual machines)",
+    "tags": []
+  },
+  {
+    "id": "alpine-virt-3.21",
+    "name": "Alpine Linux (virtual)",
+    "vendor": "Alpine Linux",
+    "version": "3.21 Virtual (for virtual machines)",
+    "arch": "x86_64",
+    "category": "tools",
+    "homepage": "https://alpinelinux.org/downloads/",
+    "resolver": {
+      "type": "alpine",
+      "index": "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/latest-releases.yaml",
+      "pattern": "alpine-virt",
+      "isoSignature": {
+        "type": "iso-detached",
+        "suffix": ".asc",
+        "keys": [
+          "alpine.asc"
+        ],
+        "fingerprints": [
+          "0482D84022F52DF1C4E7CD43293ACD0907D9495A"
+        ]
+      }
+    },
+    "secureBoot": "unsigned",
+    "signature": "gpg",
+    "notes": {
+      "en": "Tiny image for virtual machines and quick tests.",
+      "es": "Imagen mínima para máquinas virtuales y pruebas rápidas."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "alpine",
+    "group": "rescue",
+    "edition": "3.21 Virtual (for virtual machines)",
+    "tags": []
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "rocky-8-minimal",
+    "name": "Rocky Linux",
+    "vendor": "Rocky Enterprise Software Foundation",
+    "version": "8 (minimal)",
+    "category": "linux",
+    "homepage": "https://rockylinux.org/download",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://download.rockylinux.org/pub/rocky/8/isos/x86_64/CHECKSUM",
+      "pattern": "^Rocky-8\\.\\d+-x86_64-minimal\\.iso$"
+    },
+    "family": "rocky",
+    "group": "servers",
+    "edition": "8 minimal",
+    "notes": {
+      "en": "Rebuild of Red Hat Enterprise Linux 9, supported for years.",
+      "es": "Reconstrucción de Red Hat Enterprise Linux 9, con soporte durante años."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "almalinux-8-minimal",
+    "name": "AlmaLinux",
+    "vendor": "AlmaLinux OS Foundation",
+    "version": "8 minimal",
+    "category": "linux",
+    "homepage": "https://almalinux.org/get-almalinux/",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://repo.almalinux.org/almalinux/8/isos/x86_64/CHECKSUM",
+      "pattern": "^AlmaLinux-8\\.\\d+-x86_64-minimal\\.iso$"
+    },
+    "family": "almalinux",
+    "group": "servers",
+    "edition": "8 minimal",
+    "notes": {
+      "en": "Binary-compatible Red Hat Enterprise Linux 10 for servers.",
+      "es": "Compatible con Red Hat Enterprise Linux 10 para servidores."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "nixos-25.11-minimal",
+    "name": "NixOS",
+    "vendor": "NixOS Foundation",
+    "version": "25.11 (Minimal installer)",
+    "category": "linux",
+    "homepage": "https://nixos.org/download/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://channels.nixos.org/nixos-25.11/latest-nixos-minimal-x86_64-linux.iso.sha256",
+      "pattern": "^nixos-minimal-25\\.11\\..*-x86_64-linux\\.iso$",
+      "link": "https://channels.nixos.org/nixos-25.11/latest-nixos-minimal-x86_64-linux.iso"
+    },
+    "family": "nixos",
+    "group": "linux",
+    "edition": "25.11 Minimal installer",
+    "notes": {
+      "en": "Text installer for NixOS, the system you describe with one configuration file.",
+      "es": "Instalador de texto de NixOS, el sistema que se describe con un único archivo de configuración."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "nixos-25.11-graphical",
+    "name": "NixOS",
+    "vendor": "NixOS Foundation",
+    "version": "25.11 (Graphical installer)",
+    "category": "linux",
+    "homepage": "https://nixos.org/download/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://channels.nixos.org/nixos-25.11/latest-nixos-graphical-x86_64-linux.iso.sha256",
+      "pattern": "^nixos-graphical-25\\.11\\..*-x86_64-linux\\.iso$",
+      "link": "https://channels.nixos.org/nixos-25.11/latest-nixos-graphical-x86_64-linux.iso"
+    },
+    "family": "nixos",
+    "group": "linux",
+    "edition": "25.11 Graphical installer",
+    "notes": {
+      "en": "NixOS live image with a graphical installer.",
+      "es": "Imagen live de NixOS con instalador gráfico."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "nixos-25.05-minimal",
+    "name": "NixOS",
+    "vendor": "NixOS Foundation",
+    "version": "25.05 (Minimal installer)",
+    "category": "linux",
+    "homepage": "https://nixos.org/download/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso.sha256",
+      "pattern": "^nixos-minimal-25\\.05\\..*-x86_64-linux\\.iso$",
+      "link": "https://channels.nixos.org/nixos-25.05/latest-nixos-minimal-x86_64-linux.iso"
+    },
+    "family": "nixos",
+    "group": "linux",
+    "edition": "25.05 Minimal installer",
+    "notes": {
+      "en": "Text installer for NixOS, the system you describe with one configuration file.",
+      "es": "Instalador de texto de NixOS, el sistema que se describe con un único archivo de configuración."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "centos-stream-9-boot",
+    "name": "CentOS Stream",
+    "vendor": "CentOS Project",
+    "version": "9 (Boot (network install))",
+    "category": "linux",
+    "homepage": "https://www.centos.org/centos-stream/",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/iso/CentOS-Stream-9-latest-x86_64-boot.iso.SHA256SUM",
+      "pattern": "^CentOS-Stream-9-latest-x86_64-boot\\.iso$"
+    },
+    "family": "centos",
+    "group": "servers",
+    "edition": "9 Boot (network install)",
+    "notes": {
+      "en": "Small installer that fetches CentOS Stream while installing.",
+      "es": "Instalador pequeño que descarga CentOS Stream durante la instalación."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "centos-stream-9-dvd1",
+    "name": "CentOS Stream",
+    "vendor": "CentOS Project",
+    "version": "9 (DVD (offline))",
+    "category": "linux",
+    "homepage": "https://www.centos.org/centos-stream/",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/iso/CentOS-Stream-9-latest-x86_64-dvd1.iso.SHA256SUM",
+      "pattern": "^CentOS-Stream-9-latest-x86_64-dvd1\\.iso$"
+    },
+    "family": "centos",
+    "group": "servers",
+    "edition": "9 DVD (offline)",
+    "notes": {
+      "en": "Full installer, no network needed.",
+      "es": "Instalador completo, sin necesidad de red."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "freebsd-14-bootonly",
+    "name": "FreeBSD",
+    "vendor": "FreeBSD Project",
+    "version": "14.4 (Boot only)",
+    "category": "linux",
+    "homepage": "https://www.freebsd.org/where/",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://download.freebsd.org/releases/ISO-IMAGES/14.4/CHECKSUM.SHA256-FreeBSD-14.4-RELEASE-amd64",
+      "pattern": "^FreeBSD-14\\.\\d-RELEASE-amd64-bootonly\\.iso$"
+    },
+    "family": "freebsd",
+    "group": "servers",
+    "edition": "14.4 Boot only",
+    "notes": {
+      "en": "Tiny installer that downloads FreeBSD while installing.",
+      "es": "Instalador diminuto que descarga FreeBSD durante la instalación."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "freebsd-14-disc1",
+    "name": "FreeBSD",
+    "vendor": "FreeBSD Project",
+    "version": "14.4 (Disc 1 (offline))",
+    "category": "linux",
+    "homepage": "https://www.freebsd.org/where/",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://download.freebsd.org/releases/ISO-IMAGES/14.4/CHECKSUM.SHA256-FreeBSD-14.4-RELEASE-amd64",
+      "pattern": "^FreeBSD-14\\.\\d-RELEASE-amd64-disc1\\.iso$"
+    },
+    "family": "freebsd",
+    "group": "servers",
+    "edition": "14.4 Disc 1 (offline)",
+    "notes": {
+      "en": "Installer with everything needed to install without a network.",
+      "es": "Instalador con todo lo necesario para instalar sin red."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "openbsd-7.8",
+    "name": "OpenBSD",
+    "vendor": "OpenBSD Project",
+    "version": "7.8",
+    "category": "linux",
+    "homepage": "https://www.openbsd.org/faq/faq4.html",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://cdn.openbsd.org/pub/OpenBSD/7.8/amd64/SHA256",
+      "pattern": "^install\\d+\\.iso$"
+    },
+    "family": "openbsd",
+    "group": "servers",
+    "edition": "7.8 installer",
+    "notes": {
+      "en": "Security-focused BSD. Its checksums are signed with signify, which Rebootera does not check yet.",
+      "es": "BSD centrado en la seguridad. Sus sumas van firmadas con signify, que Rebootera todavía no comprueba."
+    }
+  },
+  {
+    "arch": "amd64",
+    "secureBoot": "unsigned",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "openbsd-7.7",
+    "name": "OpenBSD",
+    "vendor": "OpenBSD Project",
+    "version": "7.7",
+    "category": "linux",
+    "homepage": "https://www.openbsd.org/faq/faq4.html",
+    "resolver": {
+      "type": "bsd",
+      "index": "https://cdn.openbsd.org/pub/OpenBSD/7.7/amd64/SHA256",
+      "pattern": "^install\\d+\\.iso$"
+    },
+    "family": "openbsd",
+    "group": "servers",
+    "edition": "7.7 installer",
+    "notes": {
+      "en": "Security-focused BSD. Its checksums are signed with signify, which Rebootera does not check yet.",
+      "es": "BSD centrado en la seguridad. Sus sumas van firmadas con signify, que Rebootera todavía no comprueba."
+    }
+  },
+  {
+    "arch": "x86_64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "proxmox-ve-8",
+    "name": "Proxmox VE",
+    "vendor": "Proxmox",
+    "version": "Virtual Environment 8",
+    "category": "linux",
+    "homepage": "https://www.proxmox.com/products/proxmox-virtual-environment/get-started",
+    "resolver": {
+      "type": "sums",
+      "index": "https://enterprise.proxmox.com/iso/SHA256SUMS",
+      "pattern": "^proxmox-ve_8\\.\\d+-\\d+\\.iso$"
+    },
+    "family": "proxmox",
+    "group": "servers",
+    "edition": "Virtual Environment 8",
+    "notes": {
+      "en": "Virtualization platform for virtual machines and containers, managed from a web page.",
+      "es": "Plataforma de virtualización de máquinas virtuales y contenedores, que se gestiona desde una web."
+    }
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "windows-server-2019-eval",
+    "name": "Windows Server 2022",
+    "vendor": "Microsoft",
+    "version": "Server 2019 (evaluation)",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/evalcenter/evaluate-windows-server-2022",
+    "resolver": {
+      "type": "direct",
+      "index": "https://go.microsoft.com/fwlink/?linkid=2195167&clcid=0x409&culture=en-us&country=us"
+    },
+    "family": "windows-server",
+    "group": "servers",
+    "edition": "Server 2019 (180-day evaluation, English)",
+    "notes": {
+      "en": "Microsoft's official 180-day evaluation image of Windows Server 2022, in English.",
+      "es": "Imagen oficial de evaluación de 180 días de Windows Server 2022 de Microsoft, en inglés."
+    }
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [],
+    "id": "windows-server-2016-eval",
+    "name": "Windows Server 2022",
+    "vendor": "Microsoft",
+    "version": "Server 2016 (evaluation)",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/evalcenter/evaluate-windows-server-2022",
+    "resolver": {
+      "type": "direct",
+      "index": "https://go.microsoft.com/fwlink/?linkid=2195174&clcid=0x409&culture=en-us&country=us"
+    },
+    "family": "windows-server",
+    "group": "servers",
+    "edition": "Server 2016 (180-day evaluation, English)",
+    "notes": {
+      "en": "Microsoft's official 180-day evaluation image of Windows Server 2022, in English.",
+      "es": "Imagen oficial de evaluación de 180 días de Windows Server 2022 de Microsoft, en inglés."
+    }
+  },
+  {
+    "id": "truenas-scale-goldeye",
+    "name": "TrueNAS SCALE",
+    "vendor": "TrueNAS",
+    "version": "25.10 Goldeye (latest)",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://www.truenas.com/truenas-community-edition/",
+    "resolver": {
+      "type": "manifest",
+      "index": "https://update.sys.truenas.net/scale/TrueNAS-SCALE-Goldeye/manifest.json",
+      "link": "https://download.truenas.com/TrueNAS-SCALE-Goldeye/{version}/TrueNAS-SCALE-{version}.iso",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "Storage (NAS) system with ZFS, shares, apps and virtual machines, managed from a web page.",
+      "es": "Sistema de almacenamiento (NAS) con ZFS, recursos compartidos, aplicaciones y máquinas virtuales, que se gestiona desde una web."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "truenas",
+    "group": "servers",
+    "edition": "25.10 Goldeye (latest)",
+    "tags": [
+      "recommended"
+    ]
+  },
+  {
+    "id": "truenas-scale-fangtooth",
+    "name": "TrueNAS SCALE",
+    "vendor": "TrueNAS",
+    "version": "25.04 Fangtooth",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://www.truenas.com/truenas-community-edition/",
+    "resolver": {
+      "type": "manifest",
+      "index": "https://update.sys.truenas.net/scale/TrueNAS-SCALE-Fangtooth/manifest.json",
+      "link": "https://download.truenas.com/TrueNAS-SCALE-Fangtooth/{version}/TrueNAS-SCALE-{version}.iso",
+      "sumSuffix": ".sha256"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "Storage (NAS) system with ZFS, shares, apps and virtual machines, managed from a web page.",
+      "es": "Sistema de almacenamiento (NAS) con ZFS, recursos compartidos, aplicaciones y máquinas virtuales, que se gestiona desde una web."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "truenas",
+    "group": "servers",
+    "edition": "25.04 Fangtooth",
+    "tags": []
+  },
+  {
+    "id": "xcp-ng-8-3",
+    "name": "XCP-ng",
+    "vendor": "Vates",
+    "version": "8.3 LTS",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://xcp-ng.org/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://mirrors.xcp-ng.org/isos/8.3/SHA256SUMS",
+      "pattern": "^xcp-ng-8\\.3\\.0-\\d+\\.iso$"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "Open-source hypervisor (Xen) to run many virtual machines on one server, managed with Xen Orchestra.",
+      "es": "Hipervisor de código abierto (Xen) para ejecutar muchas máquinas virtuales en un servidor, que se gestiona con Xen Orchestra."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "xcp-ng",
+    "group": "servers",
+    "edition": "8.3 LTS (full install)",
+    "tags": [
+      "recommended"
+    ]
+  },
+  {
+    "id": "openmediavault",
+    "name": "openmediavault",
+    "vendor": "openmediavault",
+    "version": "latest",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://www.openmediavault.org/",
+    "resolver": {
+      "type": "sourceforge",
+      "index": "openmediavault",
+      "pattern": "^openmediavault_[\\d.]+-amd64\\.iso$"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "Simple NAS based on Debian: shared folders, users, RAID and a web page to manage them.",
+      "es": "NAS sencillo basado en Debian: carpetas compartidas, usuarios, RAID y una web para gestionarlos."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "openmediavault",
+    "group": "servers",
+    "edition": "Latest ISO",
+    "tags": [
+      "recommended"
+    ]
+  },
+  {
+    "id": "vyos-rolling",
+    "name": "VyOS",
+    "vendor": "VyOS",
+    "version": "Rolling",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://vyos.io/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/vyos/vyos-nightly-build/releases/latest",
+      "pattern": "^vyos-[\\d.-]+-rolling-generic-amd64\\.iso$"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "Open-source router and firewall system, configured from a command line. This is the rolling (nightly) build.",
+      "es": "Sistema de router y cortafuegos de código abierto, que se configura por línea de órdenes. Es la compilación continua (nightly)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "vyos",
+    "group": "servers",
+    "edition": "Rolling release",
+    "tags": []
+  },
+  {
+    "id": "opnsense",
+    "name": "OPNsense",
+    "vendor": "Deciso",
+    "version": "latest",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://opnsense.org/download/",
+    "resolver": {
+      "type": "manual"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "Firewall and router based on FreeBSD with a web page. Its download page picks the image type (DVD) and mirror.",
+      "es": "Cortafuegos y router basado en FreeBSD con una web. Su página de descarga elige el tipo de imagen (DVD) y el servidor."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "opnsense",
+    "group": "servers",
+    "edition": "Firewall and router",
+    "tags": [
+      "recommended"
+    ]
+  },
+  {
+    "id": "pfsense",
+    "name": "pfSense CE",
+    "vendor": "Netgate",
+    "version": "latest",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://www.pfsense.org/download/",
+    "resolver": {
+      "type": "manual"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "Firewall and router based on FreeBSD. Netgate asks for a short form before the download.",
+      "es": "Cortafuegos y router basado en FreeBSD. Netgate pide un breve formulario antes de la descarga."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "pfsense",
+    "group": "servers",
+    "edition": "Community Edition",
+    "tags": []
+  },
+  {
+    "id": "ubuntu-24-04-cloud",
+    "name": "Ubuntu Server cloud image",
+    "vendor": "Canonical",
+    "version": "24.04 LTS (Noble)",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://cloud-images.ubuntu.com/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cloud-images.ubuntu.com/noble/current/SHA256SUMS",
+      "pattern": "^noble-server-cloudimg-amd64\\.img$"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "Ready-made Ubuntu Server for virtual machines and VPS: the same image cloud providers use.",
+      "es": "Ubuntu Server ya instalado para máquinas virtuales y VPS: la misma imagen que usan los proveedores de nube."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for virtual machines and VPS providers (it needs cloud-init), not a bootable ISO: import it into your hypervisor or provider.",
+        "es": "Imagen de disco para máquinas virtuales y proveedores de VPS (necesita cloud-init), no una ISO de arranque: impórtala en tu hipervisor o proveedor."
+      }
+    },
+    "family": "cloud-images",
+    "group": "servers",
+    "edition": "24.04 LTS (Noble)",
+    "tags": [
+      "recommended",
+      "board"
+    ]
+  },
+  {
+    "id": "ubuntu-22-04-cloud",
+    "name": "Ubuntu Server cloud image",
+    "vendor": "Canonical",
+    "version": "22.04 LTS (Jammy)",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://cloud-images.ubuntu.com/",
+    "resolver": {
+      "type": "sums",
+      "index": "https://cloud-images.ubuntu.com/jammy/current/SHA256SUMS",
+      "pattern": "^jammy-server-cloudimg-amd64\\.img$"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "Ready-made Ubuntu Server for virtual machines and VPS: the same image cloud providers use.",
+      "es": "Ubuntu Server ya instalado para máquinas virtuales y VPS: la misma imagen que usan los proveedores de nube."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A disk image for virtual machines and VPS providers (it needs cloud-init), not a bootable ISO: import it into your hypervisor or provider.",
+        "es": "Imagen de disco para máquinas virtuales y proveedores de VPS (necesita cloud-init), no una ISO de arranque: impórtala en tu hipervisor o proveedor."
+      }
+    },
+    "family": "cloud-images",
+    "group": "servers",
+    "edition": "22.04 LTS (Jammy)",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "arduino-ide-windows",
+    "name": "Arduino IDE",
+    "vendor": "Arduino",
+    "version": "Windows 64-bit",
+    "arch": "x86_64",
+    "category": "tools",
+    "homepage": "https://www.arduino.cc/en/software/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/arduino/arduino-ide/releases/latest",
+      "pattern": "^arduino-ide_[\\d.]+_Windows_64bit\\.exe$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "The program to write and upload code to Arduino boards (UNO, Nano, Mega, ESP32...).",
+      "es": "El programa para escribir y subir código a las placas Arduino (UNO, Nano, Mega, ESP32...)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A program for your computer, not a bootable image: it is saved on your USB so you can install it on any computer.",
+        "es": "Un programa para tu ordenador, no una imagen de arranque: se guarda en el USB para instalarlo en cualquier equipo."
+      }
+    },
+    "family": "arduino",
+    "group": "boards",
+    "edition": "Windows 64-bit",
+    "tags": [
+      "recommended",
+      "board"
+    ]
+  },
+  {
+    "id": "arduino-ide-linux",
+    "name": "Arduino IDE",
+    "vendor": "Arduino",
+    "version": "Linux 64-bit (AppImage)",
+    "arch": "x86_64",
+    "category": "tools",
+    "homepage": "https://www.arduino.cc/en/software/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/arduino/arduino-ide/releases/latest",
+      "pattern": "^arduino-ide_[\\d.]+_Linux_64bit\\.AppImage$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "The program to write and upload code to Arduino boards (UNO, Nano, Mega, ESP32...).",
+      "es": "El programa para escribir y subir código a las placas Arduino (UNO, Nano, Mega, ESP32...)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A program for your computer, not a bootable image: it is saved on your USB so you can install it on any computer.",
+        "es": "Un programa para tu ordenador, no una imagen de arranque: se guarda en el USB para instalarlo en cualquier equipo."
+      }
+    },
+    "family": "arduino",
+    "group": "boards",
+    "edition": "Linux 64-bit (AppImage)",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "arduino-ide-macos-arm",
+    "name": "Arduino IDE",
+    "vendor": "Arduino",
+    "version": "macOS Apple silicon",
+    "arch": "arm64",
+    "category": "tools",
+    "homepage": "https://www.arduino.cc/en/software/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/arduino/arduino-ide/releases/latest",
+      "pattern": "^arduino-ide_[\\d.]+_macOS_arm64\\.dmg$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "The program to write and upload code to Arduino boards (UNO, Nano, Mega, ESP32...).",
+      "es": "El programa para escribir y subir código a las placas Arduino (UNO, Nano, Mega, ESP32...)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A program for your computer, not a bootable image: it is saved on your USB so you can install it on any computer.",
+        "es": "Un programa para tu ordenador, no una imagen de arranque: se guarda en el USB para instalarlo en cualquier equipo."
+      }
+    },
+    "family": "arduino",
+    "group": "boards",
+    "edition": "macOS Apple silicon",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "arduino-ide-macos-intel",
+    "name": "Arduino IDE",
+    "vendor": "Arduino",
+    "version": "macOS Intel",
+    "arch": "x86_64",
+    "category": "tools",
+    "homepage": "https://www.arduino.cc/en/software/",
+    "resolver": {
+      "type": "github",
+      "index": "https://api.github.com/repos/arduino/arduino-ide/releases/latest",
+      "pattern": "^arduino-ide_[\\d.]+_macOS_64bit\\.dmg$"
+    },
+    "secureBoot": "none",
+    "signature": "none",
+    "notes": {
+      "en": "The program to write and upload code to Arduino boards (UNO, Nano, Mega, ESP32...).",
+      "es": "El programa para escribir y subir código a las placas Arduino (UNO, Nano, Mega, ESP32...)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "A program for your computer, not a bootable image: it is saved on your USB so you can install it on any computer.",
+        "es": "Un programa para tu ordenador, no una imagen de arranque: se guarda en el USB para instalarlo en cualquier equipo."
+      }
+    },
+    "family": "arduino",
+    "group": "boards",
+    "edition": "macOS Intel",
+    "tags": [
+      "board"
+    ]
+  },
+  {
+    "id": "unraid",
+    "name": "Unraid",
+    "vendor": "Lime Technology",
+    "version": "latest",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://unraid.net/download",
+    "resolver": {
+      "type": "manual"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "NAS and home-server system with a mixed-disk array, Docker and virtual machines (paid licence after a free trial).",
+      "es": "Sistema de NAS y servidor doméstico con un array de discos mezclados, Docker y máquinas virtuales (licencia de pago tras una prueba gratuita)."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Unraid is not an ISO: it is a set of files for its own USB drive, made with the official USB Creator, and it asks for a free account.",
+        "es": "Unraid no es una ISO: son archivos para su propio USB, hecho con su creador oficial, y pide una cuenta gratuita."
+      }
+    },
+    "family": "unraid",
+    "group": "servers",
+    "edition": "Official download",
+    "tags": []
+  },
+  {
+    "id": "synology-dsm",
+    "name": "Synology DSM",
+    "vendor": "Synology",
+    "version": "latest",
+    "arch": "x86_64",
+    "category": "linux",
+    "homepage": "https://www.synology.com/en-global/support/download",
+    "resolver": {
+      "type": "manual"
+    },
+    "secureBoot": "unknown",
+    "signature": "none",
+    "notes": {
+      "en": "The operating system of Synology NAS devices. Download page for updates and manual installs on your own Synology.",
+      "es": "El sistema operativo de los NAS de Synology. Página de descargas para actualizar o instalar a mano en tu propio Synology."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "DSM only installs on Synology NAS devices (their download page asks for your model); it cannot be started from a USB on another computer.",
+        "es": "DSM solo se instala en los NAS de Synology (su página de descarga pide tu modelo); no se puede arrancar desde un USB en otro ordenador."
+      }
+    },
+    "family": "synology",
+    "group": "servers",
+    "edition": "Official download",
+    "tags": []
   }
 ]

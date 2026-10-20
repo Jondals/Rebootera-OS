@@ -6,8 +6,11 @@ __pycache__/
 # Recursos de Windows generados por scripts/build/build-desktop.sh
 core/cmd/rebootera-desktop/*.syso
 
-# Imágenes de la landing: las copia el workflow de Pages desde docs/images
-site/images/
+# Landing (Astro): imágenes copiadas de docs/images y resultados de compilar
+site/public/images/
+site/dist/
+site/node_modules/
+site/.astro/
 
 # Binarios de Linux y macOS (solo para la publicación automática)
 /dist/

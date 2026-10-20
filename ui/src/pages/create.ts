@@ -8,6 +8,7 @@
 
 import { getJSON, postJSON } from "../api.js";
 import { button, emptyState, errorBox, pageHeader, panel, progress } from "../components.js";
+import { confirmAction } from "../dialogs.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
@@ -126,7 +127,14 @@ function canGo(): boolean {
   if (device === null || (source === "file" && iso === "")) {
     return false;
   }
-  return action === "update" || typed === confirmText(device);
+  return true;
+}
+
+/** Indica si este sistema puede crear el USB desde la aplicación (Windows, Linux y macOS). */
+function canCreate(): boolean {
+  return (
+    appMode.platform === "windows" || appMode.platform === "linux" || appMode.platform === "darwin"
+  );
 }
 
 /** Dibuja la página. */
@@ -191,22 +199,23 @@ function mergeDevices(disks: USBDisk[], drives: Drive[]): Device[] {
   return list;
 }
 
-/** Lee los discos USB (solo Windows) y los USB de Rebootera ya creados. */
-async function loadTargets(): Promise<void> {
-  try {
-    const drives = (await getJSON<Drive[]>("/api/desktop/drives")).filter(
-      function isRebootera(drive) {
-        return drive.rebootera;
-      },
-    );
-    const disks =
-      appMode.platform === "windows" ? await getJSON<USBDisk[]>("/api/desktop/disks") : [];
-    devices = mergeDevices(disks, drives);
-  } catch (error) {
-    body?.replaceChildren(errorBox(error));
-    return;
-  }
-  // * Un único USB conectado se propone solo, con la primera acción posible.
+/** Últimas unidades y discos leídos (se enseñan al instante al volver a la página) y si aún se está buscando. */
+let drivesCache: Drive[] = [];
+let disksCache: USBDisk[] | null = null;
+let loading = false;
+
+/** Filtro: solo las unidades que ya son un USB de Rebootera. */
+function onlyRebootera(drive: Drive): boolean {
+  return drive.rebootera;
+}
+
+/** Recalcula la lista de USB a partir de las últimas lecturas. */
+function rebuild(): void {
+  devices = mergeDevices(disksCache ?? [], drivesCache);
+}
+
+/** Si solo hay un USB lo elige (con su primera acción posible) y dibuja la página. */
+function settle(): void {
   if (selected() === null) {
     selectedKey = "";
     if (devices.length === 1) {
@@ -215,6 +224,51 @@ async function loadTargets(): Promise<void> {
     }
   }
   draw();
+}
+
+/**
+ * Lee los USB por etapas y enseña cada etapa según llega, para que la ventana salga al momento: primero lo que
+ * ya se sabía (con "buscando…" si no hay nada), luego las unidades de Rebootera (rápido), luego los discos (el
+ * servidor los tiene ya leídos desde que arrancó la aplicación) y por último una lectura fresca en segundo plano.
+ */
+async function loadTargets(fresh = false): Promise<void> {
+  loading = disksCache === null;
+  rebuild();
+  draw();
+  try {
+    drivesCache = (await getJSON<Drive[]>("/api/desktop/drives")).filter(onlyRebootera);
+    if (!canCreate()) {
+      disksCache = [];
+      loading = false;
+      rebuild();
+      settle();
+      return;
+    }
+    rebuild();
+    draw();
+    if (!fresh) {
+      disksCache = await getJSON<USBDisk[]>("/api/desktop/disks");
+      loading = false;
+      rebuild();
+      settle();
+    }
+    const latest = await getJSON<USBDisk[]>("/api/desktop/disks?fresh=1");
+    const changed = JSON.stringify(latest) !== JSON.stringify(disksCache);
+    disksCache = latest;
+    loading = false;
+    if (changed || fresh) {
+      rebuild();
+      settle();
+    }
+  } catch (error) {
+    loading = false;
+    body?.replaceChildren(errorBox(error));
+  }
+}
+
+/** Botón "Actualizar": vuelve a leer los discos de verdad. */
+function refreshTargets(): void {
+  void loadTargets(true);
 }
 
 /** Lee el estado de la operación mientras está en marcha. */
@@ -292,20 +346,25 @@ function onSource(event: MouseEvent): void {
   draw();
 }
 
-/** Guarda el texto de confirmación escrito. */
-function typeConfirm(event: Event): void {
-  typed = (event.currentTarget as HTMLInputElement).value;
-  const go = body?.querySelector<HTMLButtonElement>(".create-go");
-  if (go) {
-    go.disabled = !canGo();
-  }
-}
-
-/** Empieza la creación o la actualización. */
+/** Pide continuar (con el aviso de que se borra o se toca el disco) y empieza la creación o la actualización. */
 async function start(): Promise<void> {
   const device = selected();
   if (device === null) {
     return;
+  }
+  if (action !== "update") {
+    const warning = action === "erase" ? t("desktop.createWarn") : t("desktop.adoptWarn");
+    const label = device.disk === null ? "" : " (" + device.name + ")";
+    const proceed = await confirmAction(
+      t("desktop.confirmTitle") + label,
+      warning,
+      t("desktop.continue"),
+    );
+    if (!proceed) {
+      return;
+    }
+    // * El agente exige el texto de confirmación; el clic en "Continuar" es la confirmación, así que se rellena solo.
+    typed = confirmText(device);
   }
   acknowledged = false;
   selectedAfter = false;
@@ -400,16 +459,16 @@ function deviceCard(device: Device): HTMLElement {
 
 /** Panel 1: qué USB. */
 function usbPanel(): HTMLElement {
-  const refresh = button(t("common.refresh"), loadTargets, { iconPaths: icons.refresh });
+  const refresh = button(t("common.refresh"), refreshTargets, { iconPaths: icons.refresh });
   refresh.classList.add("btn-small");
-  const parts: HTMLElement[] =
-    devices.length > 0
-      ? devices.map(deviceCard)
-      : [
-          el("p", { class: "muted" }, [
-            appMode.platform === "windows" ? t("desktop.noDisks") : t("desktop.onlyWindows"),
-          ]),
-        ];
+  const parts: HTMLElement[] = devices.map(deviceCard);
+  if (loading) {
+    parts.push(el("p", { class: "muted" }, [t("desktop.searching")]));
+  } else if (devices.length === 0) {
+    parts.push(
+      el("p", { class: "muted" }, [canCreate() ? t("desktop.noDisks") : t("desktop.unsupported")]),
+    );
+  }
   return panel(t("desktop.stepUsb"), parts, { iconPaths: icons.usb, action: refresh });
 }
 
@@ -523,13 +582,6 @@ function goPanel(device: Device): HTMLElement {
       el("div", { class: "notice" }, [icon(icons.shield), el("span", {}, [t("desktop.keepNote")])]),
     );
   } else {
-    const confirmInput = el("input", {
-      class: "text-input",
-      type: "text",
-      placeholder: confirmText(device),
-    });
-    confirmInput.value = typed;
-    confirmInput.addEventListener("input", typeConfirm);
     parts.push(
       erasing
         ? el("div", { class: "error-box" }, [
@@ -541,11 +593,10 @@ function goPanel(device: Device): HTMLElement {
             el("span", {}, [t("desktop.adoptWarn")]),
           ]),
       device.sizeBytes >= LARGE_DISK ? warning(t("desktop.largeDisk")) : null,
-      el("label", { class: "confirm-field" }, [
-        el("span", {}, [t("desktop.confirmHint", { text: confirmText(device) })]),
-        confirmInput,
-      ]),
       el("p", { class: "muted small-note" }, [t("desktop.needsAdmin")]),
+      appMode.platform === "darwin"
+        ? el("p", { class: "muted small-note" }, [t("desktop.macUefi")])
+        : null,
     );
   }
   parts.push(el("div", { class: "deploy-actions" }, [go]));
@@ -591,9 +642,9 @@ function draw(): void {
     body.replaceChildren(drawStatus(status));
     return;
   }
-  if (devices.length === 0 && appMode.platform !== "windows") {
+  if (devices.length === 0 && !canCreate()) {
     body.replaceChildren(
-      emptyState(icons.info, t("desktop.createTitle"), t("desktop.onlyWindows")),
+      emptyState(icons.info, t("desktop.createTitle"), t("desktop.unsupported")),
     );
     return;
   }

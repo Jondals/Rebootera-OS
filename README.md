@@ -24,8 +24,8 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 | **Wi-Fi** | Connect the live session to a wireless network from Settings (WPA2/WPA3 and open networks, also hidden ones). |
 | **USB & Storage** | Disks and partitions with their role and usage. **Safe Disk Guard**: internal disks and the Rebootera USB are protected and only read. |
 | **Disks and partitions** | Every disk as a visual bar with three actions: create or resize a partition, merge it into a neighbour, delete it (ext4 and NTFS can be resized without losing files). Each change shows the exact steps first and asks you to type the disk name; the USB Rebootera runs from is never touched. |
-| **Rebootera Desktop** | Windows, Linux and macOS app. On Windows its **Create USB** option shows each USB once and offers what fits it: update Rebootera, add it keeping your files, or erase and start clean, with the latest Rebootera downloaded for you or your own ISO. It also downloads official images and manages the library without a USB (they are saved in the `Rebootera` folder of your user). On Linux and macOS creating the USB from the app is not available yet. |
-| **Look and feel** | Eight themes (seven dark: Obsidian, Sapphire, Emerald, Amethyst, Ember, Graphite, Amoled; and Ivory), an animated background with configurable blur that can be turned off, a tabbed header, interface size, English and Spanish. |
+| **Rebootera Desktop** | Windows, Linux and macOS app. Its **Create USB** option shows each USB once and offers what fits it: update Rebootera, erase and start clean, with the latest Rebootera downloaded for you or your own ISO, and (on Windows only) add it keeping your files. On Linux it asks for administrator permission with polkit; on macOS the USB starts UEFI computers. It also downloads official images and manages the library without a USB (they are saved in the `Rebootera` folder of your user). |
+| **Look and feel** | Eight dark themes (Amoled, Obsidian, Sapphire, Emerald, Amethyst, Ember, Orange, Graphite), an animated background with configurable blur that can be turned off, a tabbed header, interface size, English and Spanish. |
 | **Boards & IoT** | Raspberry Pi OS, Ubuntu for Raspberry Pi, DietPi, OpenWrt and Home Assistant OS, checked with their published SHA-256 (disk images to write to an SD card). Rename any image and give it a picture from My images. |
 
 | | |
@@ -44,7 +44,7 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 **From Linux** — as root:
 
 ```bash
-scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.12.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.17.0-amd64.iso
 ```
 
 The script refuses non-removable disks and the system disk.
@@ -130,7 +130,7 @@ It takes about a minute. The script builds the interface, embeds it together wit
 
 ### 4. Make a Rebootera USB
 
-- **Real USB drive**: open `Rebootera Desktop.exe` → **Create USB** and choose the ISO from step 2, or use `scripts/usb/make-usb.sh --device` on Linux (see [Getting a Rebootera USB](#getting-a-rebootera-usb)).
+- **Real USB drive**: open `Rebootera Desktop.exe` → **Create USB** and choose the ISO from step 2, (also available in Rebootera Desktop for Linux and macOS), or use `scripts/usb/make-usb.sh --device` on Linux (see [Getting a Rebootera USB](#getting-a-rebootera-usb)).
 - **Disk image for virtual machines**: `wsl -d RebooteraBuild -u root --exec bash "/mnt/d/dev/Rebootera OS/scripts/usb/make-usb.sh" --image /root/usb.img --iso "/mnt/d/dev/Rebootera OS/out/rebootera-os-<version>-amd64.iso"`.
 
 ### Interface development (pnpm)
@@ -149,15 +149,17 @@ pnpm run build
 | --- | --- |
 | `go test ./...` (in `core/`) | API protections, storage and hardware inventory, catalog resolvers, downloads (resume, checksum mismatch), library, boot selection, desktop kit |
 | `go test -tags online ./internal/catalog/` | Every catalog entry against the real official sources |
-| `scripts/test/test-all.sh [--quick] [--no-build]` | **Everything at once**: builds both ISOs and runs every VM test in parallel (three 1.5 GB VMs at a time). About 8 minutes of tests; `--quick` boots the two ISOs in 1 minute |
+| `scripts/test/test-all.sh [--full] [--build] [--no-build]` | **Fast by default** (under 3 minutes): boots both ISOs on UEFI + Secure Boot and rebuilds an ISO only if the source changed. `--full` runs every VM test in parallel (three 1.5 GB VMs at a time, about 17 minutes): use it before a release |
 | `scripts/test/cpu-probe.py URL` | Idle CPU of each interface page with the same WebKitGTK as the image (catches endless animations) |
 | `scripts/test/vmtest.py MODE ISO OUT` | Boots the ISO in QEMU/KVM (`uefi`, `uefi-sb`, `bios`): services, isolation, permissions, Secure Boot, interface screenshots, power off from the interface |
 | `scripts/test/vmtest-usb.py MODE USB.img DISK.qcow2 OUT` | End-to-end Rebootera USB: Vault, real download, import from another disk, settings, boot of the chosen image and persistence after reboot |
 | `scripts/test/vmtest-v03.py USB.img OUT` | 0.3.0 features end to end: GPG-verified download, driver matching with real virtio-win INF files, Wi-Fi with simulated radios and a virtual access point, Debian preseed with boot-once, Windows preparation and cleanup |
+| `scripts/test/test-create-linux.sh` | Linux (in the WSL distro, as root): runs the real Rebootera Desktop and creates a USB on a **virtual disk** (a loop device) through its API: real Ventoy install, label, GPT, boot partition, Rebootera OS byte for byte and the USB structure |
 | `scripts/test/test-desktop-windows.ps1` | Windows only: runs the real `Rebootera Desktop.exe` against a **fake** USB (a temporary folder) and checks that the image and drivers are copied byte for byte, the system is untouched and bad requests are refused |
 | `scripts/test/make-partman-disk.sh OUT.qcow2` | Test disk for the partition manager: ext4 + NTFS with data and checksums (only image files and a loop device) |
 | `REBOOTERA_LOOP_TESTS=1 go test ./cmd/rebootera-agent -run TestLoop` | As root in WSL: runs the partition manager on real loop disks (resize, move a limit in both directions, merge, create, delete) and checks files by hash and file system health |
 | `scripts/test/vmtest-interactive.py MODE IMG OUT` | Drives a VM from outside (keys, clicks, screenshots), for example to walk through MokManager |
+| `scripts/dev/site.ps1` | Windows: shows the website (`site/`) in the browser with a tiny local server (`-Port`, `-NoOpen`) |
 | `scripts/dev/ui-preview.py URL OUT` | Interface screenshots with the same WebKitGTK as the image |
 
 Results are recorded in [docs/PRUEBAS.md](docs/PRUEBAS.md) (Spanish).

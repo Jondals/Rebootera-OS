@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"rebootera/core/internal/drivers"
 )
 
 // maxDriverCandidates limita cuántas particiones se prueban (un equipo con decenas de discos no se bloquea).
@@ -26,6 +28,9 @@ func scanDriverPartitions(clientUser string) ([]string, error) {
 	}
 	var kept []string
 	tried := 0
+	// * Una partición cuya etiqueta dice "DRIVERS" (o parecido) se queda abierta aunque no tenga una carpeta de drivers: sus
+	// * paquetes están sueltos en la raíz.
+	labelled := drivers.LabelledPartitions()
 	for _, entry := range entries {
 		name := entry.Name()
 		if !partitionPattern.MatchString(name) || strings.HasPrefix(name, "sr") {
@@ -33,7 +38,7 @@ func scanDriverPartitions(clientUser string) ([]string, error) {
 		}
 		target := filepath.Join(mediaRoot, name)
 		if isMountPoint(target) {
-			if hasDriverFolder(target) {
+			if _, byLabel := labelled[name]; byLabel || hasDriverFolder(target) {
 				kept = append(kept, name)
 			}
 			continue
@@ -45,7 +50,7 @@ func scanDriverPartitions(clientUser string) ([]string, error) {
 		if mountMedia("/dev/"+name, clientUser) != nil {
 			continue
 		}
-		if hasDriverFolder(target) {
+		if _, byLabel := labelled[name]; byLabel || hasDriverFolder(target) {
 			kept = append(kept, name)
 			continue
 		}

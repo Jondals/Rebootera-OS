@@ -23,7 +23,7 @@ func TestResolveCache(t *testing.T) {
 		t.Fatal("otra entrada no debe salir")
 	}
 	// * Una consulta antigua caduca.
-	cache.entries["debian"] = cachedResolve{result: got, at: time.Now().Add(-2 * resolveTTL)}
+	cache.entries["debian"] = cachedResolve{Result: got, At: time.Now().Add(-2 * resolveTTL)}
 	if _, ok := cache.lookup("debian"); ok {
 		t.Fatal("una consulta caducada no debe devolverse")
 	}

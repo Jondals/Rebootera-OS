@@ -1,0 +1,91 @@
+---
+// * Dos filas de sistemas que se desplazan en sentidos opuestos. Cada logotipo es un enlace a la web del proyecto:
+// * en reposo van en el color de la página y, al pasar el ratón, toman el color de su marca.
+import { OS_LOGOS } from "../data/logos";
+import L from "./L.astro";
+import Icon from "./Icon.astro";
+
+/** Web oficial de cada sistema. */
+const SITES: Record<string, string> = {
+  ubuntu: "https://ubuntu.com/download",
+  debian: "https://www.debian.org/distrib/",
+  fedora: "https://fedoraproject.org/",
+  mint: "https://linuxmint.com/download.php",
+  arch: "https://archlinux.org/download/",
+  opensuse: "https://get.opensuse.org/",
+  kali: "https://www.kali.org/get-kali/",
+  rocky: "https://rockylinux.org/download",
+  almalinux: "https://almalinux.org/get-almalinux/",
+  proxmox: "https://www.proxmox.com/en/downloads",
+  freebsd: "https://www.freebsd.org/where/",
+  openbsd: "https://www.openbsd.org/faq/faq4.html",
+  alpine: "https://alpinelinux.org/downloads/",
+  nixos: "https://nixos.org/download/",
+  void: "https://voidlinux.org/download/",
+  centos: "https://www.centos.org/centos-stream/",
+  windows: "https://www.microsoft.com/windows",
+  "raspberrypi-os": "https://www.raspberrypi.com/software/",
+  openwrt: "https://openwrt.org/",
+  "home-assistant": "https://www.home-assistant.io/installation/",
+};
+
+/** Algunos colores de marca son casi negros y no se verían sobre el fondo oscuro. */
+const BRAND_FIX: Record<string, string> = { almalinux: "#4FA3E8", centos: "#7A78E0", alpine: "#2B8FC4" };
+
+const first = OS_LOGOS.slice(0, 10);
+const second = OS_LOGOS.slice(10);
+---
+
+<svg width="0" height="0" class="absolute" aria-hidden="true">
+  {
+    OS_LOGOS.map(function symbol(logo) {
+      return (
+        <symbol id={"os-" + logo.id} viewBox="0 0 24 24">
+          <path d={logo.d} />
+        </symbol>
+      );
+    })
+  }
+</svg>
+
+<section id="systems" class="relative z-10 py-20">
+  <div class="mx-auto mb-10 max-w-6xl px-5">
+    <p class="reveal mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent"><L en="Systems" es="Sistemas" /></p>
+    <h2 class="reveal max-w-3xl font-display text-4xl tracking-tight md:text-5xl" style="--d: 60ms">
+      <L en="Windows, Linux, BSD and more, straight from the source" es="Windows, Linux, BSD y más, directos de su fuente" />
+    </h2>
+    <p class="reveal mt-4 text-lg text-muted" style="--d: 120ms"><L en="Tap a logo to open the project's own site." es="Toca un logo para abrir la web del propio proyecto." /></p>
+  </div>
+
+  <div class="space-y-3 overflow-hidden py-2 [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
+    {
+      [first, second].map(function row(items, index) {
+        return (
+          <div class={"marquee" + (index === 1 ? " marquee-reverse" : "")}>
+            {[0, 1].map(function copy(round) {
+              return items.map(function item(logo) {
+                return (
+                  <a
+                    href={SITES[logo.id]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="sys"
+                    style={"--brand: " + (BRAND_FIX[logo.id] || logo.color)}
+                    aria-hidden={round === 1 ? "true" : undefined}
+                    tabindex={round === 1 ? -1 : undefined}
+                  >
+                    <svg class="logo" width="28" height="28" aria-hidden="true">
+                      <use href={"#os-" + logo.id} />
+                    </svg>
+                    <span class="text-[13px] font-medium leading-tight">{logo.name}</span>
+                    <Icon name="external" size={14} class="go" />
+                  </a>
+                );
+              });
+            })}
+          </div>
+        );
+      })
+    }
+  </div>
+</section>

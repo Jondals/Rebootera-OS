@@ -1,0 +1,16 @@
+# * Carga los controladores de los paneles táctiles y teclados de portátil que no se cargan solos: muchos paneles
+# * táctiles modernos van por I2C/HID y sin estos módulos el sistema no los ve (solo funciona un ratón externo).
+# * Los módulos que no existan se ignoran (modprobe -q): no es un error.
+[Unit]
+Description=Rebootera: controladores del panel táctil
+DefaultDependencies=no
+After=systemd-modules-load.service
+Before=rebootera-ui.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'for module in i2c_designware_platform i2c_designware_pci intel_lpss_pci intel_lpss_acpi i2c_hid_acpi i2c_hid_of i2c_hid hid_multitouch hid_generic hid_rmi rmi_smbus elan_i2c elants_i2c psmouse pinctrl_amd pinctrl_intel pinctrl_tigerlake pinctrl_icelake pinctrl_alderlake pinctrl_cannonlake pinctrl_sunrisepoint pinctrl_jasperlake pinctrl_geminilake pinctrl_cherryview pinctrl_meteorlake pinctrl_lakefield i2c_i801 i2c_piix4; do modprobe -q "$module" 2>/dev/null; done; exit 0'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

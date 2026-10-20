@@ -153,7 +153,7 @@ func bestMatch(device hardware.Device, packages []*Package) (Match, bool) {
 			if !pkg.Supports(id) {
 				continue
 			}
-			if best == nil || newer(pkg, best) {
+			if best == nil || preferred(pkg, best) {
 				best = pkg
 			}
 		}
@@ -168,6 +168,15 @@ func bestMatch(device hardware.Device, packages []*Package) (Match, bool) {
 		}
 	}
 	return Match{}, false
+}
+
+// * preferred indica si a debe elegirse antes que b: gana el origen de mayor prioridad (USB, carpeta de fábrica,
+// * Windows instalado) y, dentro del mismo origen, el más reciente.
+func preferred(a, b *Package) bool {
+	if a.Rank != b.Rank {
+		return a.Rank < b.Rank
+	}
+	return newer(a, b)
 }
 
 // * newer indica si a es más reciente que b (fecha mm/dd/aaaa del INF).

@@ -5,7 +5,6 @@
 // * (modo escritorio), con secciones distintas en cada modo.
 
 import { getJSON, postJSON } from "./api.js";
-import { miniTheme } from "./components.js";
 import { openPowerDialog } from "./dialogs.js";
 import { el, icon } from "./dom.js";
 import * as fmt from "./format.js";
@@ -15,34 +14,19 @@ import { reportReady } from "./bridge.js";
 import { onlineInterface } from "./insights.js";
 import { playIntro } from "./intro.js";
 import { appMode, isDesktop, loadMode } from "./mode.js";
-import { createPage } from "./pages/create.js";
-import { desktopDriversPage } from "./pages/desktop-drivers.js";
 import { homePage } from "./pages/home.js";
-import { driversPage } from "./pages/drivers.js";
 import { overviewPage } from "./pages/overview.js";
-import { settingsPage } from "./pages/settings.js";
-import { storagePage } from "./pages/storage.js";
-import { downloadsPage } from "./pages/downloads.js";
-import { libraryPage } from "./pages/library.js";
-import { wizardPage } from "./pages/wizard.js";
-import {
-  forceLite,
-  loadPrefs,
-  loadVaultPrefs,
-  prefs,
-  savePrefs,
-  THEMES,
-  type Theme,
-} from "./prefs.js";
+import { forceLite, loadPrefs, loadVaultPrefs } from "./prefs.js";
 import {
   activeRoute,
   desktopRoutes,
   navigate,
   register,
-  refreshCurrent,
+  registerLazy,
   renderCurrent,
   routes,
   setRoutes,
+  type Page,
   startRouter,
   type Route,
 } from "./router.js";
@@ -56,6 +40,7 @@ const NAV_ICONS: Record<string, string> = {
   drivers: icons.drivers,
   downloads: icons.download,
   storage: icons.disk,
+  computer: icons.cpu,
   create: icons.usb,
   settings: icons.settings,
 };
@@ -140,110 +125,11 @@ function renderDriveCard(): void {
   chipNode.title = text;
 }
 
-/** Alterna entre inglés y español desde la barra superior. */
-function toggleLanguage(): void {
-  prefs.language = prefs.language === "en" ? "es" : "en";
-  savePrefs();
-  relabel();
-  refreshCurrent();
-}
-
 /** Vuelve a traducir el marco tras un cambio de idioma. */
 function relabel(): void {
   translateStatic(document);
-  byId("lang-code").textContent = prefs.language.toUpperCase();
   renderNav();
   renderShell();
-  drawThemeSwitch();
-}
-
-/** Indica si el selector de tema está desplegado. */
-let themeOpen = false;
-
-/**
- * Dibuja el selector de tema de la barra superior: un botón con la miniatura del tema actual que despliega
- * las tres opciones, cada una con su vista previa y su nombre.
- */
-function drawThemeSwitch(): void {
-  const current = el(
-    "button",
-    {
-      class: "theme-current",
-      type: "button",
-      title: t("theme.title"),
-      "aria-haspopup": "true",
-      "aria-expanded": String(themeOpen),
-    },
-    [
-      icon(icons.palette),
-      el("span", { class: "theme-name" }, [t("theme." + prefs.theme)]),
-      icon(icons.chevronRight, "icon theme-caret"),
-    ],
-  );
-  current.addEventListener("click", toggleThemeMenu);
-  const parts: HTMLElement[] = [current];
-  if (themeOpen) {
-    parts.push(
-      el(
-        "div",
-        { class: "theme-popover", role: "menu" },
-        THEMES.map(function themeOption(name) {
-          const option = el(
-            "button",
-            {
-              class: "theme-option",
-              type: "button",
-              role: "menuitemradio",
-              "aria-checked": String(prefs.theme === name),
-              "data-theme": name,
-            },
-            [
-              miniTheme(name),
-              el("span", { class: "theme-option-text" }, [
-                el("strong", {}, [t("theme." + name)]),
-                el("span", {}, [t("theme." + name + "Hint")]),
-              ]),
-            ],
-          );
-          option.addEventListener("click", pickTheme);
-          return option;
-        }),
-      ),
-    );
-  }
-  byId("theme-switch").replaceChildren(...parts);
-}
-
-/** Despliega o recoge el selector de tema. */
-function toggleThemeMenu(): void {
-  themeOpen = !themeOpen;
-  drawThemeSwitch();
-}
-
-/** Recoge el selector al pulsar fuera de él o Escape. */
-function closeThemeMenu(event: Event): void {
-  if (!themeOpen) {
-    return;
-  }
-  if (event instanceof KeyboardEvent && event.key !== "Escape") {
-    return;
-  }
-  // ! composedPath se calcula al empezar el evento: sigue incluyendo el selector aunque el botón pulsado ya se
-  // ! haya vuelto a dibujar (con event.target, abrir el menú lo cerraba al instante y "no funcionaba").
-  if (event instanceof MouseEvent && event.composedPath().includes(byId("theme-switch"))) {
-    return;
-  }
-  themeOpen = false;
-  drawThemeSwitch();
-}
-
-/** Aplica el tema de la opción pulsada y lo recuerda. */
-function pickTheme(event: MouseEvent): void {
-  prefs.theme = (event.currentTarget as HTMLElement).dataset.theme as Theme;
-  themeOpen = false;
-  savePrefs();
-  drawThemeSwitch();
-  document.dispatchEvent(new CustomEvent("rebootera:theme"));
 }
 
 /** Unidad de /api/desktop/drives (solo se mira si es un USB de Rebootera). */
@@ -271,7 +157,7 @@ async function autoSelectUsb(): Promise<void> {
       appMode.usb = found[0].root;
       await refreshVault();
       renderShell();
-      renderCurrent();
+      void renderCurrent();
     }
   } catch {
     // * Sin respuesta se vuelve a intentar en el siguiente ciclo.
@@ -296,7 +182,7 @@ async function loadVersion(): Promise<void> {
 async function applyVaultPrefs(): Promise<void> {
   if (await loadVaultPrefs()) {
     relabel();
-    renderCurrent();
+    void renderCurrent();
   }
 }
 
@@ -305,19 +191,42 @@ function preventDefault(event: Event): void {
   event.preventDefault();
 }
 
+/** Carga de cada página al abrirla por primera vez (cada una es un archivo aparte). */
+async function loadCreate(): Promise<Page> {
+  return (await import("./pages/create.js")).createPage;
+}
+async function loadLibrary(): Promise<Page> {
+  return (await import("./pages/library.js")).libraryPage;
+}
+async function loadWizard(): Promise<Page> {
+  return (await import("./pages/wizard.js")).wizardPage;
+}
+async function loadDesktopDrivers(): Promise<Page> {
+  return (await import("./pages/desktop-drivers.js")).desktopDriversPage;
+}
+async function loadDrivers(): Promise<Page> {
+  return (await import("./pages/drivers.js")).driversPage;
+}
+async function loadDownloads(): Promise<Page> {
+  return (await import("./pages/downloads.js")).downloadsPage;
+}
+async function loadStorage(): Promise<Page> {
+  return (await import("./pages/storage.js")).storagePage;
+}
+async function loadComputer(): Promise<Page> {
+  return (await import("./pages/computer.js")).computerPage;
+}
+async function loadSettings(): Promise<Page> {
+  return (await import("./pages/settings.js")).settingsPage;
+}
+
 /** Inicializa la interfaz. */
 async function init(): Promise<void> {
   loadPrefs();
   translateStatic(document);
-  byId("lang-code").textContent = prefs.language.toUpperCase();
   byId("power-button").addEventListener("click", openPowerDialog);
-  byId("lang-button").addEventListener("click", toggleLanguage);
   document.addEventListener("rebootera:language", relabel);
-  document.addEventListener("rebootera:theme", drawThemeSwitch);
-  document.addEventListener("click", closeThemeMenu);
-  document.addEventListener("keydown", closeThemeMenu);
   byId("power-icon").innerHTML = icons.power;
-  drawThemeSwitch();
   // * El kiosco no ofrece menú contextual: no hay nada útil que mostrar en él.
   document.addEventListener("contextmenu", preventDefault);
 
@@ -327,18 +236,20 @@ async function init(): Promise<void> {
     setRoutes(desktopRoutes);
     byId("power-button").hidden = true;
     forceLite();
-    register("create", createPage);
+    registerLazy("create", loadCreate);
     window.setInterval(autoSelectUsb, 4000);
   }
 
   // * Resumen y asistente de drivers son distintos en el escritorio: allí se ve y se gestiona el USB.
   register("overview", isDesktop() ? homePage : overviewPage);
-  register("library", libraryPage);
-  register("install", wizardPage);
-  register("drivers", isDesktop() ? desktopDriversPage : driversPage);
-  register("downloads", downloadsPage);
-  register("storage", storagePage);
-  register("settings", settingsPage);
+  // * Solo la portada se carga de entrada; las demás páginas se leen del USB la primera vez que se abren.
+  registerLazy("library", loadLibrary);
+  registerLazy("install", loadWizard);
+  registerLazy("drivers", isDesktop() ? loadDesktopDrivers : loadDrivers);
+  registerLazy("downloads", loadDownloads);
+  registerLazy("storage", loadStorage);
+  registerLazy("computer", loadComputer);
+  registerLazy("settings", loadSettings);
 
   subscribe(renderShell);
   const ready = Promise.all([loadVersion(), start(isDesktop()), applyVaultPrefs()]);

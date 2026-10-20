@@ -38,8 +38,9 @@ const (
 	StateMismatch  = "mismatch"
 )
 
-// * Extensiones que Ventoy puede arrancar y su tipo.
-var kinds = map[string]string{".iso": "iso", ".img": "img", ".wim": "wim", ".vhd": "vhd", ".vhdx": "vhd", ".efi": "efi", ".xz": "img", ".gz": "img"}
+// * Extensiones que se guardan en la biblioteca y su tipo: las imágenes que Ventoy puede arrancar (o que sirven para máquinas
+// * virtuales) y los programas ("app") que el catálogo ofrece para llevar en el USB, como el Arduino IDE.
+var kinds = map[string]string{".iso": "iso", ".img": "img", ".wim": "wim", ".vhd": "vhd", ".vhdx": "vhd", ".efi": "efi", ".xz": "img", ".gz": "img", ".qcow2": "img", ".exe": "app", ".appimage": "app", ".dmg": "app"}
 
 // Item es una imagen de la biblioteca.
 type Item struct {

@@ -22,7 +22,7 @@ import (
 // Valores de Ventoy que usa Rebootera.
 const (
 	RebooteraImage  = "/rebootera/rebootera-os.iso"
-	defaultTimeout  = "4"
+	defaultTimeout  = "1"
 	installTimeout  = "10"
 	keyDefaultImage = "VTOY_DEFAULT_IMAGE"
 	keyMenuTimeout  = "VTOY_MENU_TIMEOUT"

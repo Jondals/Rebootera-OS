@@ -14,6 +14,8 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -80,6 +82,10 @@ func init() {
 // * ui es la carpeta de la interfaz: una carpeta del disco en Rebootera OS o
 // * los archivos embebidos en el ejecutable de Rebootera Desktop.
 func New(ui fs.FS, token, port string, agent Agent, deps Deps) *Server {
+	// * Los tamaños de las descargas que se supieron la última vez se enseñan al instante.
+	if dir, err := os.UserCacheDir(); err == nil {
+		resolutions.open(filepath.Join(dir, "rebootera", "resolve.json"))
+	}
 	return &Server{
 		ui:    ui,
 		token: token,
@@ -115,8 +121,8 @@ func (s *Server) Handler() http.Handler {
 		s.registerDesktop(mux)
 	}
 	s.registerVault(mux)
-	mux.Handle("GET /", s.requireSession(http.FileServer(http.FS(s.ui))))
-	return &guard{server: s, next: mux}
+	mux.Handle("GET /", s.requireSession(s.uiHandler()))
+	return &guard{server: s, next: withGzip(mux)}
 }
 
 // guard aplica a todas las peticiones la comprobación de Host y las

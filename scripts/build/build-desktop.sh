@@ -96,7 +96,7 @@ main() {
 	mkdir -p "$SRC/out"
 	# * El nombre lleva la versión (como el de la ISO): así se ve siempre cuál es la última. Los de versiones
 	# * anteriores se borran, para que out/ solo tenga el .exe y la ISO de esta versión.
-	rm -f "$SRC"/out/Rebootera-Desktop-*.exe "$SRC/out/Rebootera Desktop.exe"
+	rm -f "$SRC"/out/Rebootera-Desktop-*.exe "$SRC/out/Rebootera Desktop.exe" || echo "aviso: no se pudo borrar un exe antiguo de out/ (¿está abierto?): bórralo a mano al cerrarlo" >&2
 	cp "$work/RebooteraDesktop.exe" "$SRC/out/Rebootera-Desktop-$version.exe"
 	ls -lh "$SRC/out/Rebootera-Desktop-$version.exe"
 

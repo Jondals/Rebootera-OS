@@ -1,24 +1,26 @@
 <!doctype html>
 <!-- * Marco de Rebootera UI: intro, fondo animado, menú lateral, barra superior y área principal. -->
-<html lang="en" data-theme="obsidian">
+<html lang="en" data-theme="amoled">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Rebootera OS</title>
-    <link rel="stylesheet" href="styles/tokens.css" />
-    <link rel="stylesheet" href="styles/base.css" />
-    <link rel="stylesheet" href="styles/layout.css" />
-    <link rel="stylesheet" href="styles/components.css" />
-    <link rel="stylesheet" href="styles/pages.css" />
-    <link rel="stylesheet" href="styles/lux.css" />
-    <link rel="stylesheet" href="styles/intro.css" />
-    <link rel="stylesheet" href="styles/topnav.css" />
+    <meta
+      name="description"
+      content="Rebootera OS: install, recover and manage operating systems from one USB."
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" href="logo.svg" type="image/svg+xml" />
+    <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="styles/app.css" />
     <script type="module" src="js/main.js"></script>
   </head>
   <body>
     <!-- * Logotipo: se define una vez y se usa en el menú y en la intro. Sus colores salen del tema
          (variables --logo-*), así que cambia con él. -->
-    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <svg class="sprite" width="0" height="0" aria-hidden="true">
       <defs>
         <linearGradient id="lg-tile" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" class="lg-t1" />
@@ -188,15 +190,6 @@
         <div class="topnav-right">
           <span id="status-chip"></span>
           <div class="drive-chip" id="drive-card"></div>
-          <div class="theme-switch" id="theme-switch"></div>
-          <button
-            class="icon-button"
-            id="lang-button"
-            type="button"
-            data-i18n-label="topbar.language"
-          >
-            <span class="lang-code" id="lang-code">EN</span>
-          </button>
           <button
             class="icon-button icon-button-danger"
             id="power-button"

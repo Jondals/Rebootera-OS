@@ -145,12 +145,11 @@ async function review(
     body.replaceChildren(errorBox(error));
     return;
   }
-  const typed = el("input", { class: "text-input", type: "text", placeholder: plan.confirm });
   const apply = button(
     t("pm.apply"),
     async function applyClick(): Promise<void> {
       try {
-        await applyOp(op, typed.value);
+        await applyOp(op, plan.confirm);
         dialog.close();
         done();
       } catch (error) {
@@ -159,10 +158,6 @@ async function review(
     },
     { variant: "danger" },
   );
-  apply.disabled = true;
-  typed.addEventListener("input", function check(): void {
-    apply.disabled = typed.value !== plan.confirm;
-  });
   const warnings: HTMLElement[] = [];
   if (plan.destructive) {
     warnings.push(el("div", { class: "error-box" }, [t("pm.warnDestructive")]));
@@ -185,13 +180,9 @@ async function review(
       }),
     ),
     ...warnings,
-    el("label", { class: "confirm-field" }, [
-      el("span", {}, [t("pm.typeToConfirm", { text: plan.confirm })]),
-      typed,
-    ]),
     el("div", { class: "modal-actions" }, [apply]),
   );
-  typed.focus();
+  apply.focus();
 }
 
 /** Muestra un error de medición del mínimo. */

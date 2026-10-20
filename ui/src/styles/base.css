@@ -98,15 +98,6 @@ pre {
   letter-spacing: 0.01em;
 }
 
-.mono-label {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
 /* ! Movimiento reducido: por ajuste propio o del sistema. */
 :root[data-motion="reduced"] *,
 :root[data-motion="reduced"] *::before,
@@ -135,11 +126,6 @@ pre {
 :root[data-gfx="lite"] .overlay {
   backdrop-filter: none;
 }
-
-:root[data-gfx="lite"] .aurora,
-:root[data-gfx="lite"] .intro-halo,
-:root[data-gfx="lite"] .intro-letter,
-:root[data-gfx="lite"] .logo-arrow,
 :root[data-gfx="lite"] [class*="glow"],
 :root[data-gfx="lite"] svg {
   filter: none !important;

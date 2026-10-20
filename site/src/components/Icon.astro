@@ -1,0 +1,25 @@
+---
+// * Un icono de línea de data/icons.ts, del tamaño y con las clases que se pidan.
+import { ICONS } from "../data/icons";
+
+interface Props {
+  name: string;
+  class?: string;
+  size?: number;
+}
+const { name, class: className = "", size = 22 } = Astro.props;
+---
+
+<svg
+  class={className}
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.7"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  set:html={ICONS[name]}
+/>

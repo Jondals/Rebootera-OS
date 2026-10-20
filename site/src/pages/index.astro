@@ -1,0 +1,32 @@
+---
+// * Página de inicio de Rebootera OS: reúne las secciones en el orden en que se leen.
+import Layout from "../layouts/Layout.astro";
+import Background from "../components/Background.astro";
+import Header from "../components/Header.astro";
+import Hero from "../components/Hero.astro";
+import Systems from "../components/Systems.astro";
+import Features from "../components/Features.astro";
+import Showcase from "../components/Showcase.astro";
+import Steps from "../components/Steps.astro";
+import Faq from "../components/Faq.astro";
+import Footer from "../components/Footer.astro";
+import BackToTop from "../components/BackToTop.astro";
+---
+
+<Layout
+  title="Rebootera OS"
+  description="Install and fix any system from one USB. Download Rebootera Desktop for Windows, Linux or macOS, or the Rebootera OS image."
+>
+  <Background />
+  <Header />
+  <main>
+    <Hero />
+    <Features />
+    <Systems />
+    <Showcase />
+    <Steps />
+    <Faq />
+  </main>
+  <Footer />
+  <BackToTop />
+</Layout>

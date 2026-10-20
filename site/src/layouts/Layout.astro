@@ -1,0 +1,71 @@
+---
+// * Plantilla de la página: cabecera del documento, hoja de iconos (el logotipo con los colores del tema), el CSS
+// * de los temas y los scripts (tema, idioma, descargas, fondo y aparición al desplazarse). El icono de la pestaña
+// * lo redibuja site.js con los colores del tema activo.
+import "../styles/global.css";
+import { themeCss } from "../data/themes";
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="amoled">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#000000" id="theme-color" />
+    <link rel="icon" href="logo.svg" type="image/svg+xml" id="favicon" />
+    <link rel="preload" href="fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    <style set:html={themeCss()}></style>
+    <script is:inline>
+      // * Tema guardado (o Amoled) y idioma, antes de pintar, para que no parpadee.
+      try {
+        var savedTheme = window.localStorage.getItem("rebootera-theme");
+        if (savedTheme) {
+          document.documentElement.setAttribute("data-theme", savedTheme);
+        }
+      } catch (error) {
+        // Sin almacenamiento se usan los valores por defecto.
+      }
+    </script>
+  </head>
+  <body data-lang="en">
+    <svg class="sprite" width="0" height="0" aria-hidden="true">
+      <defs>
+        <linearGradient id="lg-tile" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" class="lg-t1"></stop>
+          <stop offset="1" class="lg-t2"></stop>
+        </linearGradient>
+        <radialGradient id="lg-glow" cx="128" cy="170" r="120" gradientUnits="userSpaceOnUse">
+          <stop offset="0" class="lg-g1"></stop>
+          <stop offset="1" class="lg-g2"></stop>
+        </radialGradient>
+        <linearGradient id="lg-sun" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" class="lg-s1"></stop>
+          <stop offset="1" class="lg-s2"></stop>
+        </linearGradient>
+        <clipPath id="lg-clip"><rect x="8" y="8" width="240" height="240" rx="58"></rect></clipPath>
+      </defs>
+      <symbol id="rbt-logo" viewBox="0 0 256 256">
+        <rect x="8" y="8" width="240" height="240" rx="58" fill="url(#lg-tile)"></rect>
+        <rect x="8" y="8" width="240" height="240" fill="url(#lg-glow)" clip-path="url(#lg-clip)"></rect>
+        <rect x="9.5" y="9.5" width="237" height="237" rx="56.5" fill="none" class="lg-edge" stroke-width="3"></rect>
+        <path d="M60.8 121A82 82 0 0 1 195.2 121" fill="none" class="lg-ray" stroke-opacity="0.9" stroke-linecap="round" stroke-width="8"></path>
+        <path d="M37.9 116A104 104 0 0 1 218.1 116" fill="none" class="lg-ray" stroke-opacity="0.45" stroke-linecap="round" stroke-width="6"></path>
+        <path d="M72 168A56 56 0 0 1 184 168Z" fill="url(#lg-sun)"></path>
+        <path d="M56 182H200" fill="none" class="lg-ray" stroke-opacity="0.85" stroke-linecap="round" stroke-width="8"></path>
+        <path d="M86 200H170" fill="none" class="lg-ray" stroke-opacity="0.4" stroke-linecap="round" stroke-width="8"></path>
+      </symbol>
+    </svg>
+    <slot />
+    <script is:inline src="site.js"></script>
+  </body>
+</html>

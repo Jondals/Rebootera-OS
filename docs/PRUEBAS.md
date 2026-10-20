@@ -123,7 +123,7 @@ Con `VTOY_SECURE_BOOT_POLICY=1` Ventoy no deja arrancar Linux con Secure Boot. S
 
 ## v0.3.0 (2026-10-17)
 
-Todo se ejecuta con `scripts/test/test-all.sh` (compila las dos ISO y lanza las pruebas en paralelo, tres VM de 1,5 GB a la vez). Con las ISO ya compiladas tarda unos 10 minutos (antes, más de una hora una prueba detrás de otra); `--quick` (arranque de las dos ISO en UEFI + Secure Boot) tarda 1 minuto. Última ejecución completa: **93 comprobaciones, 0 fallos**.
+Todo se ejecuta con `scripts/test/test-all.sh` (compila las dos ISO y lanza las pruebas en paralelo, tres VM de 1,5 GB a la vez). Con las ISO ya compiladas tarda unos 10 minutos (antes, más de una hora una prueba detrás de otra); sin opciones (modo rápido: arranque de las dos ISO en UEFI + Secure Boot y recompilación solo si cambió el código) tarda menos de 3 minutos; `--full` lanza todo (unos 17 minutos) y es lo que se ejecuta antes de publicar. Última ejecución completa: **93 comprobaciones, 0 fallos**.
 
 | Prueba | Resultado |
 | --- | --- |
@@ -214,6 +214,45 @@ Crear USB / actualizar (Rebootera Desktop, Windows 11), sin tocar ningún disco 
 ### No probado en la v0.5.0
 
 Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el ratón; solo se probó el análisis de su resultado), "Crear USB" borrando un pendrive real, instalar dentro de un USB ajeno (Rufus), un instalador real de Windows y la ejecución de los workflows de GitHub.
+
+## v0.15.0 (2026-10-20)
+
+| Prueba | Resultado |
+| --- | --- |
+| `scripts/test/test-create-linux.sh`: Crear USB en Linux con la aplicación real sobre un disco virtual (loop) | 0 fallos: aparece en la lista (y el disco del sistema no), se rechaza sin confirmación y con un disco que no es USB, Ventoy instalado de verdad, GPT, exFAT «REBOOTERA», partición VTOYEFI, Rebootera OS idéntico byte a byte y estructura del USB |
+| Compilación y `go vet` para Linux (x64 y arm64), Windows y macOS (Intel y Apple); `go test ./...` | sin avisos; pruebas nuevas de la lista de discos de Linux y macOS, del script de macOS y de los nombres de dispositivo aceptados |
+| `test-all.sh` rápido con la ISO 0.15.0 (1263 MB, 61 MB menos) | depuración 19 OK, definitiva 2 OK, 0 fallos |
+| `test-desktop-windows.ps1` y `test-installer-windows.ps1` con el exe 0.15.0 real | 0 fallos |
+| Interfaz empaquetada con esbuild (un JS y un CSS) | compila, `tsc` limpio, arranca en WebKitGTK |
+
+### No probado en la v0.15.0
+
+- **Crear USB en macOS**: la lectura de `diskutil`, el reparto y el script están probados con datos de ejemplo, pero no se ha ejecutado en un Mac ni se ha arrancado un USB hecho así.
+- **Crear USB en Linux sobre un pendrive físico** y con el diálogo real de polkit (se probó como root, sin pkexec, sobre un disco virtual).
+- **El rendimiento** del arranque desde un pendrive real tras recortar la imagen y empaquetar la interfaz.
+
+## v0.14.0 (2026-10-20)
+
+| Prueba | Resultado |
+| --- | --- |
+| `test-all.sh` en modo rápido con la ISO 0.14.0 recién compilada (arranque en UEFI + Secure Boot) | depuración 19 OK, definitiva 2 OK (con el apagado desde la interfaz), 0 fallos, 393 s incluyendo la compilación de las dos ISO |
+| `go vet` y `go test ./...` | sin avisos; pruebas nuevas de la caché de tamaños, la partición «DRIVERS», los colores del menú de Ventoy y la página principal con el tema guardado |
+| `tsc`, `prettier`, auditoría de textos y de reglas CSS sin uso | limpio (se quitaron unas 70 reglas de CSS) |
+| `scripts/test/test-desktop-windows.ps1` y `test-installer-windows.ps1` con el exe 0.14.0 real (sin ventana) | ISO y drivers copiados byte a byte, sistema intacto; ISO del instalador con El Torito BIOS + UEFI, 0 fallos |
+| Interfaz (Inicio, Disks con datos de ejemplo, Este equipo, Ajustes con Wi-Fi primero, Descargar) | dibujada en WebKitGTK sin ventana y revisada a mano; capturas de `docs/images` rehechas |
+
+### Errores encontrados y corregidos
+
+| Error | Causa | Arreglo |
+| --- | --- | --- |
+| La prueba de la ISO definitiva no apagaba desde la interfaz | los clics de `vmtest.py` apuntaban a la cabecera antigua | coordenadas nuevas (incluida la pestaña «Este equipo») |
+
+### No probado en la v0.14.0
+
+- **El rendimiento en un equipo real con un pendrive lento**: los cambios (menos sondeos y redibujados, fondo quieto, lectura anticipada, servicios apagados) están hechos y las VM arrancan, pero no se midió en hardware.
+- **El panel táctil I2C/HID real**, y **la búsqueda de drivers de la tarjeta de red en los discos de un equipo real**.
+- **El borrado y las particiones con el botón «Continuar» en un disco real** (se probó la ruta de la API, no el clic).
+- **El menú de Ventoy con los colores del tema** y su espera de 1 s en un USB real, y **el navegador integrado en modo oscuro** (se comprueba la política, no la ventana).
 
 ## v0.12.0 (2026-10-20)
 
