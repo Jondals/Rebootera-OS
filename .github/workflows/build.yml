@@ -4,12 +4,18 @@
 # con el token que da GitHub a cada ejecución (no hace falta ningún secreto).
 # Hay dos canales:
 #
-#   master -> release "latest" (estable). Al publicarla, si la rama "beta" no
+#   master -> release "latest" (estable), con el nombre que tú elijas (ver abajo). Al publicarla, si la rama "beta" no
 #             existe se crea desde este commit; si existe y no tiene commits
 #             propios se avanza hasta aquí; y la release "beta" se publica con
 #             los mismos archivos.
 #   beta   -> release "beta" (prerelease), donde se prueban los cambios antes de
 #             pasarlos a master. Nunca toca "latest".
+#
+# Nombre de la release de master: al fusionar beta en master (o cualquier push), el título sale de
+#   1. una línea "Release: <nombre>" en el mensaje del commit (o del merge), si la hay;
+#   2. si no, del título de la pull request cuando es un merge de GitHub ("Merge pull request #N ...");
+#   3. si no, "Rebootera OS <versión> (latest build)".
+# El nombre queda como título de la release y la primera línea de sus notas.
 #
 # La compilación se hace dentro de un contenedor Debian 13, igual que el entorno
 # de desarrollo (WSL "RebooteraBuild"), con las dependencias del README.
@@ -21,7 +27,6 @@ on:
     paths-ignore:
       - "site/**"
       - "docs/images/**"
-      - ".github/workflows/site-sync.yml"
   workflow_dispatch:
 
 permissions:
@@ -87,6 +92,13 @@ jobs:
             TAG=latest
             FLAGS=--latest
             TITLE="Rebootera OS ${VERSION} (latest build)"
+            # * Nombre elegido: línea "Release: ..." del commit o, en un merge de pull request, el título de la PR.
+            MESSAGE="$(git log -1 --format=%B "$GITHUB_SHA")"
+            CHOSEN="$(echo "$MESSAGE" | sed -n 's/^[Rr]elease:[[:space:]]*//p' | head -n 1)"
+            if [ -z "$CHOSEN" ] && echo "$MESSAGE" | head -n 1 | grep -q '^Merge pull request'; then
+              CHOSEN="$(echo "$MESSAGE" | sed -n '3p')"
+            fi
+            [ -n "$CHOSEN" ] && TITLE="$CHOSEN"
             WHAT="Automatic build of the last push to master (stable)."
           else
             TAG=beta
