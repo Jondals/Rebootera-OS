@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path"
 	"runtime"
 	"strconv"
 
@@ -56,6 +57,9 @@ func (s *Server) registerDesktop(mux *http.ServeMux) {
 		"/api/desktop/add":            s.handleAddImage,
 		"/api/desktop/apply":          s.handleApply,
 		"/api/desktop/create":         s.handleCreate,
+		"/api/desktop/create/pause":   s.handleCreateControl,
+		"/api/desktop/create/resume":  s.handleCreateControl,
+		"/api/desktop/create/cancel":  s.handleCreateControl,
 		"/api/desktop/drivers/add":    s.handleDriversAdd,
 		"/api/desktop/drivers/remove": s.handleDriversRemove,
 	}
@@ -230,6 +234,24 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 
 // * handleCreateStatus devuelve el estado de la creación.
 func (s *Server) handleCreateStatus(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, desktop.Status())
+}
+
+// * handleCreateControl pausa, reanuda o cancela la descarga de Rebootera OS de una creación o actualización.
+func (s *Server) handleCreateControl(w http.ResponseWriter, r *http.Request) {
+	var err error
+	switch path.Base(r.URL.Path) {
+	case "pause":
+		err = desktop.Pause()
+	case "resume":
+		err = desktop.Resume()
+	case "cancel":
+		err = desktop.Cancel()
+	}
+	if err != nil {
+		fail(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, desktop.Status())
 }
 

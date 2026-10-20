@@ -43,7 +43,7 @@ export interface PartDisk {
 
 /** Operación que se pide al gestor. */
 export interface Op {
-  kind: "resize" | "boundary" | "merge" | "delete" | "create" | "rename";
+  kind: "resize" | "boundary" | "merge" | "delete" | "create" | "rename" | "format";
   disk: string;
   part: number;
   other: number;

@@ -67,6 +67,8 @@ interface CreateStatus {
   error?: string;
   done: boolean;
   drive?: string;
+  paused?: boolean;
+  cancelled?: boolean;
 }
 
 /** Lo que se hace con el USB elegido. */
@@ -603,6 +605,42 @@ function goPanel(device: Device): HTMLElement {
   return panel(t("desktop.stepGo"), parts, { iconPaths: icons.shield });
 }
 
+/** Pausa, reanuda o cancela la descarga de Rebootera OS (según data-action). */
+async function downloadAction(event: MouseEvent): Promise<void> {
+  const action = (event.currentTarget as HTMLElement).dataset.action ?? "";
+  try {
+    if (action === "cancel") {
+      const proceed = await confirmAction(
+        t("desktop.cancelDownloadTitle"),
+        t("desktop.cancelDownloadText"),
+        t("desktop.cancelDownloadConfirm"),
+      );
+      if (!proceed) {
+        return;
+      }
+    }
+    status = await postJSON<CreateStatus>("/api/desktop/create/" + action, {});
+    draw();
+    void pollStatus();
+  } catch (error) {
+    body?.prepend(errorBox(error));
+  }
+}
+
+/** Botones de pausa y cancelación; solo mientras se descarga Rebootera OS. */
+function downloadControls(current: CreateStatus): HTMLElement | null {
+  if (!current.running || current.phase !== "download") {
+    return null;
+  }
+  const toggle = current.paused
+    ? button(t("downloads.resume"), downloadAction, { iconPaths: icons.download })
+    : button(t("downloads.pause"), downloadAction, { iconPaths: icons.clock });
+  toggle.dataset.action = current.paused ? "resume" : "pause";
+  const cancel = button(t("downloads.cancel"), downloadAction, { iconPaths: icons.x });
+  cancel.dataset.action = "cancel";
+  return el("div", { class: "image-actions" }, [toggle, cancel]);
+}
+
 /** Dibuja el estado de la operación en curso o terminada. */
 function drawStatus(current: CreateStatus): HTMLElement {
   if (current.done) {
@@ -618,15 +656,16 @@ function drawStatus(current: CreateStatus): HTMLElement {
       { iconPaths: icons.check },
     );
   }
-  const phase = t("desktop.phases." + current.phase, {
-    p: Math.round(current.progress * 100),
-    item: current.item ?? "",
-  });
+  const percent = Math.round(current.progress * 100);
+  const phase = current.paused
+    ? t("desktop.downloadPaused", { p: percent })
+    : t("desktop.phases." + current.phase, { p: percent, item: current.item ?? "" });
   return panel(
     t("desktop.createTitle"),
     [
       el("p", {}, [phase]),
-      progress(current.progress, "accent"),
+      progress(current.progress, current.paused ? "warn" : "accent"),
+      downloadControls(current),
       current.error ? errorBox(new Error(current.error)) : null,
     ],
     { iconPaths: icons.sparkle },
@@ -651,6 +690,9 @@ function draw(): void {
   const device = selected();
   const parts: (HTMLElement | null)[] = [
     status?.error && !status.running ? errorBox(new Error(status.error)) : null,
+    status?.cancelled && !status.running
+      ? el("div", { class: "notice" }, [icon(icons.info), el("span", {}, [t("desktop.cancelled")])])
+      : null,
     usbPanel(),
   ];
   if (device !== null) {

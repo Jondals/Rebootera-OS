@@ -34,6 +34,7 @@ const (
 	OpDelete   = "delete"
 	OpCreate   = "create"
 	OpRename   = "rename"
+	OpFormat   = "format"
 )
 
 // Tipos de paso del plan.
@@ -122,8 +123,10 @@ type TableEdit struct {
 	Sectors uint64 `json:"sectors"`
 	Delete  bool   `json:"delete,omitempty"`
 	Create  bool   `json:"create,omitempty"`
-	// FS decide el tipo de partición que se crea.
+	// FS decide el tipo de partición que se crea o al que se cambia (Retype).
 	FS string `json:"fs,omitempty"`
+	// Retype cambia solo el tipo de la partición (Linux o datos) para que coincida con su sistema de archivos nuevo.
+	Retype bool `json:"retype,omitempty"`
 }
 
 // Step es un paso del plan.
@@ -330,6 +333,8 @@ func Make(layout Layout, op Op, info Info) (Plan, error) {
 		return planCreate(layout, op)
 	case OpRename:
 		return planRename(layout, op)
+	case OpFormat:
+		return planFormat(layout, op)
 	}
 	return Plan{}, ErrBadRequest
 }
@@ -616,6 +621,35 @@ func planCreate(layout Layout, op Op) (Plan, error) {
 		{Kind: StepTable, Edits: []TableEdit{{Part: number, Start: start, Sectors: size, Create: true, FS: op.FS}}},
 		{Kind: StepMkfs, Part: number, Start: start, FS: op.FS, Label: label},
 	}}, nil
+}
+
+// * planFormat borra una partición existente y le pone un sistema de archivos nuevo, sin cambiar su tamaño ni su sitio.
+// * Si pasa de Linux (ext) a otro, o al revés, también se cambia el tipo de partición: con el tipo de Linux, Windows
+// * no le daría letra a una unidad NTFS o exFAT. Los demás tipos (arranque EFI, recuperación…) se respetan.
+func planFormat(layout Layout, op Op) (Plan, error) {
+	part, ok := layout.find(op.Part)
+	if !ok {
+		return Plan{}, ErrNotFound
+	}
+	if err := needIdle(part); err != nil {
+		return Plan{}, err
+	}
+	if !slices.Contains(createFS, op.FS) {
+		return Plan{}, ErrBadRequest
+	}
+	label := strings.TrimSpace(op.Label)
+	if len([]rune(label)) > labelLimits[op.FS] || strings.ContainsAny(label, "\"'\\`$;&|<>\n\r\x00/") {
+		return Plan{}, ErrBadRequest
+	}
+	if op.FS == "fat32" && part.Sectors < 66*Align {
+		return Plan{}, ErrTooSmall
+	}
+	plan := Plan{Destructive: true, Affected: []int{part.Number}}
+	if strings.HasPrefix(part.FSType, "ext") != (op.FS == "ext4") {
+		plan.Steps = append(plan.Steps, Step{Kind: StepTable, Edits: []TableEdit{{Part: part.Number, Start: part.Start, Sectors: part.Sectors, Retype: true, FS: op.FS}}})
+	}
+	plan.Steps = append(plan.Steps, Step{Kind: StepMkfs, Part: part.Number, Start: part.Start, FS: op.FS, Label: label})
+	return plan, nil
 }
 
 // * nextNumber devuelve el primer número de partición libre.

@@ -29,7 +29,14 @@ import {
   startedStatus,
   titleOf,
 } from "./diskmap.js";
-import { openCreate, openDelete, openMerge, openRename, openResize } from "./partdialogs.js";
+import {
+  openCreate,
+  openDelete,
+  openFormat,
+  openMerge,
+  openRename,
+  openResize,
+} from "./partdialogs.js";
 
 /** Cada cuántos ms se vuelve a leer el estado de la operación y, en reposo, los discos. */
 const STATUS_MS = 2000;
@@ -192,7 +199,10 @@ function freeActions(layout: Layout, segment: Segment): HTMLElement[] {
   return buttons;
 }
 
-/** Acciones de una partición: tamaño, unir con la vecina y borrar. */
+/** Unir con la vecina está oculto: todavía no es fiable. El diálogo y el plan siguen en el código. */
+const MERGE_ENABLED = false;
+
+/** Acciones de una partición: tamaño, nombre, formatear, unir con la vecina (oculto) y borrar. */
 function partitionActions(layout: Layout, segment: Segment): HTMLElement[] {
   const left = neighbour(layout, segment, "left");
   const right = neighbour(layout, segment, "right");
@@ -221,7 +231,19 @@ function partitionActions(layout: Layout, segment: Segment): HTMLElement[] {
       icons.settings,
     ),
   );
-  if (left || right) {
+  buttons.push(
+    action(
+      t("pm.format"),
+      t("pm.actFormat"),
+      function format(): void {
+        openFormat(layout, segment, started);
+      },
+      !segment.mounted,
+      t("pm.mounted"),
+      icons.refresh,
+    ),
+  );
+  if (MERGE_ENABLED && (left || right)) {
     buttons.push(
       action(
         t("pm.merge"),

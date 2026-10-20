@@ -2,7 +2,12 @@
 // * cada segundo.
 package desktop
 
-import "sync"
+import (
+	"errors"
+	"sync"
+
+	"rebootera/core/internal/release"
+)
 
 // CreateStatus es el estado de una creación o actualización de USB en curso.
 type CreateStatus struct {
@@ -14,12 +19,20 @@ type CreateStatus struct {
 	Error string `json:"error,omitempty"`
 	Done  bool   `json:"done"`
 	Drive string `json:"drive,omitempty"`
+	// Paused indica que la descarga de Rebootera OS está en pausa; Cancelled, que se canceló (no es un error).
+	Paused    bool `json:"paused,omitempty"`
+	Cancelled bool `json:"cancelled,omitempty"`
 }
 
 var (
 	createMu     sync.Mutex
 	createStatus CreateStatus
+	// control pausa y cancela la descarga de la operación en marcha.
+	control *release.Control
 )
+
+// errNotDownloading se devuelve al pausar o cancelar cuando ya no se está descargando.
+var errNotDownloading = errors.New("solo se puede pausar o cancelar mientras se descarga Rebootera OS")
 
 // * Status devuelve el estado de la creación o actualización.
 func Status() CreateStatus {
@@ -50,6 +63,54 @@ func begin() error {
 		return errBusy
 	}
 	createStatus = CreateStatus{Running: true, Phase: "prepare"}
+	control = release.NewControl()
+	return nil
+}
+
+// * Pause pausa la descarga de Rebootera OS conservando lo descargado.
+// ! Solo en la fase de descarga: después se escribe en el USB y eso no se interrumpe a medias.
+func Pause() error {
+	createMu.Lock()
+	defer createMu.Unlock()
+	if !createStatus.Running || createStatus.Phase != "download" {
+		return errNotDownloading
+	}
+	control.Pause()
+	createStatus.Paused = true
+	return nil
+}
+
+// * Resume continúa la descarga pausada.
+func Resume() error {
+	createMu.Lock()
+	defer createMu.Unlock()
+	if !createStatus.Running || createStatus.Phase != "download" {
+		return errNotDownloading
+	}
+	control.Resume()
+	createStatus.Paused = false
+	return nil
+}
+
+// * Cancel cancela la operación durante la descarga y borra lo descargado; el USB no se toca.
+func Cancel() error {
+	createMu.Lock()
+	defer createMu.Unlock()
+	if !createStatus.Running || createStatus.Phase != "download" {
+		return errNotDownloading
+	}
+	control.Cancel()
+	return nil
+}
+
+// * downloadCancelled indica si se pidió cancelar: las operaciones lo comprueban al acabar de descargar,
+// * antes de tocar el USB.
+func downloadCancelled() error {
+	createMu.Lock()
+	defer createMu.Unlock()
+	if control.Cancelled() {
+		return release.ErrCancelled
+	}
 	return nil
 }
 
@@ -60,6 +121,11 @@ func finish(drive string, err error) {
 	createStatus.Running = false
 	createStatus.Drive = drive
 	createStatus.Item = ""
+	createStatus.Paused = false
+	if errors.Is(err, release.ErrCancelled) {
+		createStatus.Cancelled = true
+		return
+	}
 	if err != nil {
 		createStatus.Error = err.Error()
 		return

@@ -7,6 +7,7 @@
 package release
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -47,10 +48,15 @@ const maxISOBytes = 4 << 30
 
 // * get abre una URL HTTPS y comprueba la respuesta.
 func get(rawURL string) (*http.Response, error) {
+	return getContext(context.Background(), rawURL)
+}
+
+// * getContext es get con un contexto que permite cortar la conexión.
+func getContext(ctx context.Context, rawURL string) (*http.Response, error) {
 	if !strings.HasPrefix(rawURL, "https://") {
 		return nil, fmt.Errorf("solo se admiten descargas HTTPS: %s", rawURL)
 	}
-	req, err := http.NewRequest("GET", rawURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -74,14 +80,14 @@ func get(rawURL string) (*http.Response, error) {
 }
 
 // * open abre una URL HTTPS desde offset (con Range) y acepta 200, 206 y 416; el resto son errores.
-func open(rawURL string, offset int64) (*http.Response, error) {
+func open(ctx context.Context, rawURL string, offset int64) (*http.Response, error) {
 	if offset == 0 {
-		return get(rawURL)
+		return getContext(ctx, rawURL)
 	}
 	if !strings.HasPrefix(rawURL, "https://") {
 		return nil, fmt.Errorf("solo se admiten descargas HTTPS: %s", rawURL)
 	}
-	req, err := http.NewRequest("GET", rawURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -140,12 +146,12 @@ func hashFile(path string) (string, error) {
 
 // * Fetch deja la última ISO de Rebootera OS en dir y devuelve su ruta. Si ya
 // * hay una copia con el SHA-256 publicado, no vuelve a descargarla.
-func Fetch(dir string, progress Progress) (string, error) {
+func Fetch(dir string, progress Progress, ctl *Control) (string, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
 	final := filepath.Join(dir, ISOName)
-	if _, err := FetchTo(final, progress); err != nil {
+	if _, err := FetchTo(final, progress, ctl); err != nil {
 		return "", err
 	}
 	return final, nil
@@ -154,7 +160,8 @@ func Fetch(dir string, progress Progress) (string, error) {
 // * FetchTo descarga la última ISO publicada directamente en final (puede ser el propio USB) y devuelve
 // * su SHA-256. Se escribe en final+".part" y solo se renombra cuando el SHA-256 coincide con el publicado;
 // * si la descarga se corta, se reanuda donde quedó. Si final ya tiene el SHA-256 publicado, no descarga nada.
-func FetchTo(final string, progress Progress) (string, error) {
+// * Con ctl se puede pausar (se corta la conexión y se reanuda con Range) o cancelar (se borra lo descargado).
+func FetchTo(final string, progress Progress, ctl *Control) (string, error) {
 	expected, err := ExpectedHash()
 	if err != nil {
 		return "", err
@@ -176,74 +183,127 @@ func FetchTo(final string, progress Progress) (string, error) {
 			hasher.Reset()
 		}
 	}
-	resp, err := open(BaseURL+ISOName, offset)
+	out, err := os.OpenFile(part, os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-	flags := os.O_CREATE | os.O_WRONLY
-	switch resp.StatusCode {
-	case http.StatusPartialContent:
-	case http.StatusRequestedRangeNotSatisfiable:
-		// * Lo que había ya era el archivo entero: solo falta comprobarlo.
-		return finishFetch(part, final, expected, hasher, progress)
-	default:
-		// * El servidor no admite reanudar: se empieza de cero.
-		offset = 0
-		hasher.Reset()
-		flags |= os.O_TRUNC
-	}
-	total := offset + resp.ContentLength
-	if resp.ContentLength < 0 {
-		total = 0
-	}
-	if total > maxISOBytes {
-		return "", errors.New("la imagen publicada es mayor de lo esperado")
-	}
-	out, err := os.OpenFile(part, flags, 0o644)
+	complete, err := fetchLoop(out, hasher, offset, progress, ctl)
 	if err != nil {
-		return "", err
-	}
-	if _, err := out.Seek(offset, io.SeekStart); err != nil {
 		out.Close()
+		if errors.Is(err, ErrCancelled) {
+			os.Remove(part)
+		}
 		return "", err
 	}
-	buf := make([]byte, 4<<20)
-	done := offset
-	for {
-		n, readErr := resp.Body.Read(buf)
-		if n > 0 {
-			if done += int64(n); done > maxISOBytes {
-				out.Close()
-				os.Remove(part)
-				return "", errors.New("la imagen publicada es mayor de lo esperado")
-			}
-			hasher.Write(buf[:n])
-			if _, err := out.Write(buf[:n]); err != nil {
-				out.Close()
-				return "", fmt.Errorf("no se pudo guardar la descarga: %w", err)
-			}
-			if progress != nil && total > 0 {
-				progress(float64(done) / float64(total))
-			}
-		}
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			// * Se conserva lo descargado: al reintentar se reanuda.
+	if complete {
+		if err := out.Sync(); err != nil {
 			out.Close()
-			return "", fmt.Errorf("la descarga se interrumpió: %w", readErr)
+			return "", err
 		}
-	}
-	if err := out.Sync(); err != nil {
-		out.Close()
-		return "", err
 	}
 	if err := out.Close(); err != nil {
 		return "", err
 	}
 	return finishFetch(part, final, expected, hasher, progress)
+}
+
+// * fetchLoop descarga en out desde offset, reconectando tras cada pausa. Devuelve true si escribió datos
+// * nuevos hasta el final (false si lo que había ya era el archivo entero).
+func fetchLoop(out *os.File, hasher hash.Hash, offset int64, progress Progress, ctl *Control) (bool, error) {
+	done := offset
+	for {
+		if err := ctl.hold(); err != nil {
+			return false, err
+		}
+		ctx, release := ctl.connect()
+		resp, err := open(ctx, BaseURL+ISOName, done)
+		if err != nil {
+			release()
+			if ctl.interrupted() {
+				continue
+			}
+			return false, err
+		}
+		switch resp.StatusCode {
+		case http.StatusPartialContent:
+		case http.StatusRequestedRangeNotSatisfiable:
+			// * Lo que había ya era el archivo entero: solo falta comprobarlo.
+			resp.Body.Close()
+			release()
+			return false, nil
+		default:
+			// * El servidor no admite reanudar: se empieza de cero.
+			done = 0
+			hasher.Reset()
+			if err := out.Truncate(0); err != nil {
+				resp.Body.Close()
+				release()
+				return false, err
+			}
+		}
+		total := done + resp.ContentLength
+		if resp.ContentLength < 0 {
+			total = 0
+		}
+		if total > maxISOBytes {
+			resp.Body.Close()
+			release()
+			return false, errors.New("la imagen publicada es mayor de lo esperado")
+		}
+		if _, err := out.Seek(done, io.SeekStart); err != nil {
+			resp.Body.Close()
+			release()
+			return false, err
+		}
+		finished, err := pipe(resp.Body, out, hasher, &done, total, progress, ctl)
+		resp.Body.Close()
+		release()
+		switch {
+		case err != nil:
+			return false, err
+		case finished:
+			return true, nil
+		}
+		// * Se cortó por una pausa o una cancelación: se conserva lo descargado y se vuelve a empezar el bucle.
+		out.Sync()
+	}
+}
+
+// * pipe copia el cuerpo de la respuesta al archivo. Devuelve true al llegar al final y false si la pausa
+// * o la cancelación cortaron la conexión antes.
+func pipe(body io.Reader, out *os.File, hasher hash.Hash, done *int64, total int64, progress Progress, ctl *Control) (bool, error) {
+	buf := make([]byte, 4<<20)
+	for {
+		n, readErr := body.Read(buf)
+		if n > 0 {
+			if *done += int64(n); *done > maxISOBytes {
+				out.Close()
+				os.Remove(out.Name())
+				return false, errors.New("la imagen publicada es mayor de lo esperado")
+			}
+			hasher.Write(buf[:n])
+			if _, err := out.Write(buf[:n]); err != nil {
+				return false, fmt.Errorf("no se pudo guardar la descarga: %w", err)
+			}
+			if progress != nil && total > 0 {
+				progress(float64(*done) / float64(total))
+			}
+		}
+		if readErr == io.EOF {
+			return true, nil
+		}
+		if readErr != nil {
+			if ctl.interrupted() {
+				return false, nil
+			}
+			// * Se conserva lo descargado: al reintentar se reanuda.
+			return false, fmt.Errorf("la descarga se interrumpió: %w", readErr)
+		}
+		// * Una pausa pedida justo cuando ya había datos de sobra se atiende en el siguiente trozo.
+		if ctl.interrupted() {
+			return false, nil
+		}
+	}
 }
 
 // * finishFetch comprueba el SHA-256 de lo descargado y lo deja en su sitio.

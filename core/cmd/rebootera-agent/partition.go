@@ -567,6 +567,7 @@ func (r *partRun) move(step partman.Step) error {
 var (
 	dumpLine  = regexp.MustCompile(`^(/dev/\S+?)(\d+)\s*:\s*(.*)$`)
 	startAttr = regexp.MustCompile(`start=\s*\d+`)
+	typeAttr  = regexp.MustCompile(`type=\s*[0-9A-Za-z-]+`)
 	sizeAttr  = regexp.MustCompile(`size=\s*\d+`)
 )
 
@@ -612,6 +613,8 @@ func (r *partRun) table(edits []partman.TableEdit) error {
 		switch {
 		case found && edit.Delete:
 			continue
+		case found && edit.Retype:
+			script = append(script, match[1]+match[2]+" : "+typeAttr.ReplaceAllString(match[3], "type="+partitionType(table, edit.FS)))
 		case found && !edit.Create:
 			rest := startAttr.ReplaceAllString(match[3], "start="+strconv.FormatUint(edit.Start, 10))
 			rest = sizeAttr.ReplaceAllString(rest, "size="+strconv.FormatUint(edit.Sectors, 10))
@@ -678,6 +681,10 @@ func (r *partRun) mkfs(step partman.Step) error {
 			break
 		}
 		time.Sleep(250 * time.Millisecond)
+	}
+	// * Una partición que ya tenía datos puede conservar firmas del sistema de archivos anterior: se limpian primero.
+	if err := r.tool("", "wipefs", "-a", device); err != nil {
+		return err
 	}
 	label := step.Label
 	switch step.FS {

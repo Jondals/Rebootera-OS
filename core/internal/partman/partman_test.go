@@ -387,3 +387,39 @@ func TestMontajesDeRebooteraNoBloquean(t *testing.T) {
 		t.Fatal("un montaje del usuario sí debe bloquear el disco")
 	}
 }
+
+// * TestFormat formatea una partición existente: borra datos, cambia el tipo solo al cruzar Linux/datos y rechaza lo peligroso.
+func TestFormat(t *testing.T) {
+	layout := Build(disk(part(1, 100, 200, "ext4"), part(2, 300, 150, "ntfs")))
+	plan, err := Make(layout, Op{Kind: OpFormat, Disk: "vdb", Part: 2, FS: "exfat", Label: "DATOS"}, nil)
+	if err != nil || !plan.Destructive || len(plan.Steps) != 1 || plan.Steps[0].Kind != StepMkfs || plan.Steps[0].Part != 2 {
+		t.Fatalf("de datos a datos no cambia el tipo: %v %+v", err, plan)
+	}
+	plan, err = Make(layout, Op{Kind: OpFormat, Disk: "vdb", Part: 2, FS: "ext4"}, nil)
+	if err != nil || len(plan.Steps) != 2 || plan.Steps[0].Kind != StepTable || !plan.Steps[0].Edits[0].Retype {
+		t.Fatalf("de NTFS a ext4 cambia el tipo: %v %+v", err, plan)
+	}
+	plan, err = Make(layout, Op{Kind: OpFormat, Disk: "vdb", Part: 1, FS: "ntfs"}, nil)
+	if err != nil || len(plan.Steps) != 2 || !plan.Steps[0].Edits[0].Retype {
+		t.Fatalf("de ext4 a NTFS cambia el tipo: %v %+v", err, plan)
+	}
+	for name, bad := range map[string]Op{
+		"fs desconocido":     {Kind: OpFormat, Disk: "vdb", Part: 2, FS: "btrfs"},
+		"etiqueta peligrosa": {Kind: OpFormat, Disk: "vdb", Part: 2, FS: "ntfs", Label: "a;rm"},
+		"etiqueta larga":     {Kind: OpFormat, Disk: "vdb", Part: 2, FS: "fat32", Label: "ABCDEFGHIJKL"},
+		"no existe":          {Kind: OpFormat, Disk: "vdb", Part: 9, FS: "ntfs"},
+		"fat32 diminuta":     {Kind: OpFormat, Disk: "vdb", Part: 2, FS: "fat32"},
+	} {
+		if name == "fat32 diminuta" {
+			small := Build(disk(part(1, 100, 20, "ntfs")))
+			bad.Part = 1
+			if _, err := Make(small, bad, nil); !errors.Is(err, ErrTooSmall) {
+				t.Fatalf("%s: debería rechazarse: %v", name, err)
+			}
+			continue
+		}
+		if _, err := Make(layout, bad, nil); err == nil {
+			t.Fatalf("%s: debería rechazarse", name)
+		}
+	}
+}

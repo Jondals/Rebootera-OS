@@ -119,8 +119,11 @@ func (j *createJob) steps() (string, error) {
 	// ! La descarga va antes de tocar el disco: si falla, el USB no se borra.
 	if j.iso == "" {
 		setPhase("download", 0)
-		path, err := release.Fetch(release.CacheDir(), downloadProgress)
+		path, err := release.Fetch(release.CacheDir(), downloadProgress, control)
 		if err != nil {
+			return "", err
+		}
+		if err := downloadCancelled(); err != nil {
 			return "", err
 		}
 		j.iso = path

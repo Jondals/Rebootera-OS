@@ -515,6 +515,58 @@ export function openRename(layout: Layout, segment: Segment, done: Done): void {
   input.focus();
 }
 
+/** Máximo de caracteres de la etiqueta según el sistema de archivos. */
+const LABEL_LIMITS: Record<string, number> = { exfat: 15, ntfs: 32, ext4: 16, fat32: 11 };
+
+/** Formatear una partición que ya existe: se borra todo lo que tiene y se le pone un sistema de archivos nuevo. */
+export function openFormat(layout: Layout, segment: Segment, done: Done): void {
+  const body = el("div", { class: "pm-dialog" });
+  const dialog = openModal(t("pm.formatTitle", { name: nameOf(segment) }), [body], "modal-wide");
+  const op = newOp("format", layout.disk);
+  op.part = segment.number;
+  op.fs = Object.hasOwn(LABEL_LIMITS, segment.fsType ?? "") ? (segment.fsType as string) : "exfat";
+  const fsSelect = el("select", { class: "text-input", "aria-label": t("pm.fs") });
+  for (const fs of ["exfat", "ntfs", "ext4", "fat32"]) {
+    fsSelect.append(el("option", { value: fs }, [t("pm.fsNames." + fs)]));
+  }
+  fsSelect.value = op.fs;
+  const label = el("input", {
+    class: "text-input",
+    type: "text",
+    maxlength: String(LABEL_LIMITS[op.fs]),
+    value: segment.label ?? "",
+    placeholder: t("pm.labelHintFormat"),
+  });
+  op.label = label.value;
+  fsSelect.addEventListener("change", function changeFS(): void {
+    op.fs = fsSelect.value;
+    label.maxLength = LABEL_LIMITS[op.fs];
+    label.value = label.value.slice(0, LABEL_LIMITS[op.fs]);
+    op.label = label.value;
+  });
+  label.addEventListener("input", function changeLabel(): void {
+    op.label = label.value;
+  });
+  const next = button(
+    t("pm.continue"),
+    function go(): void {
+      review(dialog, body, op, done);
+    },
+    { variant: "primary" },
+  );
+  body.append(
+    el("div", { class: "error-box" }, [
+      t("pm.formatText", {
+        size: fmt.disk(segment.sectors * 512),
+        used: fmt.disk(segment.usedBytes),
+      }),
+    ]),
+    el("label", { class: "confirm-field" }, [el("span", {}, [t("pm.fs")]), fsSelect]),
+    el("label", { class: "confirm-field" }, [el("span", {}, [t("pm.label")]), label]),
+    el("div", { class: "modal-actions" }, [next]),
+  );
+}
+
 /** Borrar una partición. */
 export function openDelete(layout: Layout, segment: Segment, done: Done): void {
   const body = el("div", { class: "pm-dialog" });

@@ -296,3 +296,40 @@ func TestLoopCreateDelete(t *testing.T) {
 	}
 	d.verify(1, sums)
 }
+
+// * TestLoopFormat formatea una partición con datos como exFAT y luego como ext4: la otra partición no se toca
+// * y el tipo de partición acompaña al sistema de archivos.
+func TestLoopFormat(t *testing.T) {
+	d := newLoopDisk(t, 500, [][3]string{{"1", "200", "ext4"}, {"200", "450", "ntfs"}})
+	sums := d.fill(1, 2, 10)
+	d.fill(2, 2, 10)
+	d.apply(partman.Op{Kind: partman.OpFormat, Part: 2, FS: "exfat", Label: "DATOS"})
+	if fs := strings.TrimSpace(sh(t, "blkid", "-o", "value", "-s", "TYPE", d.dev(2))); fs != "exfat" {
+		t.Fatalf("debería ser exFAT, es %q", fs)
+	}
+	if label := strings.TrimSpace(sh(t, "blkid", "-o", "value", "-s", "LABEL", d.dev(2))); label != "DATOS" {
+		t.Fatalf("etiqueta: %q", label)
+	}
+	if start, size := d.sectors(2); start != 200*2048 || size != 250*2048 {
+		t.Fatalf("la partición no debe cambiar de sitio: %d+%d", start, size)
+	}
+	d.verify(1, sums)
+	// * Pasar a ext4 cambia también el tipo de partición, y los archivos viejos ya no existen.
+	d.apply(partman.Op{Kind: partman.OpFormat, Part: 2, FS: "ext4", Label: "LINUX"})
+	if fs := strings.TrimSpace(sh(t, "blkid", "-o", "value", "-s", "TYPE", d.dev(2))); fs != "ext4" {
+		t.Fatalf("debería ser ext4, es %q", fs)
+	}
+	if typ := strings.TrimSpace(sh(t, "sfdisk", "--part-type", d.device, "2")); !strings.EqualFold(typ, "0FC63DAF-8483-4772-8E79-3D69D8477DE4") {
+		t.Fatalf("tipo de partición tras ext4: %q", typ)
+	}
+	d.clean(2)
+	dir := d.mount(2)
+	entries, _ := os.ReadDir(dir)
+	exec.Command("umount", dir).Run()
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), "datos") {
+			t.Fatalf("quedó un archivo viejo: %s", entry.Name())
+		}
+	}
+	d.verify(1, sums)
+}

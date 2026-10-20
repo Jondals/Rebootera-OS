@@ -110,8 +110,13 @@ func InstallLatest(root string, progress Progress) error {
 		return err
 	}
 	staged := filepath.Join(dir, "rebootera-os.iso.new")
-	hash, err := release.FetchTo(staged, release.Progress(progress))
+	hash, err := release.FetchTo(staged, release.Progress(progress), control)
 	if err != nil {
+		return err
+	}
+	// * Cancelar en el último instante: no se instala nada y la copia descargada se quita.
+	if err := downloadCancelled(); err != nil {
+		os.Remove(staged)
 		return err
 	}
 	return promoteSystem(dir, release.ISOName, hash)
