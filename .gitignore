@@ -6,8 +6,7 @@ __pycache__/
 # Recursos de Windows generados por scripts/build/build-desktop.sh
 core/cmd/rebootera-desktop/*.syso
 
-# Landing (Astro): imágenes copiadas de docs/images y resultados de compilar
-site/public/images/
+# Landing (Astro): resultados de compilar (las capturas de site/public/images sí van en el repositorio)
 site/dist/
 site/node_modules/
 site/.astro/

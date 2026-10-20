@@ -1,89 +1,14 @@
 ---
-// * Fondo de toda la página: un pendrive grande con volumen (cara superior, canto, conector metálico, brillo y sombra),
-// * con el amanecer del logotipo en la etiqueta, unas pocas trazas de circuito y los arcos del logotipo detrás. Va en los
-// * colores del tema, flota despacio y, al hacer scroll, cruza la página girando un poco, de derecha a izquierda.
-// * public/site.js escribe el progreso del scroll (--p). Es decorativo: no recibe clics.
+// * Fondo de toda la página: una luz de color del tema que cae desde arriba, dos nubes suaves que se desplazan con el
+// * scroll, una retícula de puntos muy tenue que se difumina hacia los bordes y un poco de grano. Todo es CSS (sin
+// * imágenes ni SVG pesados) y solo mueve transform. public/site.js escribe el progreso del scroll (--p). Es
+// * decorativo: no recibe clics.
 ---
 
 <div class="dawn" aria-hidden="true">
-  <div class="dawn-glow"></div>
-  <div class="dawn-art">
-    <svg viewBox="0 0 800 600" fill="none">
-      <defs>
-        <linearGradient id="art-top" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" class="art-t1"></stop>
-          <stop offset="1" class="art-t2"></stop>
-        </linearGradient>
-        <linearGradient id="art-side" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" class="art-s1"></stop>
-          <stop offset="1" class="art-s2"></stop>
-        </linearGradient>
-        <linearGradient id="art-metal" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fff" stop-opacity="0.5"></stop>
-          <stop offset="0.5" stop-color="#fff" stop-opacity="0.16"></stop>
-          <stop offset="1" stop-color="#fff" stop-opacity="0.34"></stop>
-        </linearGradient>
-        <linearGradient id="art-gloss" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#fff" stop-opacity="0"></stop>
-          <stop offset="0.5" stop-color="#fff" stop-opacity="0.2"></stop>
-          <stop offset="1" stop-color="#fff" stop-opacity="0"></stop>
-        </linearGradient>
-        <radialGradient id="art-halo" cx="430" cy="340" r="380" gradientUnits="userSpaceOnUse">
-          <stop offset="0" class="art-h1"></stop>
-          <stop offset="1" class="art-h2"></stop>
-        </radialGradient>
-        <linearGradient id="art-sun" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" class="art-u1"></stop>
-          <stop offset="1" class="art-u2"></stop>
-        </linearGradient>
-        <filter id="art-blur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="16"></feGaussianBlur></filter>
-        <clipPath id="art-clip"><rect x="290" y="240" width="390" height="190" rx="34"></rect></clipPath>
-      </defs>
-
-      <circle cx="430" cy="340" r="380" fill="url(#art-halo)"></circle>
-
-      <g class="art-arcs">
-        <path d="M110 340A320 320 0 0 1 750 340"></path>
-        <path d="M50 340A380 380 0 0 1 810 340" opacity="0.55"></path>
-        <path d="M-10 340A440 440 0 0 1 870 340" opacity="0.28"></path>
-      </g>
-
-      <g class="art-traces">
-        <path d="M150 320H80L50 290H-70"></path>
-        <path d="M150 350H30L0 380H-90"></path>
-        <path d="M150 372H110L80 402V470H-30"></path>
-        <circle cx="-70" cy="290" r="5"></circle>
-        <circle cx="-90" cy="380" r="5"></circle>
-        <circle cx="-30" cy="470" r="5"></circle>
-      </g>
-
-      <ellipse cx="450" cy="478" rx="320" ry="34" fill="#000" fill-opacity="0.55" filter="url(#art-blur)"></ellipse>
-
-      <g class="art-usb">
-        <rect x="290" y="262" width="390" height="190" rx="34" fill="url(#art-side)"></rect>
-        <rect x="150" y="300" width="170" height="96" rx="10" class="art-metal-side"></rect>
-        <rect x="150" y="286" width="170" height="96" rx="10" fill="url(#art-metal)" class="art-metal-edge"></rect>
-        <path d="M168 300H302" class="art-metal-line"></path>
-        <rect x="186" y="320" width="42" height="16" rx="3" class="art-hole"></rect>
-        <rect x="244" y="320" width="42" height="16" rx="3" class="art-hole"></rect>
-
-        <rect x="290" y="240" width="390" height="190" rx="34" fill="url(#art-top)" class="art-edge"></rect>
-        <g clip-path="url(#art-clip)">
-          <path d="M360 240H470L400 430H290Z" fill="url(#art-gloss)"></path>
-        </g>
-        <path d="M316 258H640" class="art-shine"></path>
-
-        <rect x="352" y="282" width="236" height="106" rx="16" class="art-label"></rect>
-        <path d="M425 350A45 45 0 0 1 515 350Z" fill="url(#art-sun)"></path>
-        <path d="M402 350A68 68 0 0 1 538 350" class="art-mark"></path>
-        <path d="M382 350A88 88 0 0 1 558 350" class="art-mark art-mark-soft"></path>
-        <path d="M400 366H540" class="art-mark"></path>
-        <path d="M430 378H510" class="art-mark art-mark-soft"></path>
-
-        <circle cx="640" cy="335" r="16" class="art-ring"></circle>
-        <circle cx="634" cy="266" r="5" class="art-led"></circle>
-      </g>
-    </svg>
-  </div>
-  <div class="dawn-shade"></div>
+  <div class="dawn-sky"></div>
+  <div class="dawn-orb dawn-orb-a"></div>
+  <div class="dawn-orb dawn-orb-b"></div>
+  <div class="dawn-grid"></div>
+  <div class="dawn-grain"></div>
 </div>

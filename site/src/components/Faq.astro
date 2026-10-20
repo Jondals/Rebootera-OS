@@ -1,5 +1,5 @@
 ---
-// * Preguntas frecuentes: desplegables nativos (<details>) con un pequeño fundido al abrirse.
+// * Preguntas frecuentes: acordeón propio (botón + panel que crece de 0fr a 1fr); site.js abre y cierra con data-open.
 import L from "./L.astro";
 import Icon from "./Icon.astro";
 
@@ -14,8 +14,8 @@ const questions = [
   {
     q: { en: "Which systems can I download?", es: "¿Qué sistemas puedo descargar?" },
     a: {
-      en: "Windows evaluation editions (Microsoft only hands out Home and Pro from its own page), Ubuntu and its flavours, Debian, Fedora, Arch, Mint, Kali, Alpine, NixOS, Proxmox, the BSDs and rescue tools, plus images for boards like Raspberry Pi OS, OpenWrt and Home Assistant OS. Got a link to something else? You can paste it too.",
-      es: "Ediciones de evaluación de Windows (Microsoft solo da Home y Pro desde su página), Ubuntu y sus sabores, Debian, Fedora, Arch, Mint, Kali, Alpine, NixOS, Proxmox, los BSD y herramientas de rescate, además de imágenes para placas como Raspberry Pi OS, OpenWrt y Home Assistant OS. ¿Tienes el enlace de otra cosa? También lo puedes pegar.",
+      en: "Windows 10 and 11 (downloaded straight from Microsoft) and the evaluation editions, Ubuntu and its flavours, Debian, Fedora, Arch, Mint, Kali, Alpine, NixOS, Proxmox, the BSDs and rescue tools, plus images for boards like Raspberry Pi OS, OpenWrt and Home Assistant OS. Got a link to something else? You can paste it too.",
+      es: "Windows 10 y 11 (se descargan directamente de Microsoft) y las ediciones de evaluación, Ubuntu y sus sabores, Debian, Fedora, Arch, Mint, Kali, Alpine, NixOS, Proxmox, los BSD y herramientas de rescate, además de imágenes para placas como Raspberry Pi OS, OpenWrt y Home Assistant OS. ¿Tienes el enlace de otra cosa? También lo puedes pegar.",
     },
   },
   {
@@ -59,13 +59,17 @@ const questions = [
     {
       questions.map(function item(entry) {
         return (
-          <details class="faq reveal group rounded-xl border border-line bg-panel/60 backdrop-blur transition open:border-line2">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 font-medium [&::-webkit-details-marker]:hidden">
+          <div class="faq reveal rounded-xl border border-line bg-panel/60 backdrop-blur transition" data-open="false">
+            <button type="button" class="faq-q" aria-expanded="false">
               <span><L en={entry.q.en} es={entry.q.es} /></span>
-              <Icon name="chevron" size={20} class="chev shrink-0 text-accent transition-transform" />
-            </summary>
-            <div class="px-6 pb-6 text-[15px] leading-relaxed text-muted"><L en={entry.a.en} es={entry.a.es} /></div>
-          </details>
+              <Icon name="chevron" size={20} class="chev shrink-0 text-accent" />
+            </button>
+            <div class="faq-a">
+              <div class="faq-in">
+                <div><L en={entry.a.en} es={entry.a.es} /></div>
+              </div>
+            </div>
+          </div>
         );
       })
     }

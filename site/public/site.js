@@ -1,4 +1,4 @@
-// * Comportamiento de la landing de Rebootera OS (sin dependencias): idioma y tema con fundido, menús de la cabecera,
+// * Comportamiento de la landing de Rebootera OS (sin dependencias): idioma y tema al instante, menús de la cabecera,
 // * descarga según el sistema del visitante (lee la release "latest" de GitHub), icono de la pestaña con los colores
 // * del tema, capturas que siguen al tema, carrusel, aparición al desplazarse y movimiento con el ratón (inclinación
 // * de la captura de portada y desplazamiento del fondo). Se carga al final del <body>; el tema guardado ya se aplicó
@@ -31,25 +31,6 @@
     }
   }
 
-  /** Aplica un cambio con un fundido: el del navegador (mezcla de capturas) para los temas y, si se pide "text" o no existe, uno propio solo de texto. */
-  function transition(change, kind) {
-    if (reduced) {
-      change();
-      return;
-    }
-    if (kind !== "text" && document.startViewTransition) {
-      document.startViewTransition(change);
-      return;
-    }
-    body.classList.add("swapping");
-    window.setTimeout(function swap() {
-      change();
-      window.requestAnimationFrame(function reveal() {
-        body.classList.remove("swapping");
-      });
-    }, 220);
-  }
-
   // ---------- Idioma ----------
 
   /** Idioma guardado o, si no hay, el del navegador. */
@@ -68,13 +49,11 @@
     showVersion();
   }
 
-  /** Pasa al otro idioma con un fundido y lo recuerda. */
+  /** Pasa al otro idioma al instante y lo recuerda. */
   function toggleLanguage() {
     var next = body.getAttribute("data-lang") === "en" ? "es" : "en";
     writeStored("rebootera-lang", next);
-    transition(function change() {
-      applyLanguage(next);
-    }, "text");
+    applyLanguage(next);
   }
 
   // ---------- Tema ----------
@@ -142,36 +121,6 @@
     }
   }
 
-  /** Descarga las capturas de un tema antes de cambiarlo (o sigue pasado un momento, para no dejar la página parada). */
-  function preloadShots(theme, done) {
-    var images = document.querySelectorAll("img[data-shot]");
-    var pending = images.length;
-    var finished = false;
-    function finish() {
-      if (!finished) {
-        finished = true;
-        done();
-      }
-    }
-    function oneLoaded() {
-      pending -= 1;
-      if (pending <= 0) {
-        finish();
-      }
-    }
-    if (pending === 0) {
-      finish();
-      return;
-    }
-    for (var i = 0; i < images.length; i++) {
-      var probe = new Image();
-      probe.onload = oneLoaded;
-      probe.onerror = oneLoaded;
-      probe.src = shotPath(images[i].getAttribute("data-shot"), theme);
-    }
-    window.setTimeout(finish, 900);
-  }
-
   /** Marca el tema activo en las listas, pone el color de la barra del navegador y redibuja el icono. */
   function markTheme() {
     var options = document.querySelectorAll("[data-theme-opt]");
@@ -204,18 +153,15 @@
     updateShots();
   }
 
-  /** Aplica el tema de la opción pulsada (con fundido, cuando sus capturas ya están) y lo recuerda. */
+  /** Aplica el tema de la opción pulsada al instante y lo recuerda. */
   function pickTheme(event) {
     var name = event.currentTarget.getAttribute("data-theme-opt");
     if (name === currentTheme()) {
       return;
     }
     writeStored("rebootera-theme", name);
-    preloadShots(name, function ready() {
-      transition(function change() {
-        applyTheme(name);
-      });
-    });
+    applyTheme(name);
+    closeMenus();
   }
 
   // ---------- Menús de la cabecera ----------
@@ -271,56 +217,28 @@
     }
   }
 
-  // ---------- Enlaces sin dirección visible ----------
+  // ---------- Enlaces ----------
 
-  /** Guarda el destino de un enlace sin ponerlo en href (así el navegador no enseña la dirección al señalarlo). */
+  /** Pone el destino de un enlace (un href normal: funciona con clic central, teclado y lectores de pantalla). */
   function setLink(element, url) {
-    element.removeAttribute("href");
-    element.setAttribute("data-href", url);
+    element.setAttribute("href", url);
   }
 
-  /** Va al destino guardado: baja suave dentro de la página o abre la dirección (en otra pestaña si lo era). */
-  function followLink(event) {
-    var element = event.currentTarget;
-    var url = element.getAttribute("data-href");
-    if (!url) {
-      return;
-    }
-    if (event.type === "keydown" && event.key !== "Enter") {
-      return;
-    }
-    event.preventDefault();
-    if (url.charAt(0) === "#") {
-      var target = document.querySelector(url);
-      if (target) {
-        target.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
-      }
-    } else if (element.getAttribute("data-blank") === "true") {
-      window.open(url, "_blank", "noopener,noreferrer");
-    } else {
-      window.location.href = url;
-    }
+  // ---------- Preguntas ----------
+
+  /** Abre o cierra una pregunta (las demás se quedan como estaban). */
+  function toggleFaq(event) {
+    var item = event.currentTarget.closest(".faq");
+    var open = item.getAttribute("data-open") !== "true";
+    item.setAttribute("data-open", String(open));
+    event.currentTarget.setAttribute("aria-expanded", String(open));
   }
 
-  /** Quita el href de todos los enlaces de la página y los hace navegar con followLink (siguen siendo enlaces para el teclado y los lectores). */
-  function hideLinks() {
-    var links = document.querySelectorAll("a[href], a[data-href]");
-    for (var i = 0; i < links.length; i++) {
-      var link = links[i];
-      if (link.getAttribute("target") === "_blank") {
-        link.setAttribute("data-blank", "true");
-        link.removeAttribute("target");
-        link.removeAttribute("rel");
-      }
-      if (link.hasAttribute("href")) {
-        setLink(link, link.getAttribute("href"));
-      }
-      link.setAttribute("role", "link");
-      if (!link.hasAttribute("tabindex")) {
-        link.setAttribute("tabindex", "0");
-      }
-      link.addEventListener("click", followLink);
-      link.addEventListener("keydown", followLink);
+  /** Conecta los botones de las preguntas. */
+  function setupFaq() {
+    var buttons = document.querySelectorAll(".faq-q");
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].addEventListener("click", toggleFaq);
     }
   }
 
@@ -740,7 +658,7 @@
   window.addEventListener("resize", closeMenus);
   applyTheme(currentTheme());
   setupDownload();
-  hideLinks();
+  setupFaq();
   setupReveal();
   window.addEventListener("pointerdown", loadReleaseOnce, { passive: true });
   window.addEventListener("scroll", loadReleaseOnce, { passive: true });

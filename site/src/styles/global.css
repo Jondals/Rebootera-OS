@@ -95,31 +95,8 @@ body {
   display: none;
 }
 
-/* Cambios de idioma y de tema: fundido entre las dos versiones de la página */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 450ms;
-  animation-timing-function: var(--ease);
-}
-
-body.swapping main,
-body.swapping footer,
-body.swapping header nav,
-body.swapping header .menu-panel {
-  opacity: 0;
-  transform: translateY(4px);
-}
-
-main,
-footer,
-header nav {
-  transition:
-    opacity 220ms ease,
-    transform 220ms var(--ease);
-}
-
-/* Fondo: una ilustración grande de un pendrive con trazas de circuito. --p (0 a 1) es lo que has bajado por la
-   página y lo pone site.js: la ilustración cruza la página de derecha a izquierda girando un poco. Flota sola. */
+/* Fondo: luz del color del tema, dos nubes que se mueven con el scroll (--p, de 0 a 1, lo pone site.js), una
+   retícula de puntos y grano. Solo se animan transform y opacity. */
 .dawn {
   --p: 0;
   position: fixed;
@@ -127,172 +104,68 @@ header nav {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  background: var(--bg);
 }
 
-.dawn-glow {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 95vmax;
-  height: 65vmax;
-  margin-left: -47vmax;
-  background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.16), transparent);
-  transform: translate3d(0, calc(var(--p) * 60vh - 28vmax), 0);
-}
-
-.dawn-art {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(1200px, 130vw);
-  margin: calc(min(1200px, 130vw) * -0.375) 0 0 calc(min(1200px, 130vw) * -0.5);
-  opacity: 0.62;
-  transform: translate3d(calc(34vw - var(--p) * 68vw), calc(var(--p) * 22vh - 6vh), 0) rotate(calc(-12deg + var(--p) * 24deg));
-}
-
-.dawn-art svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-  animation: float 13s ease-in-out infinite alternate;
-}
-
-.art-t1 {
-  stop-color: var(--accent);
-  stop-opacity: 0.6;
-}
-
-.art-t2 {
-  stop-color: var(--accent);
-  stop-opacity: 0.14;
-}
-
-.art-s1 {
-  stop-color: var(--accent);
-  stop-opacity: 0.22;
-}
-
-.art-s2 {
-  stop-color: #000;
-  stop-opacity: 0.55;
-}
-
-.art-h1 {
-  stop-color: var(--accent);
-  stop-opacity: 0.3;
-}
-
-.art-h2 {
-  stop-color: var(--accent);
-  stop-opacity: 0;
-}
-
-.art-u1 {
-  stop-color: #fff;
-  stop-opacity: 0.85;
-}
-
-.art-u2 {
-  stop-color: var(--accent);
-  stop-opacity: 0.9;
-}
-
-.art-edge {
-  stroke: rgba(var(--accent-rgb), 0.75);
-  stroke-width: 2;
-}
-
-.art-metal-edge {
-  stroke: rgba(255, 255, 255, 0.4);
-  stroke-width: 2;
-}
-
-.art-metal-side {
-  fill: rgba(255, 255, 255, 0.1);
-  stroke: rgba(255, 255, 255, 0.18);
-  stroke-width: 1.5;
-}
-
-.art-metal-line {
-  stroke: rgba(255, 255, 255, 0.35);
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-
-.art-hole {
-  fill: rgba(0, 0, 0, 0.6);
-  stroke: rgba(255, 255, 255, 0.28);
-  stroke-width: 1.5;
-}
-
-.art-shine {
-  stroke: rgba(255, 255, 255, 0.4);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
-.art-label {
-  fill: rgba(0, 0, 0, 0.34);
-  stroke: rgba(var(--accent-rgb), 0.5);
-  stroke-width: 1.5;
-}
-
-.art-mark {
-  stroke: var(--accent);
-  stroke-width: 4;
-  stroke-linecap: round;
-}
-
-.art-mark-soft {
-  stroke-opacity: 0.5;
-}
-
-.art-ring {
-  fill: rgba(0, 0, 0, 0.35);
-  stroke: rgba(var(--accent-rgb), 0.7);
-  stroke-width: 2;
-}
-
-.art-led {
-  fill: var(--accent);
-  filter: drop-shadow(0 0 8px var(--accent));
-}
-
-.art-arcs path {
-  stroke: rgba(var(--accent-rgb), 0.4);
-  stroke-width: 2;
-}
-
-.art-traces path {
-  stroke: rgba(var(--accent-rgb), 0.45);
-  stroke-width: 2.5;
-  stroke-linejoin: round;
-}
-
-.art-traces circle {
-  fill: rgba(var(--accent-rgb), 0.7);
-}
-
-@keyframes float {
-  from {
-    transform: translate3d(0, -14px, 0);
-  }
-  to {
-    transform: translate3d(0, 16px, 0);
-  }
-}
-
-@media (max-width: 640px) {
-  .dawn-art {
-    opacity: 0.45;
-  }
-}
-
-.dawn-shade {
+.dawn-sky {
   position: absolute;
   inset: 0;
-  background: radial-gradient(70% 60% at 50% 45%, rgba(0, 0, 0, 0.42), transparent 100%);
+  background:
+    radial-gradient(120% 70% at 50% -10%, rgba(var(--accent-rgb), 0.2), transparent 62%),
+    radial-gradient(90% 60% at 100% 100%, rgba(var(--accent-rgb), 0.07), transparent 70%);
+}
+
+.dawn-orb {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.dawn-orb-a {
+  left: -18vmax;
+  top: 8vh;
+  width: 62vmax;
+  height: 62vmax;
+  background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.13), transparent);
+  transform: translate3d(calc(var(--p) * 22vw), calc(var(--p) * 30vh), 0);
+  animation: drift 26s ease-in-out infinite alternate;
+}
+
+.dawn-orb-b {
+  right: -22vmax;
+  top: 38vh;
+  width: 70vmax;
+  height: 70vmax;
+  background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.09), transparent);
+  transform: translate3d(calc(var(--p) * -26vw), calc(var(--p) * -24vh), 0);
+  animation: drift 34s ease-in-out infinite alternate-reverse;
+}
+
+.dawn-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1.4px);
+  background-size: 34px 34px;
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(75% 65% at 50% 38%, #000 10%, transparent 100%);
+  mask-image: radial-gradient(75% 65% at 50% 38%, #000 10%, transparent 100%);
+}
+
+.dawn-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes drift {
+  from {
+    margin: 0;
+  }
+  to {
+    margin: 4vmax 0 0 3vmax;
+  }
 }
 
 /* Aparición al desplazarse */
@@ -703,35 +576,55 @@ header nav {
   }
 }
 
-/* Desplegable de las preguntas frecuentes */
-:root {
-  interpolate-size: allow-keywords;
+/* Desplegable de las preguntas frecuentes: la altura va de 0fr a 1fr (funciona en todos los navegadores) */
+.faq-q {
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: inherit;
+  padding: 20px 24px;
+  text-align: left;
+  font-weight: 500;
+  transition: background-color 200ms ease;
 }
 
-details.faq::details-content {
-  height: 0;
-  overflow: clip;
-  transition:
-    height 360ms var(--ease),
-    content-visibility 360ms allow-discrete;
+.faq-a {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-details.faq[open]::details-content {
-  height: auto;
+.faq-in {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 260ms ease;
 }
 
-details.faq > div {
-  animation: faq-in 380ms var(--ease);
+.faq-in > div {
+  padding: 0 24px 24px;
+  font-size: 15px;
+  line-height: 1.625;
+  color: var(--muted);
 }
 
-@keyframes faq-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
+.faq[data-open="true"] .faq-a {
+  grid-template-rows: 1fr;
 }
 
-details.faq[open] .chev {
+.faq[data-open="true"] .faq-in {
+  opacity: 1;
+  transition-delay: 90ms;
+}
+
+.faq .chev {
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq[data-open="true"] .chev {
   transform: rotate(180deg);
 }
 
@@ -779,8 +672,13 @@ details.faq[open] .chev {
 
 /* Sin movimiento: nada se anima */
 @media (prefers-reduced-motion: reduce) {
-  .dawn-art svg {
+  .dawn-orb {
     animation: none;
+  }
+  .faq-a,
+  .faq-in,
+  .faq .chev {
+    transition: none;
   }
   .marquee {
     animation: none;
@@ -914,15 +812,9 @@ button:hover > .theme-ring {
   color: var(--on-accent);
 }
 
-/* Los enlaces no llevan href (para no enseñar su dirección), así que el cursor de mano se pone aquí */
-[data-href] {
-  cursor: pointer;
-}
-
 /* Preguntas: la fila se tiñe al señalarla */
-details.faq summary:hover {
+.faq-q:hover {
   background: var(--panel-2);
-  border-radius: inherit;
 }
 
 /* Botón de tema: un punto del color del tema activo con su halo */
