@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -220,7 +221,7 @@ func (m *Manager) downloadParallel(ctx context.Context, job *Job, file *os.File,
 	if resuming {
 		var saved savedMap
 		if data, err := os.ReadFile(mapPath); err == nil && json.Unmarshal(data, &saved) == nil &&
-			saved.Total == total && saved.URL == job.URL && saved.Block == parallelBlock {
+			saved.Total == total && sameFile(saved.URL, job.URL) && saved.Block == parallelBlock {
 			restored = bm.restore(saved.Blocks)
 		}
 		if !restored {
@@ -419,4 +420,15 @@ func (m *Manager) saveMap(job *Job, file *os.File, bm *blockMap, total int64, ma
 	if err == nil {
 		os.WriteFile(mapPath, data, 0o640)
 	}
+}
+
+// * sameFile dice si dos enlaces apuntan al mismo archivo aunque cambie la parte temporal (los enlaces de Windows llevan una
+// * firma que caduca y se renueva, pero el archivo y su tamaño son los mismos).
+func sameFile(a, b string) bool {
+	left, errLeft := url.Parse(a)
+	right, errRight := url.Parse(b)
+	if errLeft != nil || errRight != nil {
+		return a == b
+	}
+	return left.Host == right.Host && left.Path == right.Path
 }

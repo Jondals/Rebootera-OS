@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"rebootera/core/internal/agentproto"
 )
@@ -61,7 +60,7 @@ func boolDigit(value bool) string {
 	return "0"
 }
 
-// * inputSet valida y guarda los ajustes y reinicia la interfaz si cambiaron.
+// * inputSet valida y guarda los ajustes y los aplica al momento si cambiaron.
 func inputSet(settings *agentproto.InputSettings) error {
 	if settings == nil {
 		return fmt.Errorf("faltan los ajustes del puntero")
@@ -80,7 +79,7 @@ func inputSet(settings *agentproto.InputSettings) error {
 	if strings.Join(current, "|") == strings.Join(next, "|") {
 		return nil
 	}
-	// * Igual que con el teclado: SIGKILL a la sesión y Restart=always la reabre con los ajustes nuevos.
-	time.AfterFunc(restartDelay, killKiosk)
+	// * labwc recarga la configuración sin cerrar la interfaz.
+	reloadLabwc()
 	return nil
 }

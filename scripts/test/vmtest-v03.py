@@ -143,7 +143,7 @@ def test_wifi(vm, checks):
 
 
 def test_keyboard(vm, checks):
-    """Cambia la distribución del teclado: el kiosco se reinicia con la nueva."""
+    """Cambia la distribución del teclado: se aplica sin reiniciar el kiosco."""
     status, state = usbtest.api(vm, "GET", "/api/keyboard")
     checks.check("teclado: arranca en español y ofrece la lista cerrada",
                  status == 200 and state.get("layout") == "es" and "us" in state.get("layouts", []), str(state))
@@ -153,23 +153,13 @@ def test_keyboard(vm, checks):
     before = vm.run("pgrep -x labwc | head -1").strip()
     status, ok = usbtest.api(vm, "POST", "/api/keyboard", {"layout": "us"})
     checks.check("teclado: cambiar a inglés responde bien", status == 200, "%s %s" % (status, ok))
-    deadline = time.time() + 60
-    env = ""
-    after = before
-    while time.time() < deadline:
-        time.sleep(3)
-        after = vm.run("pgrep -x labwc | head -1").strip()
-        if after and after != before:
-            env = vm.run("tr '\\0' '\\n' < /proc/%s/environ | grep XKB_DEFAULT_LAYOUT" % after)
-            break
-    detail = "antes %s, ahora %s, %s" % (before, after, env)
-    if "XKB_DEFAULT_LAYOUT=us" not in env:
-        # * Si falla, se guarda cómo quedó la sesión para poder entender por qué no se reinició.
-        detail += " | " + vm.run("systemctl is-active rebootera-ui; ps -eo pid,ppid,etime,cmd | grep -E \"labwc|start-kiosk|rebootera-shell|cage\" | grep -v grep; journalctl -u rebootera-ui --no-pager -n 12 | cut -c1-160").replace("\n", " ; ")
-    checks.check("teclado: el kiosco se reinicia y labwc arranca con XKB_DEFAULT_LAYOUT=us",
-                 "XKB_DEFAULT_LAYOUT=us" in env, detail)
-    shell = vm.run("sleep 8; pgrep -f rebootera-shell | head -1")
-    checks.check("teclado: la interfaz vuelve a estar abierta", shell.strip().isdigit(), shell)
+    time.sleep(6)
+    after = vm.run("pgrep -x labwc | head -1").strip()
+    log_line = vm.run("journalctl -u rebootera-agent --no-pager -n 40 | grep -c 'sin reiniciar'")
+    checks.check("teclado: cambia al momento, sin reiniciar el kiosco",
+                 after == before and log_line.strip().endswith(("1", "2")), "antes %s, ahora %s, avisos %s" % (before, after, log_line.strip()))
+    shell = vm.run("pgrep -f rebootera-shell | head -1")
+    checks.check("teclado: la interfaz sigue abierta", shell.strip().isdigit(), shell)
     saved = vm.run("cat /run/rebootera/vault/rebootera/state/keyboard.json; cat /run/rebootera/keyboard")
     checks.check("teclado: la elección se guarda en el Vault y en el estado del arranque",
                  '"layout":"us"' in saved.replace(" ", "") and saved.strip().endswith("us"), saved)

@@ -225,15 +225,15 @@ main {
 }
 
 :root[data-blur="soft"] .bg {
-  --bg-blur: 3px;
+  --bg-blur: 4px;
 }
 
 :root[data-blur="medium"] .bg {
-  --bg-blur: 8px;
+  --bg-blur: 10px;
 }
 
 :root[data-blur="strong"] .bg {
-  --bg-blur: 16px;
+  --bg-blur: 22px;
 }
 
 /* Refresco suave (cambio de idioma o de tema): sin repetir la animación de entrada */

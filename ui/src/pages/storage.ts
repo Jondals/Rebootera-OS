@@ -1,21 +1,12 @@
-// * Página "Discos y particiones": cada disco como una barra visual (una pieza por
-// * partición y por hueco libre). Se elige una pieza y se puede cambiar su tamaño,
-// * mover el límite con su vecina, fusionarla, borrarla o crear una partición en un
-// * hueco. Cada acción enseña antes cómo quedará el disco y pide confirmación escrita.
+// * Página "Discos": cada disco como una barra visual (una pieza por partición y por hueco libre). Se pulsa una
+// * pieza y salen, con palabras sencillas, las cosas que se pueden hacer con ella: hacerla más grande o pequeña,
+// * unirla con la vecina, borrarla o, si es un hueco, crear una partición. Cada acción enseña antes cómo
+// * quedará el disco y pide confirmación escrita.
 // ! Rebootera nunca toca el USB desde el que ha arrancado ni un disco con particiones
 // ! montadas; el resto de discos se editan con la confirmación "CHANGE <disco>".
 
 import { getJSON } from "../api.js";
-import {
-  badge,
-  button,
-  emptyState,
-  errorBox,
-  pageHeader,
-  panel,
-  progress,
-  type Tone,
-} from "../components.js";
+import { button, emptyState, errorBox, pageHeader, progress } from "../components.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
@@ -28,15 +19,17 @@ import {
   type Segment,
 } from "../partman.js";
 import type { Page } from "../router.js";
-import { openCreate, openDelete, openMerge, openResize } from "./partdialogs.js";
-
-/** Tono de cada función de disco. */
-const ROLE_TONES: Record<string, Tone> = {
-  "live-media": "accent",
-  internal: "violet",
-  removable: "amber",
-  optical: "muted",
-};
+import {
+  diskBar,
+  diskHeader,
+  findPiece,
+  legend,
+  runningPanel,
+  sizeOf,
+  startedStatus,
+  titleOf,
+} from "./diskmap.js";
+import { openCreate, openDelete, openMerge, openRename, openResize } from "./partdialogs.js";
 
 /** Cada cuántos ms se vuelve a leer el estado de la operación y, en reposo, los discos. */
 const STATUS_MS = 2000;
@@ -50,11 +43,6 @@ let status: PartStatus | null = null;
 let timer = 0;
 let ticks = 0;
 let lastSignature = "";
-
-/** Clave de selección de una pieza. */
-function keyOf(disk: string, segment: Segment): string {
-  return disk + ":" + (segment.number > 0 ? "p" + segment.number : "f" + segment.start);
-}
 
 /** Dibuja la estructura fija de la página y empieza a vigilar. */
 function render(root: HTMLElement): void {
@@ -126,113 +114,9 @@ function select(event: MouseEvent): void {
   draw();
 }
 
-/** Color y clase de una pieza por su sistema de archivos. */
-function pieceClass(segment: Segment): string {
-  if (segment.number === 0) {
-    return "pm-free";
-  }
-  switch (segment.fsType) {
-    case "ntfs":
-      return "pm-fs-ntfs";
-    case "ext2":
-    case "ext3":
-    case "ext4":
-      return "pm-fs-ext";
-    case "exfat":
-    case "vfat":
-      return "pm-fs-fat";
-    case "swap":
-      return "pm-fs-swap";
-  }
-  return "pm-fs-other";
-}
-
-/** Nombre que se muestra de una pieza. */
-function titleOf(segment: Segment): string {
-  if (segment.number === 0) {
-    return t("pm.free");
-  }
-  return segment.label || segment.name || "#" + segment.number;
-}
-
-/** Barra del disco: una pieza clicable por partición y por hueco, con cuánto está lleno dentro. */
-function diskBar(disk: PartDisk): HTMLElement {
-  const bar = el("div", {
-    class: "pm-bar",
-    role: "group",
-    "aria-label": t("pm.barLabel", { disk: disk.name }),
-  });
-  for (const segment of disk.layout.segments) {
-    const key = keyOf(disk.name, segment);
-    const size = segment.sectors * 512;
-    const used = segment.number > 0 && size > 0 ? Math.min(1, segment.usedBytes / size) : 0;
-    const meter = el("i", { class: "pm-use" });
-    meter.style.width = Math.round(used * 100) + "%";
-    const piece = el(
-      "button",
-      {
-        class: "pm-seg " + pieceClass(segment) + (selected === key ? " pm-selected" : ""),
-        type: "button",
-        "data-key": key,
-        "aria-pressed": String(selected === key),
-        title:
-          titleOf(segment) +
-          " · " +
-          fmt.bytes(size) +
-          (segment.number > 0 ? " · " + t("pm.usedPercent", { p: Math.round(used * 100) }) : ""),
-      },
-      [
-        el("strong", {}, [titleOf(segment)]),
-        el("span", { class: "pm-size-text" }, [fmt.bytes(size)]),
-        segment.number > 0 ? el("span", { class: "pm-meter" }, [meter]) : null,
-      ],
-    );
-    piece.style.flexGrow = String(Math.max(segment.sectors, disk.layout.totalSectors * 0.05));
-    piece.addEventListener("click", select);
-    bar.append(piece);
-  }
-  return bar;
-}
-
-/** Leyenda de colores de la barra: solo los tipos que hay en el disco. */
-function legend(disk: PartDisk): HTMLElement {
-  const kinds = new Map<string, string>();
-  for (const segment of disk.layout.segments) {
-    kinds.set(pieceClass(segment), segment.number === 0 ? "free" : pieceClass(segment));
-  }
-  const names: Record<string, string> = {
-    "pm-free": t("pm.legendFree"),
-    "pm-fs-ntfs": t("pm.legendNtfs"),
-    "pm-fs-ext": t("pm.legendExt"),
-    "pm-fs-fat": t("pm.legendFat"),
-    "pm-fs-swap": t("pm.legendOther"),
-    "pm-fs-other": t("pm.legendOther"),
-  };
-  const shown = new Set<string>();
-  const items: HTMLElement[] = [];
-  for (const cls of kinds.keys()) {
-    const name = names[cls];
-    if (name && !shown.has(name)) {
-      shown.add(name);
-      items.push(el("span", { class: "pm-key" }, [el("i", { class: "pm-dot " + cls }), name]));
-    }
-  }
-  return el("div", { class: "pm-legend" }, items);
-}
-
 /** Vuelve a leer los discos tras una operación aceptada: el progreso lo enseña el estado. */
 function started(): void {
-  status = {
-    running: true,
-    done: false,
-    disk: "",
-    step: 0,
-    total: 1,
-    kind: "",
-    part: 0,
-    progress: 0,
-    seconds: 0,
-  };
+  status = startedStatus();
   draw();
   tick();
 }
@@ -263,9 +147,113 @@ function action(
   return node;
 }
 
+/** Partición pegada por la izquierda a un hueco libre (la que puede crecer hacia él). */
+function leftOfFree(layout: Layout, free: Segment): Segment | null {
+  return neighbour(layout, free, "left");
+}
+
+/** Motivo por el que una partición no se puede cambiar de tamaño ahora. */
+function resizeWhy(segment: Segment): string {
+  return segment.resizable
+    ? t("pm.resizeMounted")
+    : t("pm.cannotResize", { fs: segment.fsType || "?" });
+}
+
+/** Acciones de un hueco libre: crear una partición o añadírselo a la de al lado. */
+function freeActions(layout: Layout, segment: Segment): HTMLElement[] {
+  const buttons = [
+    action(
+      t("pm.create"),
+      t("pm.actCreate"),
+      function create(): void {
+        openCreate(layout, segment, started);
+      },
+      true,
+      "",
+      icons.sparkle,
+    ),
+  ];
+  const left = leftOfFree(layout, segment);
+  if (left) {
+    const usable = left.resizable && !left.mounted;
+    buttons.push(
+      action(
+        t("pm.addTo", { name: titleOf(left) }),
+        t("pm.actAddTo"),
+        function addTo(): void {
+          void openResize(layout, left, started, { grow: true });
+        },
+        usable,
+        resizeWhy(left),
+        icons.refresh,
+      ),
+    );
+  }
+  return buttons;
+}
+
+/** Acciones de una partición: tamaño, unir con la vecina y borrar. */
+function partitionActions(layout: Layout, segment: Segment): HTMLElement[] {
+  const left = neighbour(layout, segment, "left");
+  const right = neighbour(layout, segment, "right");
+  const buttons = [
+    action(
+      t("pm.resize"),
+      t("pm.actResize"),
+      function resize(): void {
+        void openResize(layout, segment, started);
+      },
+      segment.resizable && !segment.mounted,
+      resizeWhy(segment),
+      icons.refresh,
+    ),
+  ];
+  buttons.push(
+    action(
+      t("pm.rename"),
+      t("pm.actRename"),
+      function rename(): void {
+        openRename(layout, segment, started);
+      },
+      !segment.mounted &&
+        ["ext2", "ext3", "ext4", "ntfs", "exfat", "vfat"].includes(segment.fsType ?? ""),
+      segment.mounted ? t("pm.mounted") : t("pm.renameNo"),
+      icons.settings,
+    ),
+  );
+  if (left || right) {
+    buttons.push(
+      action(
+        t("pm.merge"),
+        t("pm.actMerge"),
+        function merge(): void {
+          openMerge(layout, segment, started);
+        },
+        true,
+        "",
+        icons.library,
+      ),
+    );
+  }
+  buttons.push(
+    action(
+      t("pm.delete"),
+      t("pm.actDelete"),
+      function remove(): void {
+        openDelete(layout, segment, started);
+      },
+      true,
+      "",
+      icons.x,
+      true,
+    ),
+  );
+  return buttons;
+}
+
 /** Panel de la pieza elegida: qué es, cuánto está lleno y qué se puede hacer con ella. */
 function actionsPanel(layout: Layout, segment: Segment): HTMLElement {
-  const size = segment.sectors * 512;
+  const size = sizeOf(segment);
   const isFree = segment.number === 0;
   const used = !isFree && size > 0 ? Math.min(1, segment.usedBytes / size) : 0;
   const summary: HTMLElement[] = [
@@ -273,7 +261,7 @@ function actionsPanel(layout: Layout, segment: Segment): HTMLElement {
     el("span", { class: "muted" }, [
       [
         isFree ? t("pm.free") : (segment.fsType || "—").toUpperCase(),
-        fmt.bytes(size),
+        fmt.disk(size),
         segment.mounted ? t("pm.mounted") : "",
       ]
         .filter(Boolean)
@@ -281,78 +269,21 @@ function actionsPanel(layout: Layout, segment: Segment): HTMLElement {
     ]),
   ];
   if (!isFree && segment.usedBytes > 0) {
-    const meter = progress(used, used > 0.9 ? "warn" : "accent");
     summary.push(
-      meter,
+      progress(used, used > 0.9 ? "warn" : "accent"),
       el("span", { class: "muted" }, [
         t("pm.usedFree", {
-          used: fmt.bytes(segment.usedBytes),
-          free: fmt.bytes(Math.max(0, size - segment.usedBytes)),
+          used: fmt.disk(segment.usedBytes),
+          free: fmt.disk(Math.max(0, size - segment.usedBytes)),
         }),
       ]),
     );
   }
-  const buttons: HTMLElement[] = [];
-  if (isFree) {
-    buttons.push(
-      action(
-        t("pm.create"),
-        t("pm.actCreate"),
-        function create(): void {
-          openCreate(layout, segment, started);
-        },
-        true,
-        "",
-        icons.sparkle,
-      ),
-    );
-  } else {
-    const left = neighbour(layout, segment, "left");
-    const right = neighbour(layout, segment, "right");
-    const resizeWhy = t("pm.cannotResize", { fs: segment.fsType || "?" });
-    buttons.push(
-      action(
-        t("pm.resize"),
-        t("pm.actResize"),
-        function resize(): void {
-          openResize(layout, segment, started);
-        },
-        segment.resizable,
-        resizeWhy,
-        icons.refresh,
-      ),
-    );
-    if (left || right) {
-      buttons.push(
-        action(
-          t("pm.merge"),
-          t("pm.actMerge"),
-          function merge(): void {
-            openMerge(layout, segment, started);
-          },
-          true,
-          "",
-          icons.library,
-        ),
-      );
-    }
-    buttons.push(
-      action(
-        t("pm.delete"),
-        t("pm.actDelete"),
-        function remove(): void {
-          openDelete(layout, segment, started);
-        },
-        true,
-        "",
-        icons.x,
-        true,
-      ),
-    );
-  }
   return el("div", { class: "pm-panel" }, [
     el("div", { class: "pm-info" }, summary),
-    el("div", { class: "pm-actions" }, buttons),
+    el("div", { class: "pm-actions" }, [
+      ...(isFree ? freeActions(layout, segment) : partitionActions(layout, segment)),
+    ]),
   ]);
 }
 
@@ -364,32 +295,15 @@ function lockedText(code: string): string {
 /** Tarjeta de un disco. */
 function diskCard(disk: PartDisk): HTMLElement {
   const locked = disk.layout.locked ?? "";
-  const picked = disk.layout.segments.find(function isPicked(segment) {
-    return keyOf(disk.name, segment) === selected;
-  });
+  const picked = findPiece([disk], selected)?.segment;
   return el("article", { class: "disk-card" }, [
-    el("header", { class: "disk-header" }, [
-      el("span", { class: "disk-icon" }, [icon(disk.transport === "usb" ? icons.usb : icons.disk)]),
-      el("div", { class: "disk-title" }, [
-        el("strong", {}, [[disk.vendor, disk.model].filter(Boolean).join(" ") || disk.name]),
-        el("span", { class: "muted" }, [
-          [
-            fmt.bytes(disk.sizeBytes),
-            disk.transport.toUpperCase(),
-            disk.layout.table.toUpperCase(),
-            "/dev/" + disk.name,
-          ]
-            .filter(Boolean)
-            .join(" · "),
-        ]),
-      ]),
-      badge(t("storage.roles." + disk.role), ROLE_TONES[disk.role] ?? "muted"),
+    diskHeader(disk, [
       locked
         ? el("span", { class: "guard-chip" }, [icon(icons.lock), t("common.protected")])
         : null,
     ]),
     disk.layout.segments.length > 0
-      ? el("div", {}, [diskBar(disk), legend(disk)])
+      ? el("div", {}, [diskBar(disk, selected, select), legend(disk)])
       : el("p", { class: "muted" }, [t("storage.noTable")]),
     locked
       ? el("p", { class: "muted small-note" }, [lockedText(locked)])
@@ -397,30 +311,6 @@ function diskCard(disk: PartDisk): HTMLElement {
         ? actionsPanel(disk.layout, picked)
         : el("p", { class: "muted small-note" }, [t("pm.pick")]),
   ]);
-}
-
-/** Panel con el avance de la operación en curso. */
-function runningPanel(current: PartStatus): HTMLElement {
-  const overall = current.total > 0 ? (current.step + current.progress) / current.total : 0;
-  return panel(
-    t("pm.running"),
-    [
-      el("p", {}, [
-        current.kind
-          ? t("pm.steps." + current.kind, { n: current.part, size: "" }) +
-            " (" +
-            (current.step + 1) +
-            "/" +
-            current.total +
-            ")"
-          : t("pm.starting"),
-      ]),
-      progress(overall, "accent"),
-      el("p", { class: "mono-small muted" }, [fmt.duration(current.seconds)]),
-      el("div", { class: "error-box" }, [t("pm.dontUnplug")]),
-    ],
-    { iconPaths: icons.disk },
-  );
 }
 
 /** Dibuja la página entera. */

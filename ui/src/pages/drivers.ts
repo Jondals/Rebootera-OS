@@ -1,8 +1,7 @@
-// * Página "Asistente de drivers": inventario real de dispositivos PCI y USB
-// * con el driver que usa Linux y sus Hardware ID de Windows. Filtra por
-// * dispositivos necesarios para instalar y por dispositivos sin driver.
-// * También casa esos Hardware ID con los paquetes INF que Rebootera encuentra solo al arrancar (el USB, las
-// * particiones del equipo con drivers de fábrica, un Windows instalado) y dice de dónde sale cada uno.
+// * Página "Drivers" de Rebootera OS: una respuesta clara arriba ("todo listo" o "faltan N") y debajo lo que
+// * importa para instalar (red y discos), cada pieza con su estado: Listo (hay driver para Windows en el USB, en una
+// * partición del equipo o en un Windows instalado) o Falta (con ayuda para conseguirlo). El resto de dispositivos y
+// * de dónde se buscan los drivers quedan plegados.
 
 import {
   getJSON,
@@ -12,15 +11,17 @@ import {
   type DriverPlan,
   type DriverSource,
 } from "../api.js";
-import { badge, button, emptyState, pageHeader, panel } from "../components.js";
+import { badge, button, emptyState, more, pageHeader, panel } from "../components.js";
+import { browserAvailable, openBrowser } from "../bridge.js";
 import { el, icon } from "../dom.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
+import { onlineInterface } from "../insights.js";
 import type { Page } from "../router.js";
 import { scanHardware, snapshot } from "../state.js";
 
-/** Filtros disponibles. */
-type Filter = "all" | "critical" | "missing";
+/** Estado de un dispositivo respecto a los drivers de Windows. */
+type DeviceState = "ready" | "missing" | "fine";
 
 /** Icono de cada categoría. */
 const CATEGORY_ICONS: Record<string, string> = {
@@ -36,11 +37,9 @@ const CATEGORY_ICONS: Record<string, string> = {
   other: icons.drivers,
 };
 
-let filter: Filter = "all";
-let list: HTMLElement | null = null;
-let tabs: HTMLElement | null = null;
-let usbBox: HTMLElement | null = null;
+let body: HTMLElement | null = null;
 let plan: DriverPlan | null = null;
+let searching = false;
 
 /** Pide el casado de drivers del USB con este equipo. */
 async function loadPlan(): Promise<void> {
@@ -49,7 +48,21 @@ async function loadPlan(): Promise<void> {
   } catch {
     plan = null;
   }
-  drawUsb();
+  update();
+}
+
+/** Vuelve a mirar el hardware y a buscar drivers en las particiones del equipo. */
+async function searchAgain(): Promise<void> {
+  searching = true;
+  update();
+  scanHardware();
+  try {
+    await postJSON("/api/drivers/scan", {});
+  } catch {
+    // * Si la búsqueda falla, se enseña lo que ya había.
+  }
+  searching = false;
+  await loadPlan();
 }
 
 /** Nombre legible de un origen de drivers. */
@@ -70,210 +83,241 @@ function sourceOf(id: string): DriverSource | undefined {
   });
 }
 
-/** Fila de un origen de drivers con cuántos paquetes aportó. */
-function sourceRow(source: DriverSource): HTMLElement {
-  const sourceIcon =
-    source.kind === "usb" ? icons.usb : source.kind === "windows" ? icons.monitor : icons.disk;
-  return el("div", { class: "driver-source" }, [
-    icon(sourceIcon),
-    el("span", {}, [sourceName(source)]),
-    badge(t("drivers.sourcePackages", { n: source.packages }), "muted"),
-  ]);
+/** Paquete casado con un dispositivo, si lo hay. */
+function matchOf(device: Device): DriverMatch | undefined {
+  return plan?.matches.find(function same(match) {
+    return match.address === device.address;
+  });
 }
 
-/** Vuelve a buscar drivers en las particiones del equipo. */
-async function searchAgain(): Promise<void> {
-  try {
-    await postJSON("/api/drivers/scan", {});
-  } catch {
-    // * Si la búsqueda falla, se enseña lo que ya había.
+/** Estado de un dispositivo: listo (hay paquete), falta (importante y sin paquete) o sin problema. */
+function stateOf(device: Device): DeviceState {
+  if (matchOf(device)?.package) {
+    return "ready";
   }
-  await loadPlan();
-}
-
-/** Fila de un dispositivo con su paquete de drivers. */
-function packageRow(match: DriverMatch): HTMLElement {
-  const pack = match.package;
-  return el("article", { class: "driver-match" }, [
-    el("div", {}, [
-      el("strong", {}, [match.name || match.vendor || match.address]),
-      el("div", { class: "mono-small muted" }, [
-        pack ? pack.inf + " · " + pack.provider + " " + pack.version + " · " + pack.date : "",
-      ]),
-      el("div", { class: "mono-small muted" }, [
-        t("drivers.usbMatchedBy", { id: match.hardwareId }),
-      ]),
-      pack && sourceOf(pack.sourceId)
-        ? el("div", { class: "mono-small muted" }, [
-            t("drivers.from", { source: sourceName(sourceOf(pack.sourceId) as DriverSource) }),
-          ])
-        : null,
-    ]),
-    pack
-      ? badge(
-          t("wizard.driversSig" + pack.signature.charAt(0).toUpperCase() + pack.signature.slice(1)),
-          pack.signature === "present" ? "ok" : pack.signature === "invalid" ? "danger" : "warn",
-        )
-      : null,
-  ]);
-}
-
-/** Fila de un dispositivo crítico sin paquete. */
-function missingPackageRow(match: DriverMatch): HTMLElement {
-  return el("article", { class: "driver-match" }, [
-    el("span", {}, [match.name || match.vendor || match.address]),
-    badge(t("drivers.noDriver"), "warn"),
-  ]);
-}
-
-/** Dibuja el panel de drivers de Windows del USB. */
-function drawUsb(): void {
-  if (usbBox === null || !usbBox.isConnected) {
-    return;
+  const listedMissing = plan?.missing.some(function same(match) {
+    return match.address === device.address;
+  });
+  if (listedMissing || (device.critical && device.driver === "")) {
+    return "missing";
   }
-  const body: (Node | null)[] = [];
-  if (plan === null) {
-    body.push(el("p", { class: "muted" }, [t("common.loading")]));
-  } else if (!plan.available && plan.sources.length === 0) {
-    body.push(el("p", { class: "muted" }, [t("drivers.usbNoVault")]));
-  } else {
-    body.push(
-      el("p", { class: "muted small-note" }, [t("drivers.autoText")]),
-      ...(plan.sources.length > 0
-        ? plan.sources.map(sourceRow)
-        : [el("p", { class: "muted" }, [t("drivers.noSources")])]),
-      el("div", { class: "more-actions" }, [
-        button(t("drivers.searchAgain"), searchAgain, { iconPaths: icons.refresh }),
-      ]),
-      el("p", { class: "muted small-note" }, [t("drivers.usbPackages", { n: plan.packages })]),
-    );
-    if (plan.matches.length > 0) {
-      body.push(...plan.matches.map(packageRow));
-    } else {
-      body.push(el("p", { class: "muted" }, [t("drivers.usbNone")]));
-    }
-    if (plan.missing.length > 0) {
-      body.push(
-        el("strong", {}, [t("drivers.usbMissing")]),
-        ...plan.missing.map(missingPackageRow),
-      );
-    }
-  }
-  usbBox.replaceChildren(panel(t("drivers.usbTitle"), body, { iconPaths: icons.drivers }));
+  return "fine";
 }
 
-/** Vuelve a analizar el hardware. */
-function rescan(): void {
-  scanHardware();
-  loadPlan();
+/** Nombre legible de un dispositivo. */
+function nameOf(device: Device): string {
+  return device.name || device.className || t("common.unknown");
 }
 
-/** Cambia el filtro activo según el botón pulsado. */
-function selectFilter(event: MouseEvent): void {
-  filter = (event.currentTarget as HTMLElement).dataset.filter as Filter;
-  update();
+/** Busca el driver de un dispositivo en la web, con el navegador de Rebootera. */
+function searchWeb(device: Device): void {
+  const query = [device.vendor, nameOf(device), "Windows driver"].filter(Boolean).join(" ");
+  openBrowser("https://duckduckgo.com/?q=" + encodeURIComponent(query));
 }
 
-/** Indica si un dispositivo pasa el filtro activo. */
-function matches(device: Device): boolean {
-  if (filter === "critical") {
-    return device.critical;
-  }
-  if (filter === "missing") {
-    return device.driver === "";
-  }
-  return true;
-}
-
-/** Dibuja la estructura fija de la página. */
-function render(root: HTMLElement): void {
-  tabs = el("div", { class: "segmented", role: "tablist" });
-  list = el("div", { class: "device-list" });
-  usbBox = el("div", {});
-  plan = null;
-  loadPlan();
-  root.append(
-    el("div", { class: "page" }, [
-      pageHeader(t("drivers.title"), t("drivers.subtitle"), [
-        button(t("common.rescan"), rescan, { iconPaths: icons.refresh }),
-      ]),
-      usbBox,
-      tabs,
-      list,
-    ]),
+/** Indica si se puede ofrecer buscar en la web (navegador de la sesión y red). */
+function canSearchWeb(): boolean {
+  return (
+    browserAvailable() && snapshot.system !== null && onlineInterface(snapshot.system) !== null
   );
 }
 
-/** Fila de un dispositivo. */
-function deviceRow(device: Device): HTMLElement {
-  const title = device.name || device.className || t("common.unknown");
-  return el("article", { class: "device-row" + (device.critical ? " device-critical" : "") }, [
+/** Fila de un dispositivo importante, con su estado y qué hacer. */
+function importantRow(device: Device): HTMLElement {
+  const state = stateOf(device);
+  const found = matchOf(device)?.package;
+  const source = found ? sourceOf(found.sourceId) : undefined;
+  let note = "";
+  if (state === "ready" && source) {
+    note = t("drivers.readyFrom", { source: sourceName(source) });
+  } else if (state === "missing") {
+    note = t("drivers.missingHint");
+  } else {
+    note = t("drivers.fineHint");
+  }
+  const search =
+    state === "missing" && canSearchWeb()
+      ? button(t("drivers.searchWeb"), function web(): void {
+          searchWeb(device);
+        })
+      : null;
+  return el("article", { class: "device-row device-" + state }, [
     el("span", { class: "device-icon" }, [icon(CATEGORY_ICONS[device.category] ?? icons.drivers)]),
     el("div", { class: "device-main" }, [
-      el("strong", {}, [title]),
-      // * Los identificadores de hardware ya no se enseñan: salen al pasar el ratón.
+      el("strong", {}, [nameOf(device)]),
+      // * Los identificadores de hardware salen al pasar el ratón: casi nunca hacen falta.
+      el("span", { class: "muted", title: device.hardwareIds.join("\n") }, [
+        t("categories." + device.category) + (device.vendor ? " · " + device.vendor : ""),
+        " — ",
+        note,
+      ]),
+    ]),
+    search,
+    badge(
+      t("drivers.state." + state),
+      state === "ready" ? "ok" : state === "missing" ? "warn" : "muted",
+    ),
+  ]);
+}
+
+/** Fila sencilla de un dispositivo que no hace falta para instalar. */
+function otherRow(device: Device): HTMLElement {
+  return el("article", { class: "device-row" }, [
+    el("span", { class: "device-icon" }, [icon(CATEGORY_ICONS[device.category] ?? icons.drivers)]),
+    el("div", { class: "device-main" }, [
+      el("strong", {}, [nameOf(device)]),
       el("span", { class: "muted", title: device.hardwareIds.join("\n") }, [
         t("categories." + device.category) + (device.vendor ? " · " + device.vendor : ""),
       ]),
     ]),
-    device.critical ? badge(t("drivers.critical"), "amber") : null,
-    device.driver ? badge(t("drivers.hasDriver"), "ok") : badge(t("drivers.noDriver"), "warn"),
+    badge(
+      device.driver ? t("drivers.hasDriver") : t("drivers.optional"),
+      device.driver ? "ok" : "muted",
+    ),
   ]);
 }
 
-/** Refresca los filtros y la lista. */
+/** Tarjeta grande con la respuesta: todo listo, o cuántos drivers faltan. */
+function statusCard(missing: Device[], ready: number): HTMLElement {
+  if (plan === null) {
+    return el("div", { class: "driver-hero" }, [
+      el("span", { class: "driver-hero-icon" }, [icon(icons.drivers)]),
+      el("div", {}, [el("strong", {}, [t("common.loading")])]),
+    ]);
+  }
+  const good = missing.length === 0;
+  const names = missing.slice(0, 3).map(nameOf).join(", ");
+  const again = button(searching ? t("drivers.searching") : t("drivers.searchAgain"), searchAgain, {
+    variant: good ? "ghost" : "primary",
+    iconPaths: icons.refresh,
+  });
+  again.disabled = searching;
+  return el("div", { class: "driver-hero " + (good ? "driver-hero-ok" : "driver-hero-warn") }, [
+    el("span", { class: "driver-hero-icon" }, [icon(good ? icons.check : icons.alert)]),
+    el("div", { class: "driver-hero-text" }, [
+      el("strong", {}, [
+        good ? t("drivers.okTitle") : t("drivers.missTitle", { n: missing.length }),
+      ]),
+      el("span", {}, [
+        good
+          ? ready > 0
+            ? t("drivers.okReady", { n: ready })
+            : t("drivers.okNone")
+          : t("drivers.missText", { names }),
+      ]),
+    ]),
+    again,
+  ]);
+}
+
+/** Pasos para conseguir un driver que falta. */
+function howTo(): HTMLElement {
+  return el("ol", { class: "boot-steps" }, [
+    el("li", {}, [t("drivers.how1")]),
+    el("li", {}, [t("drivers.how2")]),
+    el("li", {}, [t("drivers.how3")]),
+  ]);
+}
+
+/** De dónde busca drivers Rebootera, con cuántos paquetes aportó cada sitio. */
+function sourcesBlock(): Node[] {
+  if (plan === null) {
+    return [];
+  }
+  const rows =
+    plan.sources.length > 0
+      ? plan.sources.map(function sourceRow(source) {
+          const sourceIcon =
+            source.kind === "usb"
+              ? icons.usb
+              : source.kind === "windows"
+                ? icons.monitor
+                : icons.disk;
+          return el("div", { class: "driver-source" }, [
+            icon(sourceIcon),
+            el("div", { class: "driver-source-text" }, [
+              el("span", {}, [sourceName(source)]),
+              source.packages === 0
+                ? el("small", { class: "muted" }, [t("drivers.sourceEmpty")])
+                : null,
+            ]),
+            badge(t("drivers.sourcePackages", { n: source.packages }), "muted"),
+          ]);
+        })
+      : [el("p", { class: "muted" }, [t("drivers.noSources")])];
+  return [el("p", { class: "muted small-note" }, [t("drivers.autoText")]), ...rows];
+}
+
+/** Dibuja la estructura fija de la página. */
+function render(root: HTMLElement): void {
+  body = el("div", { class: "drivers-body" });
+  plan = null;
+  void loadPlan();
+  root.append(
+    el("div", { class: "page" }, [pageHeader(t("drivers.title"), t("drivers.subtitle")), body]),
+  );
+}
+
+/** Refresca la página con los datos actuales. */
 function update(): void {
-  if (list === null || tabs === null || !list.isConnected) {
+  if (body === null || !body.isConnected) {
     return;
   }
   const devices = snapshot.devices;
   if (devices === null) {
-    list.replaceChildren(el("p", { class: "muted" }, [t("common.loading")]));
+    body.replaceChildren(el("p", { class: "muted" }, [t("common.loading")]));
     return;
   }
-  const counts: Record<Filter, number> = {
-    all: devices.length,
-    critical: devices.filter(isCritical).length,
-    missing: devices.filter(isMissing).length,
-  };
-  const filters: [Filter, string][] = [
-    ["all", t("drivers.filterAll")],
-    ["critical", t("drivers.filterCritical")],
-    ["missing", t("drivers.filterMissing")],
-  ];
-  tabs.replaceChildren(
-    ...filters.map(function tab([name, label]) {
-      const node = el(
-        "button",
-        {
-          class: "segment-button",
-          type: "button",
-          role: "tab",
-          "data-filter": name,
-          "aria-selected": String(filter === name),
-        },
-        [label, el("span", { class: "segment-count" }, [String(counts[name])])],
-      );
-      node.addEventListener("click", selectFilter);
-      return node;
-    }),
-  );
-  const visible = devices.filter(matches);
-  list.replaceChildren(
-    ...(visible.length > 0
-      ? visible.map(deviceRow)
-      : [emptyState(icons.check, t("drivers.empty"), "")]),
-  );
+  const important = devices.filter(isCritical);
+  const others = devices.filter(isNotCritical);
+  const missing = important.filter(isMissing);
+  const ready = devices.filter(isReady).length;
+  const parts: (Node | null)[] = [statusCard(missing, ready)];
+  if (important.length > 0) {
+    parts.push(
+      panel(t("drivers.importantTitle"), important.map(importantRow), {
+        subtitle: t("drivers.importantText"),
+        iconPaths: icons.drivers,
+      }),
+    );
+  } else {
+    parts.push(emptyState(icons.check, t("drivers.empty"), ""));
+  }
+  if (missing.length > 0) {
+    parts.push(more(t("drivers.howTitle"), [howTo()], "drivers-how"));
+  }
+  if (others.length > 0) {
+    parts.push(
+      more(t("drivers.othersTitle", { n: others.length }), others.map(otherRow), "drivers-others"),
+    );
+  }
+  parts.push(more(t("drivers.sourcesTitle"), sourcesBlock(), "drivers-sources"));
+  body.replaceChildren(...parts.filter(isNode));
 }
 
-/** Indica si un dispositivo es crítico. */
+/** Indica si un dispositivo es importante para instalar. */
 function isCritical(device: Device): boolean {
   return device.critical;
 }
 
-/** Indica si un dispositivo no tiene driver. */
+/** Indica si un dispositivo no hace falta para instalar. */
+function isNotCritical(device: Device): boolean {
+  return !device.critical;
+}
+
+/** Indica si un dispositivo importante no tiene driver para Windows. */
 function isMissing(device: Device): boolean {
-  return device.driver === "";
+  return stateOf(device) === "missing";
+}
+
+/** Indica si hay un paquete de drivers para el dispositivo. */
+function isReady(device: Device): boolean {
+  return stateOf(device) === "ready";
+}
+
+/** Filtro de tipo para quitar los huecos de la lista. */
+function isNode(node: Node | null): node is Node {
+  return node !== null;
 }
 
 export const driversPage: Page = { render, update };

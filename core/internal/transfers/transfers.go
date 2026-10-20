@@ -112,7 +112,12 @@ type Job struct {
 	Error      string    `json:"error,omitempty"`
 	ErrorCode  string    `json:"errorCode,omitempty"`
 	Created    time.Time `json:"created"`
+	// * retryAt es cuándo se vuelve a intentar sola una descarga que falló por la red (no se guarda: al arrancar se reintenta ya).
+	retryAt time.Time
 }
+
+// * networkRetry es lo que se espera entre reintentos automáticos de una descarga sin red.
+const networkRetry = 20 * time.Second
 
 // Manager gestiona la cola y su único trabajador.
 type Manager struct {
@@ -154,8 +159,11 @@ func (m *Manager) load() {
 	}
 	vault.ReadJSON(statePath(), &m.jobs)
 	for _, job := range m.jobs {
-		if job.Status == StatusRunning || job.Status == StatusVerifying {
+		// * Lo que estaba a medias (también lo que se cortó por falta de red) sigue solo al volver a abrir.
+		if job.Status == StatusRunning || job.Status == StatusVerifying || (job.Status == StatusFailed && job.ErrorCode == CodeNetwork) {
 			job.Status = StatusQueued
+			job.Error = ""
+			job.ErrorCode = ""
 		}
 		job.SpeedBps = 0
 	}
@@ -182,6 +190,19 @@ func (m *Manager) List() []Job {
 		list = append(list, *job)
 	}
 	return list
+}
+
+// * Busy indica si hay alguna transferencia en marcha o esperando turno (no cuenta las pausadas ni las fallidas).
+func (m *Manager) Busy() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.load()
+	for _, job := range m.jobs {
+		if job.Status == StatusRunning || job.Status == StatusVerifying || job.Status == StatusQueued {
+			return true
+		}
+	}
+	return false
 }
 
 // * Download añade a la cola la descarga de una entrada del catálogo.
@@ -381,6 +402,15 @@ func (m *Manager) next() *Job {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.load()
+	now := time.Now()
+	for _, job := range m.jobs {
+		// * Una descarga cortada por la red se reanuda sola donde se quedó en cuanto vuelve la conexión.
+		if job.Status == StatusFailed && job.ErrorCode == CodeNetwork && !job.retryAt.IsZero() && now.After(job.retryAt) {
+			job.Status = StatusQueued
+			job.Error = ""
+			job.ErrorCode = ""
+		}
+	}
 	for _, job := range m.jobs {
 		if job.Status == StatusQueued {
 			job.Status = StatusRunning
@@ -402,6 +432,12 @@ func (m *Manager) process(job *Job) {
 	m.mu.Unlock()
 
 	sha, err := m.transfer(ctx, job)
+	// * Los enlaces temporales (Windows) caducan: si la fuente rechaza el enlace guardado, se pide uno nuevo y se continúa.
+	if err != nil && ctx.Err() == nil && job.Kind == KindDownload && job.CatalogID != "" && codeOf(err) == CodeSource {
+		if _, ok := m.refreshLink(job); ok {
+			sha, err = m.transfer(ctx, job)
+		}
+	}
 	cancel()
 
 	m.mu.Lock()
@@ -433,12 +469,32 @@ func (m *Manager) process(job *Job) {
 		job.Status = StatusFailed
 		job.Error = err.Error()
 		job.ErrorCode = codeOf(err)
+		if job.ErrorCode == CodeNetwork {
+			job.retryAt = time.Now().Add(networkRetry)
+		}
 		log.Printf("transferencias: %s falló: %v", job.FileName, err)
 	default:
 		job.Status = StatusDone
 		log.Printf("transferencias: %s guardado en la biblioteca", job.FileName)
 	}
 	m.save()
+}
+
+// * refreshLink vuelve a pedir al catálogo el enlace de una descarga. Devuelve true si es distinto del que tenía.
+func (m *Manager) refreshLink(job *Job) (string, bool) {
+	entry, err := catalog.Find(job.CatalogID)
+	if err != nil {
+		return "", false
+	}
+	resolved, err := catalog.Resolve(entry)
+	if err != nil || resolved.URL == "" || resolved.URL == job.URL {
+		return "", false
+	}
+	m.mu.Lock()
+	job.URL = resolved.URL
+	m.save()
+	m.mu.Unlock()
+	return resolved.URL, true
 }
 
 // * finish comprueba el hash y mueve el archivo a la biblioteca.

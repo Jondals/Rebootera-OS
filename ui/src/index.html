@@ -87,7 +87,7 @@
     </svg>
 
     <!-- * Intro ligera: se elimina del documento al terminar (intro.ts). -->
-    <div id="intro" class="intro" aria-hidden="true">
+    <div id="intro" class="intro intro-wait" aria-hidden="true">
       <div class="intro-center">
         <svg class="intro-logo" viewBox="0 0 256 256">
           <g class="intro-tile">
@@ -189,6 +189,7 @@
         <nav id="nav" class="tabs" data-i18n-label="nav.section"></nav>
         <div class="topnav-right">
           <span id="status-chip"></span>
+          <button class="browser-button" id="browser-button" type="button" hidden></button>
           <div class="drive-chip" id="drive-card"></div>
           <button
             class="icon-button icon-button-danger"

@@ -1,8 +1,6 @@
-// * "Asistente de drivers" de Rebootera Desktop: los paquetes de drivers que
-// * lleva el USB de Rebootera (carpeta drivers/). Aquí se añaden carpetas de
-// * drivers del equipo, se ven agrupadas con el estado de su firma y se quitan.
-// * Rebootera OS los casa luego con el hardware del equipo que arranca y puede
-// * llevarlos al instalador de Windows.
+// * "Drivers" de Rebootera Desktop: los drivers que lleva el USB (carpeta drivers/) para instalar Windows en
+// * cualquier equipo. La página explica en tres pasos cómo funciona, deja añadir la carpeta que se bajó del
+// * fabricante y enseña lo que hay, agrupado por carpeta y con una pista clara si algún paquete no tiene firma.
 // ! Los paquetes solo se leen: nunca se ejecuta nada de lo que contienen.
 
 import { getJSON, postJSON } from "../api.js";
@@ -11,6 +9,7 @@ import {
   button,
   emptyState,
   errorBox,
+  more,
   pageHeader,
   panel,
   type Tone,
@@ -19,7 +18,7 @@ import { confirmAction } from "../dialogs.js";
 import { el, icon } from "../dom.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
-import { navigate, type Page } from "../router.js";
+import type { Page } from "../router.js";
 
 /** Paquete de drivers de /api/desktop/drivers. */
 interface Pack {
@@ -45,6 +44,18 @@ interface Group {
   packs: Pack[];
 }
 
+/** Clase INF de Windows → clave del tipo en lenguaje normal. */
+const CLASS_KINDS: Record<string, string> = {
+  net: "network",
+  scsiadapter: "storage",
+  hdc: "storage",
+  diskdrive: "storage",
+  display: "display",
+  media: "audio",
+  bluetooth: "bluetooth",
+  usb: "usb",
+};
+
 let body: HTMLElement | null = null;
 let message: HTMLElement | null = null;
 let view: DriversView | null = null;
@@ -53,18 +64,14 @@ let view: DriversView | null = null;
 function render(root: HTMLElement): void {
   body = el("div", { class: "drivers-body" });
   message = el("div", { class: "page-message", "aria-live": "polite" });
-  const add = button(t("desktop.addDrivers"), addFolder, {
-    variant: "primary",
-    iconPaths: icons.drivers,
-  });
   root.append(
     el("div", { class: "page" }, [
-      pageHeader(t("nav.drivers"), t("desktop.driversSubtitle"), [add]),
+      pageHeader(t("nav.drivers"), t("desktop.driversSubtitle")),
       message,
       body,
     ]),
   );
-  load();
+  void load();
 }
 
 /** Lee los paquetes del USB. */
@@ -112,11 +119,6 @@ async function removeFolder(event: MouseEvent): Promise<void> {
   }
 }
 
-/** Abre "Crear USB" para meter drivers junto con otras cosas. */
-function openCreate(): void {
-  navigate("create");
-}
-
 /** Agrupa los paquetes por la carpeta de primer nivel de drivers/. */
 function groups(packs: Pack[]): Group[] {
   const byName = new Map<string, Pack[]>();
@@ -129,6 +131,23 @@ function groups(packs: Pack[]): Group[] {
   });
 }
 
+/** Tipo en lenguaje normal de un paquete ("Red", "Almacenamiento"...), o su clase INF si no se conoce. */
+function kindOf(pack: Pack): string {
+  const kind = CLASS_KINDS[pack.class.toLowerCase()];
+  return kind ? t("desktop.kinds." + kind) : pack.class;
+}
+
+/** Tipos distintos que aporta una carpeta, para la línea de resumen. */
+function kindsOf(packs: Pack[]): string {
+  const kinds = new Set<string>();
+  for (const pack of packs) {
+    if (pack.class) {
+      kinds.add(kindOf(pack));
+    }
+  }
+  return [...kinds].slice(0, 4).join(", ");
+}
+
 /** Tono y texto de la firma de un paquete. */
 function signatureBadge(signature: Pack["signature"]): HTMLElement {
   const tone: Tone = signature === "present" ? "ok" : signature === "invalid" ? "danger" : "warn";
@@ -136,7 +155,50 @@ function signatureBadge(signature: Pack["signature"]): HTMLElement {
   return badge(t(key), tone);
 }
 
-/** Panel de una carpeta de drivers. */
+/** Paquetes sin firma válida de una lista. */
+function unsigned(packs: Pack[]): number {
+  return packs.filter(function isUnsigned(pack) {
+    return pack.signature !== "present";
+  }).length;
+}
+
+/** Los tres pasos de cómo se usan los drivers. */
+function stepsPanel(): HTMLElement {
+  const steps = ["one", "two", "three"].map(function step(key, index) {
+    return el("li", { class: "how-step" }, [
+      el("span", { class: "how-num" }, [String(index + 1)]),
+      el("div", {}, [
+        el("strong", {}, [t("desktop.how." + key)]),
+        el("span", { class: "muted" }, [t("desktop.how." + key + "Text")]),
+      ]),
+    ]);
+  });
+  return el("ol", { class: "how-steps" }, steps);
+}
+
+/** Botón grande de añadir carpeta. */
+function addButton(): HTMLButtonElement {
+  return button(t("desktop.addDrivers"), addFolder, {
+    variant: "primary",
+    iconPaths: icons.drivers,
+  });
+}
+
+/** Tarjeta con lo que hay en el USB: cuántos drivers y si alguno no tiene firma. */
+function summaryCard(list: Group[], total: number, noSignature: number): HTMLElement {
+  return el("div", { class: "driver-hero " + (noSignature > 0 ? "" : "driver-hero-ok") }, [
+    el("span", { class: "driver-hero-icon" }, [icon(icons.drivers)]),
+    el("div", { class: "driver-hero-text" }, [
+      el("strong", {}, [t("desktop.summary", { n: total, folders: list.length })]),
+      el("span", {}, [
+        noSignature > 0 ? t("desktop.summaryUnsigned", { n: noSignature }) : t("desktop.summaryOk"),
+      ]),
+    ]),
+    addButton(),
+  ]);
+}
+
+/** Fila de una carpeta de drivers: resumen, quitar y, plegados, sus paquetes. */
 function groupPanel(group: Group): HTMLElement {
   const remove = button(t("desktop.remove"), removeFolder, { iconPaths: icons.x });
   remove.classList.add("btn-small");
@@ -147,20 +209,24 @@ function groupPanel(group: Group): HTMLElement {
       el("div", { class: "device-main" }, [
         el("strong", {}, [pack.inf.split("/").pop() ?? pack.inf]),
         el("span", { class: "muted" }, [
-          [pack.provider, pack.class, pack.version].filter(Boolean).join(" · "),
+          [pack.provider, kindOf(pack), pack.version].filter(Boolean).join(" · "),
         ]),
       ]),
       signatureBadge(pack.signature),
     ]);
   });
-  return panel(group.name, rows, {
+  const bad = unsigned(group.packs);
+  return panel(group.name, [more(t("desktop.showDrivers"), rows, "dd-" + group.name)], {
     iconPaths: icons.drivers,
-    subtitle: t("desktop.driverCount", { n: group.packs.length }),
+    subtitle:
+      t("desktop.groupCount", { n: group.packs.length }) +
+      (kindsOf(group.packs) ? " · " + kindsOf(group.packs) : "") +
+      (bad > 0 ? " · " + t("desktop.unsignedCount", { n: bad }) : ""),
     action: remove,
   });
 }
 
-/** Dibuja la lista de carpetas. */
+/** Dibuja la página según haya USB, drivers o ninguna de las dos cosas. */
 function draw(): void {
   if (body === null || view === null) {
     return;
@@ -170,18 +236,26 @@ function draw(): void {
     return;
   }
   const list = groups(view.packages);
+  const help = more(t("desktop.whichTitle"), [el("p", {}, [t("desktop.whichText")])], "dd-which");
   if (list.length === 0) {
-    const create = button(t("desktop.nav.create"), openCreate, { iconPaths: icons.sparkle });
-    const empty = emptyState(
-      icons.drivers,
-      t("desktop.noDriversTitle"),
-      t("desktop.noDriversText"),
+    body.replaceChildren(
+      emptyState(
+        icons.drivers,
+        t("desktop.noDriversTitle"),
+        t("desktop.noDriversText"),
+        addButton(),
+      ),
+      panel(t("desktop.howTitle"), [stepsPanel()], { iconPaths: icons.info }),
+      help,
     );
-    empty.append(create);
-    body.replaceChildren(empty);
     return;
   }
-  body.replaceChildren(...list.map(groupPanel));
+  body.replaceChildren(
+    summaryCard(list, view.packages.length, unsigned(view.packages)),
+    ...list.map(groupPanel),
+    panel(t("desktop.howTitle"), [stepsPanel()], { iconPaths: icons.info }),
+    help,
+  );
 }
 
 export const desktopDriversPage: Page = { render };

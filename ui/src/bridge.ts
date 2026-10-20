@@ -34,3 +34,16 @@ export function openBrowser(url?: string): void {
     JSON.stringify({ action: "browser", url: typeof url === "string" ? url : undefined }),
   );
 }
+
+/**
+ * Avisa a la ventana de Rebootera Desktop del tema puesto, para que cambie a juego el icono y la barra de título.
+ * Fuera del escritorio la función no existe y no pasa nada.
+ */
+export function reportTheme(theme: string): void {
+  const host = window as unknown as { rebooteraTheme?: (name: string) => unknown };
+  try {
+    host.rebooteraTheme?.(theme);
+  } catch {
+    // * Un icono sin cambiar no merece un error.
+  }
+}

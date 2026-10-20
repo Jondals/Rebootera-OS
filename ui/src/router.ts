@@ -16,16 +16,16 @@ export interface Page {
 /** Rutas del menú lateral en Rebootera OS. */
 const liveRoutes = [
   "overview",
+  "storage",
   "install",
   "library",
   "drivers",
   "downloads",
-  "storage",
   "computer",
 ];
 
 /** Rutas del menú lateral en Rebootera Desktop. */
-export const desktopRoutes = ["overview", "create", "drivers", "library", "downloads"];
+export const desktopRoutes = ["overview", "create", "downloads", "drivers", "library"];
 
 /** Rutas del menú lateral activas (cambian con el modo). */
 export let routes: string[] = liveRoutes;
@@ -88,6 +88,15 @@ export async function renderCurrent(): Promise<void> {
   const route = routeFromHash();
   currentRoute = route;
   onChange?.(route);
+  // * Una página que aún se lee del USB tarda un momento: mientras tanto se ve que la pulsación se atendió.
+  if (!pages.has(route) && loaders.has(route)) {
+    const waiting = document.createElement("div");
+    waiting.className = "page-waiting";
+    waiting.setAttribute("role", "status");
+    waiting.innerHTML = '<span class="page-waiting-dot"></span>';
+    mainElement.replaceChildren(waiting);
+    mainElement.scrollTop = 0;
+  }
   const page = await pageFor(route);
   // * Si mientras se cargaba se pidió otra ruta, esa otra llamada es la que dibuja.
   if (route !== currentRoute || mainElement === null) {
@@ -146,4 +155,26 @@ export function startRouter(main: HTMLElement, changed: (route: Route) => void):
   });
   subscribe(updateCurrent);
   void renderCurrent();
+}
+
+/**
+ * Lee en segundo plano las páginas que aún no se abrieron, una a una y con pausas, para que al pulsar una pestaña ya estén
+ * en memoria (leerlas del USB al pulsar era lo que hacía lenta la primera vez). Se empieza cuando la interfaz está ociosa.
+ */
+export function preloadPages(): void {
+  const pending = [...loaders.keys()].filter(function notLoaded(route) {
+    return !pages.has(route);
+  });
+  const next = pending.shift();
+  if (next === undefined) {
+    return;
+  }
+  window.setTimeout(async function loadOne(): Promise<void> {
+    try {
+      await pageFor(next);
+    } catch {
+      // * Si una falla, se cargará al abrirla.
+    }
+    preloadPages();
+  }, 900);
 }

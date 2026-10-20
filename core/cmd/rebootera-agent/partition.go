@@ -234,6 +234,11 @@ func partApply(op partman.Op, confirm string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	// ! Antes de tocar nada se guarda una copia de la tabla de particiones; sin copia no se hace nada.
+	backup, err := backupTable(op.Disk)
+	if err != nil {
+		return nil, fmt.Errorf("no se pudo guardar una copia de la tabla de particiones: %w", err)
+	}
 	partMu.Lock()
 	if partJob.Running {
 		partMu.Unlock()
@@ -242,7 +247,7 @@ func partApply(op partman.Op, confirm string) ([]string, error) {
 	partJob = partStatus{Running: true, Disk: op.Disk, Total: len(plan.Steps), started: time.Now()}
 	partMu.Unlock()
 	log.Printf("particiones: %s sobre %s con %d pasos (destructiva: %v, copia %d MB)", op.Kind, op.Disk, len(plan.Steps), plan.Destructive, plan.MovesBytes>>20)
-	run := &partRun{disk: op.Disk}
+	run := &partRun{disk: op.Disk, backup: backup}
 	go run.execute(plan)
 	return nil, nil
 }
@@ -254,6 +259,8 @@ func minimumsNeeded(op partman.Op) []int {
 		return []int{op.Part}
 	case partman.OpBoundary:
 		return []int{op.Part, op.Other}
+	case partman.OpMerge:
+		return []int{op.Part}
 	}
 	return nil
 }
@@ -261,6 +268,10 @@ func minimumsNeeded(op partman.Op) []int {
 // partRun ejecuta los pasos de un plan sobre un disco.
 type partRun struct {
 	disk string
+	// backup es la copia de la tabla de particiones de antes de empezar (volcado de sfdisk).
+	backup string
+	// moved dice si ya se empezó a copiar datos de una partición: desde ahí volver atrás ya no es seguro.
+	moved bool
 }
 
 // * execute corre todos los pasos y deja el resultado en el estado.
@@ -269,13 +280,60 @@ func (r *partRun) execute(plan partman.Plan) {
 		partMu.Lock()
 		partJob.Step, partJob.Kind, partJob.Part, partJob.Progress = i, step.Kind, step.Part, 0
 		partMu.Unlock()
+		if step.Kind == partman.StepMove {
+			r.moved = true
+		}
 		if err := r.step(step); err != nil {
 			log.Printf("particiones: el paso %d (%s) falló: %v", i, step.Kind, err)
-			r.finish(err)
+			r.finish(r.rollback(err))
 			return
 		}
 	}
 	r.finish(nil)
+}
+
+// * rollback devuelve la tabla de particiones a como estaba si el fallo llegó antes de mover datos: así una operación que se
+// * cancela (o falla) a medias no deja el disco con la tabla cambiada. Si ya se copiaban datos no se toca nada más: la
+// * copia de la tabla queda guardada para restaurarla a mano.
+func (r *partRun) rollback(cause error) error {
+	if r.moved {
+		return fmt.Errorf("%w (la copia de la tabla anterior está en %s)", cause, r.backup)
+	}
+	file, err := os.Open(r.backup)
+	if err != nil {
+		return cause
+	}
+	defer file.Close()
+	cmd := exec.Command("sfdisk", "--no-reread", "--no-tell-kernel", "/dev/"+r.disk)
+	cmd.Stdin = file
+	if out, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("particiones: no se pudo restaurar la tabla de %s: %v: %s", r.disk, err, lastLine(out))
+		return fmt.Errorf("%w (no se pudo restaurar la tabla anterior: %s)", cause, r.backup)
+	}
+	log.Printf("particiones: tabla de %s restaurada tras el fallo", r.disk)
+	return cause
+}
+
+// * backupTable guarda un volcado de la tabla de particiones de un disco en /run (RAM) y, si hay Vault, también en el USB.
+// * Devuelve la ruta de la copia en /run.
+func backupTable(disk string) (string, error) {
+	dump, err := exec.Command("sfdisk", "--dump", "/dev/"+disk).Output()
+	if err != nil {
+		return "", err
+	}
+	name := "partition-backup-" + disk + "-" + time.Now().Format("20060102-150405") + ".sfdisk"
+	if err := os.MkdirAll("/run/rebootera", 0o755); err != nil {
+		return "", err
+	}
+	path := "/run/rebootera/" + name
+	if err := os.WriteFile(path, dump, 0o600); err != nil {
+		return "", err
+	}
+	// * En el USB la copia sobrevive a un apagón o a un reinicio en mitad de la operación (si el USB no se toca).
+	if info, err := os.Stat(vaultMount + "/rebootera/state"); err == nil && info.IsDir() {
+		os.WriteFile(vaultMount+"/rebootera/state/"+name, dump, 0o600)
+	}
+	return path, nil
 }
 
 // * finish deja el estado final y relee la tabla de particiones.
@@ -316,6 +374,8 @@ func (r *partRun) step(step partman.Step) error {
 		return r.table(step.Edits)
 	case partman.StepMkfs:
 		return r.mkfs(step)
+	case partman.StepLabel:
+		return r.relabel(step)
 	}
 	return fmt.Errorf("paso desconocido: %q", step.Kind)
 }
@@ -588,6 +648,26 @@ func findEdit(edits []partman.TableEdit, number int) (partman.TableEdit, bool) {
 		}
 	}
 	return partman.TableEdit{}, false
+}
+
+// * relabel cambia la etiqueta de una partición con la herramienta de su sistema de archivos.
+func (r *partRun) relabel(step partman.Step) error {
+	fs, err := r.fsOf(step.Part)
+	if err != nil {
+		return err
+	}
+	device := partDevice(r.disk, step.Part)
+	switch fs {
+	case "ext2", "ext3", "ext4":
+		return r.tool("", "e2label", device, step.Label)
+	case "ntfs":
+		return r.tool("", "ntfslabel", "--force", device, step.Label)
+	case "exfat":
+		return r.tool("", "exfatlabel", device, step.Label)
+	case "vfat":
+		return r.tool("", "fatlabel", device, strings.ToUpper(step.Label))
+	}
+	return fmt.Errorf("no se puede cambiar el nombre de un sistema de archivos %q", fs)
 }
 
 // * mkfs formatea la partición recién creada (la que empieza en el sector pedido).

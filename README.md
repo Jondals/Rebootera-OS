@@ -19,7 +19,7 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 | **Installation media** | Add an installation made with any tool (a Rufus or Ventoy USB, a folder, a plain `.iso`) from another USB or disk (opened read-only) or, from Windows, with Rebootera Desktop. Any `.iso` copied to the `isos` folder also appears. |
 | **Installation Wizard** | Requirement check (UEFI, Secure Boot, TPM 2.0, memory, disk), critical drivers and target disk, then starts the original installer through the boot menu. Optional: answer language, time zone and user account automatically (Windows and Debian; the disk is always chosen by you), take matching drivers to the Windows installer, skip the Windows 11 requirement check, and start the installer only once (UEFI). |
 | **Driver Assistant** | Every PCI and USB device, the Linux driver in use and the Windows hardware IDs, highlighting what the installer needs (storage and network). Windows driver packages (`.inf`) are found **by themselves** at every start (on the USB, in driver folders of this computer's partitions and in an installed Windows) and matched against those hardware IDs; the page says where each one comes from. |
-| **Browser** | Firefox inside Rebootera OS, only to browse, with uBlock Origin and Dark Reader installed and locked. |
+| **Browser** | A light browser inside Rebootera OS that opens at once, only to browse: nothing is saved and nothing is downloaded. |
 | **Pointer** | Pointer speed, tap to click and natural scrolling, saved on the USB. |
 | **Wi-Fi** | Connect the live session to a wireless network from Settings (WPA2/WPA3 and open networks, also hidden ones). |
 | **USB & Storage** | Disks and partitions with their role and usage. **Safe Disk Guard**: internal disks and the Rebootera USB are protected and only read. |
@@ -44,7 +44,7 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 **From Linux** — as root:
 
 ```bash
-scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.18.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.20.0-amd64.iso
 ```
 
 The script refuses non-removable disks and the system disk.
@@ -126,7 +126,7 @@ wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-d
 It takes about a minute. The script builds the interface, embeds it together with the files of a new Rebootera USB (boot menu settings and theme), adds the icon and the Windows manifest, and cross-compiles. The result is:
 
 - `out/Rebootera-Desktop-<version>.exe`: a single file, no installation. It needs the Microsoft Edge WebView2 Runtime, which Windows 10 and 11 already include. Close the app before rebuilding it.
-- With `--all`, `dist/rebootera-desktop-linux-amd64.tar.gz`, `-linux-arm64`, `-darwin-amd64` and `-darwin-arm64`: one binary each, with no dependencies (`out/` only holds the ISO and the .exe). For a window of its own it uses a Chromium-based browser if one is installed; otherwise it opens your default browser.
+- With `--all`, `dist/rebootera-desktop-linux-amd64`, `-linux-arm64`, `-darwin-amd64` and `-darwin-arm64`: one binary each, with no dependencies (`out/` only holds the ISO and the .exe). For a window of its own it uses a Chromium-based browser if one is installed; otherwise it opens your default browser.
 
 ### 4. Make a Rebootera USB
 

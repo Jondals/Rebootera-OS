@@ -1,45 +1,41 @@
-// * Página "Asistente de instalación": seis pasos para instalar un sistema.
-// * Elegir sistema, revisar hardware, drivers críticos, disco de destino,
-// * ajustes e instalar. Los pasos de revisión usan datos reales del equipo.
-// ! Nada de esta página escribe en los discos del equipo. Elegir un destino
-// ! solo lo anota en el plan. El último paso preselecciona la imagen en el
-// ! menú de Ventoy (un archivo del USB) y reinicia, tras una confirmación
-// ! explícita; el particionado lo hace el instalador original, que pregunta.
+// * Página "Instalar": tres pasos. Elegir sistema, elegir dónde (una partición o un hueco libre, con ayuda para
+// * hacer sitio si no cabe) e instalar. Los drivers se llevan solos; lo técnico queda en "Más opciones".
+// ! Nada de esta página escribe en los discos por sí sola. Elegir un destino solo lo apunta en el plan y en la
+// ! ayuda del último paso; hacer sitio usa el gestor de particiones (con su vista previa y su confirmación). El
+// ! último paso preselecciona la imagen en el menú de Ventoy (un archivo del USB) y reinicia, tras una confirmación
+// ! explícita; el particionado final lo hace el instalador original, que pregunta.
 
-import {
-  getJSON,
-  postJSON,
-  type Disk,
-  type DriverMatch,
-  type DriverPlan,
-  type LibraryItem,
-  type SystemInfo,
-} from "../api.js";
-import {
-  badge,
-  button,
-  emptyState,
-  errorBox,
-  more,
-  pageHeader,
-  panel,
-  type Tone,
-} from "../components.js";
+import { getJSON, postJSON, type DriverPlan, type LibraryItem } from "../api.js";
+import { badge, button, emptyState, errorBox, more, pageHeader, panel } from "../components.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
 import { icons } from "../icons.js";
+import type { PartDisk, PartStatus, Segment } from "../partman.js";
 import { prefs } from "../prefs.js";
 import { navigate, type Page } from "../router.js";
 import { snapshot } from "../state.js";
+import {
+  diskBar,
+  diskHeader,
+  findPiece,
+  legend,
+  runningPanel,
+  sizeOf,
+  startedStatus,
+  titleOf,
+} from "./diskmap.js";
+import { openMakeRoom } from "./partdialogs.js";
 
 /** Claves de los pasos, en orden. */
-const STEPS = ["stepOs", "stepTarget", "stepSettings", "stepDeploy"];
+const STEPS = ["stepOs", "stepTarget", "stepDeploy"];
 
-/** Tamaño mínimo de disco para Windows 11 (64 GB). */
-const MIN_DISK = 64e9;
+/** Espacio que necesita cada tipo de sistema (Windows 11 pide 64 GB). */
+const NEEDED_BYTES = { windows: 64 * 2 ** 30, debian: 20 * 2 ** 30, other: 20 * 2 ** 30 };
 /** Memoria mínima para Windows 11 (4 GB, con margen por la memoria reservada). */
 const MIN_RAM = 3.8e9;
+/** Cada cuántos ms se mira si una operación de particiones sigue en marcha. */
+const STATUS_MS = 2000;
 
 /** Idiomas con respuestas automáticas (claves de wizard.languages). */
 const ANSWER_LANGUAGES = ["es", "en", "gb", "de", "fr", "it", "pt"];
@@ -84,7 +80,11 @@ interface Answers {
 }
 
 let step = 0;
-let selectedDisk = "";
+let targetKey = "";
+let askInstaller = false;
+let partDisks: PartDisk[] | null = null;
+let partStatus: PartStatus | null = null;
+let statusTimer = 0;
 let selectedImage = "";
 let understood = false;
 let driverPlan: DriverPlan | null = null;
@@ -236,10 +236,63 @@ async function deploy(event: MouseEvent): Promise<void> {
   }
 }
 
-/** Anota el disco elegido como destino. */
-function selectDisk(event: Event): void {
-  selectedDisk = (event.currentTarget as HTMLInputElement).value;
+/** Anota la pieza (partición o hueco) elegida como destino. */
+function selectPiece(event: MouseEvent): void {
+  targetKey = (event.currentTarget as HTMLElement).dataset.key ?? "";
+  askInstaller = false;
+  lastSignature = "";
   update();
+}
+
+/** Prefiere elegir el destino en el instalador original. */
+function chooseInInstaller(): void {
+  askInstaller = true;
+  targetKey = "";
+  step = 2;
+  update();
+}
+
+/** Lee la distribución de los discos (para elegir dónde instalar). */
+async function loadParts(): Promise<void> {
+  try {
+    partDisks = await getJSON<PartDisk[]>("/api/partitions");
+  } catch {
+    partDisks = partDisks ?? [];
+  }
+  lastSignature = "";
+  update();
+}
+
+/** Vigila la operación de particiones; al terminar vuelve a leer los discos. */
+async function watchParts(): Promise<void> {
+  if (content === null || !content.isConnected) {
+    window.clearInterval(statusTimer);
+    return;
+  }
+  let next: PartStatus | null = null;
+  try {
+    next = await getJSON<PartStatus>("/api/partitions/status");
+  } catch {
+    // * Sin respuesta se reintenta en el siguiente ciclo.
+  }
+  const wasRunning = partStatus?.running === true;
+  partStatus = next;
+  if (wasRunning && !next?.running) {
+    await loadParts();
+    return;
+  }
+  if (next?.running) {
+    lastSignature = "";
+    update();
+  }
+}
+
+/** Una operación de particiones acaba de empezar. */
+function partsStarted(): void {
+  partStatus = startedStatus();
+  lastSignature = "";
+  update();
+  void watchParts();
 }
 
 /** Dibuja la estructura fija de la página. */
@@ -247,6 +300,9 @@ function render(root: HTMLElement): void {
   // * Cada vez que se abre el asistente se vuelve a mirar el Vault (puede haber cambiado).
   planRequested = false;
   driverPlan = null;
+  window.clearInterval(statusTimer);
+  statusTimer = window.setInterval(watchParts, STATUS_MS);
+  void loadParts();
   stepper = el("ol", { class: "stepper" });
   content = el("div", { class: "wizard-content" });
   footer = el("footer", { class: "wizard-footer" });
@@ -292,18 +348,6 @@ function renderStepper(): void {
   );
 }
 
-/** Fila de requisito con su estado. */
-function requirement(label: string, state: "ok" | "warn" | "fail", detail: string): HTMLElement {
-  const tones: Record<string, Tone> = { ok: "ok", warn: "warn", fail: "danger" };
-  return el("div", { class: "req-row" }, [
-    el("span", { class: "req-icon req-" + state }, [
-      icon(state === "ok" ? icons.check : icons.alert),
-    ]),
-    el("div", {}, [el("strong", {}, [label]), el("span", { class: "muted" }, [detail])]),
-    badge(t("wizard." + state), tones[state]),
-  ]);
-}
-
 /** Paso 1: elegir sistema entre las imágenes utilizables de la biblioteca. */
 function stepChooseOs(): Node[] {
   const usable = snapshot.library.filter(isInstallable);
@@ -344,158 +388,6 @@ function stepChooseOs(): Node[] {
   ];
 }
 
-/** Paso 2: requisitos de hardware con datos reales. */
-function stepInspect(system: SystemInfo | null, disks: Disk[] | null): Node[] {
-  if (system === null) {
-    return [el("p", { class: "muted" }, [t("common.loading")])];
-  }
-  const biggest = Math.max(0, ...(disks ?? []).filter(isCandidate).map(diskSize));
-  const devices = snapshot.devices ?? [];
-  const storageOk = devices.filter(isStorageController).every(hasDriver);
-  const netDevices = devices.filter(isNetworkDevice);
-  return [
-    panel(
-      t("wizard.inspectTitle"),
-      [
-        requirement(
-          t("wizard.reqUefi"),
-          system.firmware === "uefi" ? "ok" : "fail",
-          system.firmware.toUpperCase(),
-        ),
-        requirement(
-          t("wizard.reqSecureBoot"),
-          system.secureBoot === "on" ? "ok" : system.firmware === "uefi" ? "warn" : "fail",
-          system.secureBoot === "on" ? t("topbar.secureBootOn") : t("topbar.secureBootOff"),
-        ),
-        requirement(
-          t("wizard.reqTpm"),
-          system.tpm === "2.0" ? "ok" : "fail",
-          system.tpm ? "TPM " + system.tpm : t("overview.noTpm"),
-        ),
-        requirement(
-          t("wizard.reqRam"),
-          system.memoryBytes >= MIN_RAM ? "ok" : "fail",
-          fmt.bytes(system.memoryBytes),
-        ),
-        requirement(
-          t("wizard.reqDisk"),
-          biggest >= MIN_DISK ? "ok" : "fail",
-          biggest > 0 ? fmt.bytes(biggest) : t("storage.noDisks"),
-        ),
-        requirement(
-          t("wizard.reqStorage"),
-          storageOk ? "ok" : "warn",
-          storageOk ? t("wizard.ok") : t("drivers.noDriver"),
-        ),
-        requirement(
-          t("wizard.reqNet"),
-          netDevices.some(hasDriver) ? "ok" : "warn",
-          netDevices.filter(hasDriver).map(deviceName).join(", ") || t("drivers.noDriver"),
-        ),
-      ],
-      { subtitle: t("wizard.inspectText"), iconPaths: icons.cpu },
-    ),
-  ];
-}
-
-/** Paso 3: dispositivos críticos y su driver. */
-function stepDrivers(): Node[] {
-  const critical = (snapshot.devices ?? []).filter(isCritical);
-  const missing = critical.filter(isWithoutDriver);
-  return [
-    panel(
-      t("wizard.driversTitle"),
-      [
-        missing.length === 0 ? el("p", { class: "ok" }, [t("wizard.driversAllGood")]) : null,
-        ...critical.map(function criticalRow(device) {
-          return requirement(
-            deviceName(device),
-            device.driver ? "ok" : "warn",
-            device.driver || device.hardwareIds[device.hardwareIds.length - 1],
-          );
-        }),
-        el("div", { class: "notice" }, [
-          icon(icons.alert),
-          el("span", {}, [t("wizard.driversWindowsNote")]),
-        ]),
-      ],
-      { subtitle: t("wizard.driversText"), iconPaths: icons.drivers },
-    ),
-    ...stepUsbDrivers(),
-  ];
-}
-
-/** Etiqueta del estado del catálogo de firma de un paquete de drivers. */
-function signatureBadge(signature: string): HTMLElement {
-  const tone: Tone = signature === "present" ? "ok" : signature === "invalid" ? "danger" : "warn";
-  const key = "wizard.driversSig" + signature.charAt(0).toUpperCase() + signature.slice(1);
-  return badge(t(key), tone);
-}
-
-/** Fila de un dispositivo con el paquete de drivers que le corresponde. */
-function driverMatchRow(match: DriverMatch): HTMLElement {
-  const pack = match.package;
-  return el("div", { class: "driver-match" }, [
-    el("div", {}, [
-      el("strong", {}, [match.name || match.vendor || match.address]),
-      el("div", { class: "mono-small muted" }, [
-        pack ? pack.inf + " · " + pack.provider + " " + pack.version : "",
-      ]),
-      el("div", { class: "mono-small muted" }, [
-        t("wizard.driversMatchedBy", { id: match.hardwareId }),
-      ]),
-    ]),
-    pack ? signatureBadge(pack.signature) : null,
-  ]);
-}
-
-/** Drivers del USB que casan con este equipo y opción de llevarlos a Windows. */
-function stepUsbDrivers(): Node[] {
-  if (driverPlan === null) {
-    return [];
-  }
-  const item = chosenItem();
-  const windows = item !== undefined && systemOf(item) === "windows";
-  const nodes: (Node | null)[] = [];
-  if (driverPlan.matches.length > 0) {
-    nodes.push(...driverPlan.matches.map(driverMatchRow));
-  } else {
-    nodes.push(el("p", { class: "muted" }, [t("wizard.driversNone")]));
-  }
-  if (driverPlan.missing.length > 0) {
-    nodes.push(
-      el("strong", {}, [t("wizard.driversMissingTitle")]),
-      ...driverPlan.missing.map(missingRow),
-    );
-  }
-  if (driverPlan.matches.length > 0) {
-    if (windows) {
-      const check = el("input", { type: "checkbox", checked: takeDrivers });
-      check.addEventListener("change", toggleTakeDrivers);
-      nodes.push(
-        el("label", { class: "confirm-row" }, [check, el("span", {}, [t("wizard.driversTake")])]),
-        el("p", { class: "muted small-note" }, [t("wizard.driversTakeHint")]),
-      );
-    } else {
-      nodes.push(el("p", { class: "muted small-note" }, [t("wizard.driversOnlyWindows")]));
-    }
-  }
-  return [
-    panel(t("wizard.driversMatchTitle"), nodes, {
-      subtitle: t("wizard.driversMatchText"),
-      iconPaths: icons.usb,
-    }),
-  ];
-}
-
-/** Fila de un dispositivo crítico sin paquete. */
-function missingRow(match: DriverMatch): HTMLElement {
-  return el("div", { class: "driver-match" }, [
-    el("span", {}, [match.name || match.vendor || match.address]),
-    badge(t("drivers.noDriver"), "warn"),
-  ]);
-}
-
 /** Marca o desmarca llevar los drivers al instalador. */
 function toggleTakeDrivers(event: Event): void {
   takeDrivers = (event.currentTarget as HTMLInputElement).checked;
@@ -503,52 +395,120 @@ function toggleTakeDrivers(event: Event): void {
   update();
 }
 
-/** Paso 4: disco de destino. */
-function stepTarget(disks: Disk[] | null): Node[] {
-  const candidates = (disks ?? []).filter(isCandidate);
-  if (candidates.length === 0) {
-    return [panel(t("wizard.targetTitle"), [emptyState(icons.disk, t("wizard.noTargets"), "")])];
-  }
-  return [
-    panel(t("wizard.targetTitle"), candidates.map(targetCard), {
-      subtitle: t("wizard.targetText"),
-      iconPaths: icons.disk,
-    }),
-  ];
+/** Espacio que necesita el sistema elegido. */
+function neededBytes(): number {
+  const item = chosenItem();
+  return item ? NEEDED_BYTES[systemOf(item)] : NEEDED_BYTES.other;
 }
 
-/** Tarjeta seleccionable de un disco de destino. */
-function targetCard(disk: Disk): HTMLElement {
-  const input = el("input", {
-    type: "radio",
-    name: "target",
-    value: disk.name,
-    checked: selectedDisk === disk.name,
+/** Discos que se pueden ofrecer como destino (internos y extraíbles; nunca el USB de Rebootera). */
+function targetDisks(): PartDisk[] {
+  return (partDisks ?? []).filter(function isTarget(disk) {
+    return disk.role === "internal" || disk.role === "removable";
   });
-  input.addEventListener("change", selectDisk);
-  return el(
-    "label",
-    { class: "target-card" + (selectedDisk === disk.name ? " target-selected" : "") },
-    [
-      input,
-      el("span", { class: "disk-icon" }, [icon(icons.disk)]),
-      el("div", { class: "disk-title" }, [
-        el("strong", {}, [[disk.vendor, disk.model].filter(Boolean).join(" ") || disk.name]),
-        el("span", { class: "mono-small muted" }, [
-          [
-            disk.path,
-            fmt.bytes(disk.sizeBytes),
-            disk.transport.toUpperCase(),
-            t("overview.partitions", { n: disk.partitions.length }),
-          ].join(" · "),
-        ]),
-      ]),
-      badge(t("storage.roles." + disk.role), disk.role === "internal" ? "violet" : "amber"),
-      disk.protected
-        ? el("span", { class: "guard-chip" }, [icon(icons.lock), t("common.protected")])
-        : null,
-    ],
+}
+
+/** La pieza elegida como destino, si sigue existiendo. */
+function chosenPiece(): { disk: PartDisk; segment: Segment } | null {
+  return findPiece(targetDisks(), targetKey);
+}
+
+/** Ruta de dispositivo de una pieza, para la ayuda del instalador. */
+function pieceDevice(disk: PartDisk, segment: Segment): string {
+  return segment.number > 0
+    ? "/dev/" + (segment.name || disk.name + segment.number)
+    : "/dev/" + disk.name;
+}
+
+/** Abre el gestor de discos. */
+function openDisks(): void {
+  navigate("storage");
+}
+
+/** Panel de la pieza elegida: si cabe, qué pasará con ella y cómo hacer sitio. */
+function targetPanel(disk: PartDisk, segment: Segment): HTMLElement {
+  const need = neededBytes();
+  const size = sizeOf(segment);
+  const fits = size >= need;
+  const isFree = segment.number === 0;
+  const good = isFree && fits;
+  const text = isFree
+    ? fits
+      ? t("wizard.freeOk", { size: fmt.disk(size) })
+      : t("wizard.freeSmall", { have: fmt.disk(size), need: fmt.disk(need) })
+    : fits
+      ? t("wizard.partOk", { used: fmt.disk(segment.usedBytes) })
+      : t("wizard.partSmall", { have: fmt.disk(size), need: fmt.disk(need) });
+  const locked = disk.layout.locked ?? "";
+  const room = button(
+    t("wizard.makeRoom"),
+    function makeRoom(): void {
+      openMakeRoom(disk.layout, need, isFree ? segment : null, partsStarted);
+    },
+    { variant: fits ? "ghost" : "primary", iconPaths: icons.disk },
   );
+  room.disabled = locked !== "";
+  return el("div", { class: "target-panel" }, [
+    el("strong", { class: "pm-name" }, [titleOf(segment) + " · " + fmt.disk(size)]),
+    el("div", { class: "notice " + (good ? "notice-ok" : "notice-warn") }, [
+      icon(good ? icons.check : icons.alert),
+      el("span", {}, [text]),
+    ]),
+    el("div", { class: "target-actions" }, [
+      room,
+      button(t("wizard.openDisks"), openDisks, { iconPaths: icons.refresh }),
+    ]),
+    locked !== "" ? el("p", { class: "muted small-note" }, [t("pm.locked." + locked)]) : null,
+  ]);
+}
+
+/** Tarjeta de un disco con su mapa; al pulsar una pieza sale lo que pasará con ella. */
+function targetDiskCard(disk: PartDisk): HTMLElement {
+  const need = neededBytes();
+  const picked = findPiece([disk], targetKey);
+  return el("article", { class: "disk-card" }, [
+    diskHeader(disk),
+    disk.layout.segments.length > 0
+      ? el("div", {}, [
+          diskBar(disk, targetKey, selectPiece, function tooSmall(segment): boolean {
+            return sizeOf(segment) < need;
+          }),
+          legend(disk),
+        ])
+      : el("p", { class: "muted" }, [t("storage.noTable")]),
+    picked ? targetPanel(disk, picked.segment) : null,
+  ]);
+}
+
+/** Paso 2: dónde instalar. */
+function stepTarget(): Node[] {
+  if (partStatus?.running) {
+    return [runningPanel(partStatus)];
+  }
+  if (partDisks === null) {
+    return [el("p", { class: "muted" }, [t("common.loading")])];
+  }
+  const disks = targetDisks();
+  if (disks.length === 0) {
+    return [
+      panel(t("wizard.targetTitle"), [emptyState(icons.disk, t("wizard.noTargets"), "")], {
+        iconPaths: icons.disk,
+      }),
+    ];
+  }
+  return [
+    panel(
+      t("wizard.targetTitle"),
+      [
+        el("p", { class: "muted" }, [t("wizard.targetNeed", { size: fmt.disk(neededBytes()) })]),
+        ...disks.map(targetDiskCard),
+        el("div", { class: "target-skip" }, [
+          button(t("wizard.askInstaller"), chooseInInstaller, { variant: "ghost" }),
+        ]),
+      ],
+      { subtitle: t("wizard.targetText"), iconPaths: icons.disk },
+    ),
+  ];
 }
 
 /** Tarjeta seleccionable de una imagen de la biblioteca. */
@@ -580,28 +540,23 @@ function imageCard(item: LibraryItem): HTMLElement {
   );
 }
 
-/** Paso 6: confirmación explícita y despliegue. */
+/** Aviso del último paso cuando falta algo para poder instalar. */
+function deployNotice(iconPaths: string, text: string): Node[] {
+  return [
+    panel(t("wizard.deployTitle"), [
+      el("div", { class: "notice" }, [icon(iconPaths), el("span", {}, [text])]),
+    ]),
+  ];
+}
+
+/** Paso 3: resumen, ayuda para el instalador y confirmación. */
 function stepDeploy(): Node[] {
   const item = chosenItem();
   if (!snapshot.vault?.available) {
-    return [
-      panel(t("wizard.deployTitle"), [
-        el("div", { class: "notice" }, [
-          icon(icons.lock),
-          el("span", {}, [t("wizard.deployNoVault")]),
-        ]),
-      ]),
-    ];
+    return deployNotice(icons.lock, t("wizard.deployNoVault"));
   }
   if (!item) {
-    return [
-      panel(t("wizard.deployTitle"), [
-        el("div", { class: "notice" }, [
-          icon(icons.info),
-          el("span", {}, [t("wizard.deployNeedsImage")]),
-        ]),
-      ]),
-    ];
+    return deployNotice(icons.info, t("wizard.deployNeedsImage"));
   }
   const check = el("input", { type: "checkbox", checked: understood });
   check.addEventListener("change", toggleUnderstood);
@@ -609,13 +564,14 @@ function stepDeploy(): Node[] {
     variant: "primary",
     iconPaths: icons.reboot,
   });
-  go.disabled = !understood;
+  go.disabled = !understood || (!askInstaller && chosenPiece() === null);
   return [
-    ...stepSummary(),
+    ...stepSummary(item),
+    installerHint(item),
+    more(t("wizard.moreOptions"), stepInstallerSettings(), "wizard-more"),
     panel(
       t("wizard.deployTitle"),
       [
-        el("p", {}, [t("wizard.deployText", { name: item.name })]),
         item.state !== "verified"
           ? el("div", { class: "notice" }, [
               icon(icons.alert),
@@ -757,14 +713,24 @@ function optionRow(
   ]);
 }
 
-/** Paso 5: respuestas automáticas, requisitos de Windows 11 y arranque único. */
+/** Opciones del instalador (dentro de "Más opciones"): drivers, respuestas automáticas, Windows 11 y arranque único. */
 function stepInstallerSettings(): Node[] {
   const item = chosenItem();
   if (!item) {
     return [];
   }
   const system = systemOf(item);
-  const blocks: (Node | null)[] = [];
+  const blocks: Node[] = [];
+  if (system === "windows") {
+    blocks.push(
+      optionRow(
+        t("wizard.driversTake"),
+        t("wizard.driversTakeHint"),
+        takeDrivers,
+        toggleTakeDrivers,
+      ),
+    );
+  }
   if (system === "other") {
     blocks.push(el("p", { class: "muted" }, [t("wizard.answersUnsupported")]));
   } else {
@@ -788,61 +754,158 @@ function stepInstallerSettings(): Node[] {
   } else if (snapshot.system !== null) {
     blocks.push(el("p", { class: "muted small-note" }, [t("wizard.bootOnceNoUefi")]));
   }
-  return [
-    panel(t("wizard.settingsTitle"), blocks, {
-      subtitle: t("wizard.settingsText"),
-      iconPaths: icons.install,
-    }),
-  ];
+  return blocks;
 }
 
-/** Paso 5: resumen del plan. */
-function stepSummary(): Node[] {
-  const disk = (snapshot.disks ?? []).find(isSelected);
-  const item = chosenItem();
-  const rows: [string, string][] = [
-    [t("wizard.stepOs"), item ? item.title || item.name : "—"],
-    [
-      t("wizard.stepTarget"),
-      disk ? (disk.model || disk.name) + " · " + fmt.bytes(disk.sizeBytes) : "—",
-    ],
-    ["Firmware", snapshot.system ? snapshot.system.firmware.toUpperCase() : "—"],
-  ];
-  if (item && takeDrivers && systemOf(item) === "windows") {
-    rows.push([t("wizard.stepDrivers"), t("wizard.driversTake")]);
+/** Cosas de Windows 11 que este equipo no cumple (nombres para el aviso). */
+function windowsIssues(): string[] {
+  const system = snapshot.system;
+  if (system === null) {
+    return [];
   }
-  if (item && answers.enabled && systemOf(item) !== "other") {
+  const issues: string[] = [];
+  if (system.firmware !== "uefi") {
+    issues.push(t("wizard.reqUefi"));
+  }
+  if (system.tpm !== "2.0") {
+    issues.push(t("wizard.reqTpm"));
+  }
+  if (system.memoryBytes < MIN_RAM) {
+    issues.push(t("wizard.reqRam"));
+  }
+  return issues;
+}
+
+/** Marca "saltar los requisitos" desde el aviso. */
+function enableBypass(): void {
+  winBypass = true;
+  lastSignature = "";
+  update();
+}
+
+/** Abre la página de drivers. */
+function openDrivers(): void {
+  navigate("drivers");
+}
+
+/** Texto y aviso sobre los drivers según el sistema elegido. */
+function driversLine(item: LibraryItem): { text: string; warn: Node | null } {
+  if (systemOf(item) !== "windows") {
+    return { text: t("wizard.driversLinux"), warn: null };
+  }
+  if (!takeDrivers) {
+    return { text: t("wizard.driversOff"), warn: null };
+  }
+  if (driverPlan === null) {
+    return { text: t("common.loading"), warn: null };
+  }
+  const text =
+    driverPlan.matches.length > 0
+      ? t("wizard.driversReady", { n: driverPlan.matches.length })
+      : t("wizard.driversNone");
+  if (driverPlan.missing.length === 0) {
+    return { text, warn: null };
+  }
+  const names = driverPlan.missing
+    .map(function nameOfMatch(match) {
+      return match.name || match.vendor || match.address;
+    })
+    .slice(0, 3)
+    .join(", ");
+  return {
+    text,
+    warn: el("div", { class: "notice notice-warn" }, [
+      icon(icons.alert),
+      el("span", {}, [t("wizard.driversMissing", { names })]),
+      button(t("wizard.seeDrivers"), openDrivers, { iconPaths: icons.drivers }),
+    ]),
+  };
+}
+
+/** Nombre del disco para el resumen. */
+function diskNameOf(disk: PartDisk): string {
+  return [disk.vendor, disk.model].filter(Boolean).join(" ") || disk.name;
+}
+
+/** Paso 3: resumen del plan, con los avisos que importan. */
+function stepSummary(item: LibraryItem): Node[] {
+  const piece = chosenPiece();
+  const where = askInstaller
+    ? t("wizard.whereAsk")
+    : piece
+      ? [diskNameOf(piece.disk), titleOf(piece.segment), fmt.disk(sizeOf(piece.segment))].join(
+          " · ",
+        )
+      : "—";
+  const drivers = driversLine(item);
+  const rows: [string, string, number | null][] = [
+    [t("wizard.stepOs"), item.title || item.name, 0],
+    [t("wizard.stepTarget"), where, 1],
+    [t("wizard.stepDrivers"), drivers.text, null],
+  ];
+  if (answers.enabled && systemOf(item) !== "other") {
     rows.push([
       t("wizard.answersTitle"),
       t("wizard.languages." + answers.language) +
         (answers.timeZone ? " · " + answers.timeZone : "") +
         (answers.userName ? " · " + answers.userName : ""),
+      null,
     ]);
   }
-  if (item && winBypass && systemOf(item) === "windows") {
-    rows.push(["Windows 11", t("wizard.winBypassTitle")]);
-  }
-  if (item && privacy && systemOf(item) === "windows") {
-    rows.push([t("wizard.privacyShort"), "✓"]);
-  }
-  if (bootOnce && snapshot.system?.firmware === "uefi") {
-    rows.push([t("wizard.bootOnceTitle"), "✓"]);
-  }
+  const issues = systemOf(item) === "windows" && !winBypass ? windowsIssues() : [];
   return [
     panel(
       t("wizard.blueprint"),
       [
         el(
           "dl",
-          { class: "about-list" },
-          rows.flatMap(function row([name, value]) {
-            return [el("dt", {}, [name]), el("dd", {}, [value])];
+          { class: "about-list plan-list" },
+          rows.flatMap(function row([name, value, goStep]) {
+            const change =
+              goStep === null
+                ? null
+                : button(t("wizard.change"), function change(): void {
+                    step = goStep;
+                    update();
+                  });
+            return [el("dt", {}, [name]), el("dd", {}, [value, change])];
           }),
         ),
+        drivers.warn,
+        issues.length > 0
+          ? el("div", { class: "notice notice-warn" }, [
+              icon(icons.alert),
+              el("span", {}, [t("wizard.win11Issues", { list: issues.join(", ") })]),
+              button(t("wizard.win11Skip"), enableBypass),
+            ])
+          : null,
       ],
       { iconPaths: icons.terminal },
     ),
   ];
+}
+
+/** Qué elegir cuando el instalador original pregunte dónde instalar. */
+function installerHint(item: LibraryItem): HTMLElement {
+  const piece = chosenPiece();
+  let text = t("wizard.hintAsk");
+  if (!askInstaller && piece) {
+    const size = fmt.disk(sizeOf(piece.segment));
+    const device = pieceDevice(piece.disk, piece.segment);
+    const windows = systemOf(item) === "windows";
+    text =
+      piece.segment.number === 0
+        ? t(windows ? "wizard.hintFreeWin" : "wizard.hintFreeLinux", { size })
+        : t(windows ? "wizard.hintPartWin" : "wizard.hintPartLinux", { size, device });
+  }
+  return el("div", { class: "notice" }, [
+    icon(icons.info),
+    el("div", {}, [
+      el("strong", {}, [t("wizard.hintTitle")]),
+      el("span", {}, [text]),
+      el("span", { class: "muted" }, [t("wizard.hintUsb")]),
+    ]),
+  ]);
 }
 
 /** Refresca el contenido del paso actual. */
@@ -854,14 +917,14 @@ function update(): void {
   // * teclado no se pierde con cada sondeo periódico.
   const signature = JSON.stringify([
     step,
-    selectedDisk,
+    targetKey,
+    askInstaller,
+    partDisks,
+    partStatus,
     selectedImage,
     understood,
     snapshot.library,
     snapshot.vault?.available,
-    snapshot.disks,
-    snapshot.devices?.length,
-    snapshot.system?.secureBoot,
     snapshot.system?.tpm,
     snapshot.system?.memoryBytes,
     snapshot.system?.firmware,
@@ -877,21 +940,9 @@ function update(): void {
   }
   lastSignature = signature;
   renderStepper();
-  const system = snapshot.system;
-  const disks = snapshot.disks;
-  // * La comprobación del equipo y de los drivers va plegada dentro de "Opciones": casi nunca hace falta.
-  const views: Node[][] = [
-    stepChooseOs(),
-    stepTarget(disks),
-    [
-      ...stepInstallerSettings(),
-      more(t("wizard.checkComputer"), [...stepInspect(system, disks), ...stepDrivers()]),
-      ...stepSummary(),
-    ],
-    stepDeploy(),
-  ];
+  const views: Node[][] = [stepChooseOs(), stepTarget(), stepDeploy()];
   if (step === 2) {
-    loadDriverPlan();
+    void loadDriverPlan();
   }
   content.replaceChildren(...views[step]);
 
@@ -901,7 +952,7 @@ function update(): void {
     variant: "primary",
     trailingIcon: icons.arrowRight,
   });
-  next.disabled = step === STEPS.length - 1;
+  next.disabled = step === STEPS.length - 1 || !canContinue();
   footer.replaceChildren(
     back,
     el("span", { class: "muted" }, [step + 1 + " / " + STEPS.length]),
@@ -926,49 +977,16 @@ function itemName(item: LibraryItem): string {
   return item.name;
 }
 
-/** Indica si un disco puede ser destino (interno o extraíble, no el de Rebootera). */
-function isCandidate(disk: Disk): boolean {
-  return disk.role === "internal" || disk.role === "removable";
-}
-
-/** Tamaño de un disco. */
-function diskSize(disk: Disk): number {
-  return disk.sizeBytes;
-}
-
-/** Indica si un disco es el elegido. */
-function isSelected(disk: Disk): boolean {
-  return disk.name === selectedDisk;
-}
-
-/** Indica si un dispositivo es una controladora de almacenamiento PCI. */
-function isStorageController(device: { category: string; bus: string }): boolean {
-  return device.category === "storage" && device.bus === "pci";
-}
-
-/** Indica si un dispositivo es de red. */
-function isNetworkDevice(device: { category: string }): boolean {
-  return device.category === "network" || device.category === "wireless";
-}
-
-/** Indica si un dispositivo es crítico. */
-function isCritical(device: { critical: boolean }): boolean {
-  return device.critical;
-}
-
-/** Indica si un dispositivo tiene driver. */
-function hasDriver(device: { driver: string }): boolean {
-  return device.driver !== "";
-}
-
-/** Indica si un dispositivo no tiene driver. */
-function isWithoutDriver(device: { driver: string }): boolean {
-  return device.driver === "";
-}
-
-/** Nombre legible de un dispositivo. */
-function deviceName(device: { name: string; className: string; vendor: string }): string {
-  return device.name || device.className || device.vendor;
+/** Indica si se puede pasar al paso siguiente. */
+function canContinue(): boolean {
+  if (step === 0) {
+    return chosenItem() !== undefined;
+  }
+  if (step === 1) {
+    const piece = chosenPiece();
+    return askInstaller || (piece !== null && sizeOf(piece.segment) >= neededBytes());
+  }
+  return true;
 }
 
 export const wizardPage: Page = { render, update };

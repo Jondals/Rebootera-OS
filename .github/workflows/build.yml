@@ -14,7 +14,7 @@
 # Nombre de la release de master: al fusionar beta en master (o cualquier push), el título sale de
 #   1. una línea "Release: <nombre>" en el mensaje del commit (o del merge), si la hay;
 #   2. si no, del título de la pull request cuando es un merge de GitHub ("Merge pull request #N ...");
-#   3. si no, "Rebootera OS <versión> (latest build)".
+#   3. si no, la primera línea del mensaje del commit (así basta con escribir un buen mensaje al hacer push).
 # El nombre queda como título de la release y la primera línea de sus notas.
 #
 # La compilación se hace dentro de un contenedor Debian 13, igual que el entorno
@@ -56,7 +56,7 @@ jobs:
           docker run --rm --privileged -v "$PWD":/src -w /src debian:trixie bash -euo pipefail -c '
             export DEBIAN_FRONTEND=noninteractive
             apt-get update
-            apt-get install -y live-build debootstrap rsync curl git ca-certificates golang nodejs node-corepack \
+            apt-get install -y live-build debootstrap rsync curl git ca-certificates golang nodejs node-corepack python3 \
               imagemagick librsvg2-bin grub-common fonts-inter fonts-jetbrains-mono xorriso mtools squashfs-tools \
               dosfstools exfatprogs
             git config --global --add safe.directory /src
@@ -72,10 +72,6 @@ jobs:
           cp "out/rebootera-os-${VERSION}-amd64.iso" dist/rebootera-os-amd64.iso
           cp "out/Rebootera-Desktop-${VERSION}.exe" dist/Rebootera-Desktop.exe
           (cd dist && sha256sum rebootera-os-amd64.iso > rebootera-os-amd64.iso.sha256)
-          (cd dist && sha256sum Rebootera-Desktop.exe > Rebootera-Desktop.exe.sha256)
-          for archive in dist/rebootera-desktop-*.tar.gz; do
-            (cd dist && sha256sum "$(basename "$archive")" > "$(basename "$archive").sha256")
-          done
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "ISO_SHA=$(cut -d' ' -f1 dist/rebootera-os-amd64.iso.sha256)" >> "$GITHUB_ENV"
           ls -lh dist
@@ -98,6 +94,7 @@ jobs:
             if [ -z "$CHOSEN" ] && echo "$MESSAGE" | head -n 1 | grep -q '^Merge pull request'; then
               CHOSEN="$(echo "$MESSAGE" | sed -n '3p')"
             fi
+            [ -z "$CHOSEN" ] && CHOSEN="$(echo "$MESSAGE" | head -n 1)"
             [ -n "$CHOSEN" ] && TITLE="$CHOSEN"
             WHAT="Automatic build of the last push to master (stable)."
           else
@@ -117,7 +114,7 @@ jobs:
           commit: ${GITHUB_SHA}
           sha256: ${ISO_SHA}
 
-          Files: \`Rebootera-Desktop.exe\` (Windows app that creates the USB), \`rebootera-desktop-linux-*.tar.gz\` and \`rebootera-desktop-darwin-*.tar.gz\` (the desktop app for Linux and macOS) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."
+          Files: \`Rebootera-Desktop.exe\` (Windows app that creates the USB), \`rebootera-desktop-linux-*\` and \`rebootera-desktop-darwin-*\` (the desktop app for Linux and macOS, plain executables) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."
 
       - name: Create or advance the beta branch and publish the beta release
         if: github.ref_name == 'master'

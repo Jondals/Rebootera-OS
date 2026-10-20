@@ -1,6 +1,6 @@
 // * Panel de teclado de la página de Ajustes: elige la distribución del
 // * teclado de la interfaz. Solo existe en Rebootera OS: Core se lo pide al
-// * agente, que reinicia el kiosco (la pantalla parpadea un par de segundos).
+// * agente, que lo aplica al momento sin reiniciar la pantalla.
 
 import { getJSON, postJSON } from "../api.js";
 import { errorBox, panel } from "../components.js";

@@ -32,7 +32,7 @@ func keyboardGet() ([]string, error) {
 	return []string{layout}, nil
 }
 
-// * keyboardSet guarda la distribución y reinicia la interfaz si cambió.
+// * keyboardSet guarda la distribución y la aplica al momento si cambió.
 func keyboardSet(layout string) error {
 	if !agentproto.ValidKeyboard(layout) {
 		return fmt.Errorf("distribución de teclado no admitida: %q", layout)
@@ -47,9 +47,14 @@ func keyboardSet(layout string) error {
 	if current[0] == layout {
 		return nil
 	}
-	// ! cage ignora SIGTERM: con "systemctl restart" tardaría 90 s. Se mata con
-	// ! SIGKILL y Restart=always del servicio lo vuelve a abrir en 2 s.
-	time.AfterFunc(restartDelay, killKiosk)
+	// * Con labwc el cambio es inmediato (Bloq Despl virtual); si no se pudo, se reinicia la sesión como antes.
+	// ! cage ignora SIGTERM: con "systemctl restart" tardaría 90 s. Se mata con SIGKILL y Restart=always del
+	// ! servicio lo vuelve a abrir en 2 s.
+	go func() {
+		if !switchKeyboardLive(layout) {
+			time.AfterFunc(restartDelay, killKiosk)
+		}
+	}()
 	return nil
 }
 

@@ -3,6 +3,7 @@
 // * USB de Rebootera tiene Vault, también en él para que sobrevivan al reinicio.
 
 import { getJSON, postJSON } from "./api.js";
+import { reportTheme } from "./bridge.js";
 import { setLanguage, type Language } from "./i18n.js";
 
 /** Temas visuales, todos oscuros: amoled (por defecto), obsidiana, zafiro, esmeralda, amatista, brasa, naranja y grafito. */
@@ -245,6 +246,41 @@ function syncLogoColors(): void {
   }
 }
 
+/**
+ * Icono de la pestaña (y de la ventana de Rebootera Desktop) con los colores del tema: el mismo logotipo, dibujado con el
+ * fondo y el acento del tema puesto.
+ */
+function syncFavicon(): void {
+  const style = getComputedStyle(document.documentElement);
+  const bg = style.getPropertyValue("--bg").trim() || "#0b0d11";
+  const accent = style.getPropertyValue("--accent").trim() || "#d8ae62";
+  const strong = style.getPropertyValue("--accent-strong").trim() || accent;
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect x="8" y="8" width="240" height="240" rx="58" fill="' +
+    bg +
+    '" stroke="' +
+    accent +
+    '" stroke-opacity=".4" stroke-width="3"/><path d="M60.8 121a82 82 0 0 1 134.4 0" fill="none" stroke="' +
+    accent +
+    '" stroke-width="8" stroke-linecap="round"/><path d="M72 168a56 56 0 0 1 112 0Z" fill="' +
+    strong +
+    '"/><path d="M56 182h144" stroke="' +
+    accent +
+    '" stroke-width="8" stroke-linecap="round"/></svg>';
+  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  if (link === null) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.append(link);
+  }
+  link.type = "image/svg+xml";
+  link.href = "data:image/svg+xml," + encodeURIComponent(svg);
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (meta) {
+    meta.content = bg;
+  }
+}
+
 // * Cualquier cambio del tema (también los que no pasan por applyPrefs) vuelve a pintar el logotipo.
 new MutationObserver(syncLogoColors).observe(document.documentElement, {
   attributes: true,
@@ -267,4 +303,6 @@ export function applyPrefs(): void {
     document.body.style.zoom = String(prefs.scale / 100);
   }
   syncLogoColors();
+  syncFavicon();
+  reportTheme(root.dataset.theme);
 }

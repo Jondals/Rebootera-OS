@@ -4,7 +4,7 @@
 # *   2. Prepara el contenido que va dentro del ejecutable: la interfaz (ui/) y
 # *      el kit de un USB nuevo (kit/: configuración y tema de Ventoy, README).
 # *   3. Compila "Rebootera-Desktop-<versión>.exe" sin consola (-H windowsgui) y, con la misma interfaz, los binarios de
-# *      Linux y macOS (Go puro, sin CGO: se compilan desde cualquier sistema) empaquetados en .tar.gz.
+# *      Linux y macOS (Go puro, sin CGO: se compilan desde cualquier sistema), cada uno un ejecutable suelto.
 # * Se ejecuta en la distro WSL RebooteraBuild (no necesita root):
 # *
 # *   wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-desktop.sh"
@@ -30,19 +30,17 @@ pnpm() {
 	COREPACK_ENABLE_DOWNLOAD_PROMPT=0 node "$entry" "$@"
 }
 
-# * build_unix compila el escritorio para Linux y macOS y deja un .tar.gz por plataforma en el directorio $3.
+# * build_unix compila el escritorio para Linux y macOS y deja un ejecutable suelto por plataforma en el directorio $3.
 build_unix() {
 	local work=$1 version=$2 out=$3 target os arch name
 	for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
 		os=${target%/*}
 		arch=${target#*/}
 		name="rebootera-desktop-$os-$arch"
-		mkdir -p "$work/$name"
 		GOOS=$os GOARCH=$arch go build -trimpath \
 			-ldflags "-s -w -X rebootera/core/internal/version.Version=$version" \
-			-o "$work/$name/rebootera-desktop" ./cmd/rebootera-desktop
-		tar -C "$work" -czf "$out/$name.tar.gz" "$name"
-		ls -lh "$out/$name.tar.gz"
+			-o "$out/$name" ./cmd/rebootera-desktop
+		ls -lh "$out/$name"
 	done
 }
 
@@ -74,18 +72,28 @@ main() {
 	cp "$work/art/grub/splash.png" "$kit/ventoy/theme/background.png"
 	cp "$work/art/grub/live-theme/"select_*.png "$work/art/grub/live-theme/"menu_*.png "$work/art/grub/live-theme/"*.pf2 "$kit/ventoy/theme/"
 
-	log "Generando el icono y los recursos de Windows"
+	log "Generando los iconos (uno por tema) y los recursos de Windows"
 	export GOCACHE=/root/.cache/go-build GOFLAGS=-buildvcs=false CGO_ENABLED=0
-	local size icons=()
+	local size theme icons themes=() ico_list=""
+	rm -rf "$work/icon"
 	mkdir -p "$work/icon"
-	for size in 16 20 24 32 40 48 64 128 256; do
-		rsvg-convert -w "$size" -h "$size" "$work/src/branding/logo.svg" -o "$work/icon/$size.png"
-		icons+=("$work/icon/$size.png")
+	# * Un icono por tema (el logotipo con sus colores): la ventana cambia de icono al cambiar de tema.
+	# * rsrc da el ID 1 al manifiesto y del 2 en adelante a los grupos de iconos, en el orden de make-theme-icons.py
+	# * (window_windows.go usa ese mismo orden).
+	while read -r theme; do
+		themes+=("$theme")
+	done < <(python3 "$work/src/scripts/build/make-theme-icons.py" "$work/src/ui/src/styles/lux.css" "$work/src/branding/logo.svg" "$work/icon")
+	for theme in "${themes[@]}"; do
+		icons=()
+		for size in 16 20 24 32 40 48 64 128 256; do
+			rsvg-convert -w "$size" -h "$size" "$work/icon/$theme.svg" -o "$work/icon/$theme-$size.png"
+			icons+=("$work/icon/$theme-$size.png")
+		done
+		convert "${icons[@]}" "$work/icon/$theme.ico"
+		ico_list+="${ico_list:+,}$work/icon/$theme.ico"
 	done
-	convert "${icons[@]}" "$work/icon/rebootera.ico"
-	# * rsrc da el ID 1 al manifiesto y el 2 al grupo de iconos (window_windows.go usa el 2).
 	(cd "$app" && go run github.com/akavel/rsrc@v0.10.2 -arch amd64 \
-		-manifest rebootera-desktop.manifest -ico "$work/icon/rebootera.ico" -o rsrc_windows_amd64.syso)
+		-manifest rebootera-desktop.manifest -ico "$ico_list" -o rsrc_windows_amd64.syso)
 
 	log "Compilando Rebootera Desktop $version para Windows"
 	cd "$work/src/core"

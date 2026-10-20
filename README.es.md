@@ -19,7 +19,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 | **Medios de instalación** | Añade una instalación hecha con cualquier herramienta (un USB de Rufus o Ventoy, una carpeta, una `.iso`) desde otro USB o disco (abierto en solo lectura) o, desde Windows, con Rebootera Desktop. Cualquier `.iso` copiada a la carpeta `isos` también aparece. |
 | **Asistente de instalación** | Comprobación de requisitos (UEFI, Secure Boot, TPM 2.0, memoria, disco), drivers críticos y disco de destino; después inicia el instalador original desde el menú de arranque. Opcional: responder automáticamente idioma, zona horaria y cuenta de usuario (Windows y Debian; el disco siempre lo eliges tú), llevar al instalador de Windows los drivers que casan, saltarse la comprobación de requisitos de Windows 11 y arrancar el instalador una sola vez (UEFI). |
 | **Asistente de drivers** | Todos los dispositivos PCI y USB, el driver de Linux en uso y los Hardware ID de Windows, destacando lo que necesita el instalador (disco y red). Los paquetes de drivers de Windows (`.inf`) se encuentran **solos** en cada arranque (en el USB, en carpetas de drivers de las particiones de este equipo y en un Windows instalado) y se casan con esos Hardware ID; la página dice de dónde sale cada uno. |
-| **Navegador** | Firefox dentro de Rebootera OS, solo para navegar, con uBlock Origin y Dark Reader instalados y bloqueados. |
+| **Navegador** | Un navegador ligero dentro de Rebootera OS que abre al instante, solo para navegar: no guarda nada ni descarga archivos. |
 | **Puntero** | Velocidad del puntero, toque para hacer clic y desplazamiento natural, guardados en el USB. |
 | **Wi-Fi** | Conecta la sesión a una red inalámbrica desde Ajustes (WPA2/WPA3 y redes abiertas, también ocultas). |
 | **USB y discos** | Discos y particiones con su función y su uso. **Safe Disk Guard**: los discos internos y el USB de Rebootera están protegidos y solo se leen. |
@@ -44,7 +44,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 **Desde Linux**, como root:
 
 ```bash
-scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.18.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.20.0-amd64.iso
 ```
 
 El script rechaza los discos no extraíbles y el disco del sistema.
@@ -126,7 +126,7 @@ wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-d
 Tarda alrededor de un minuto. El script compila la interfaz, la incrusta junto con los archivos de un USB de Rebootera nuevo (ajustes y tema del menú de arranque), añade el icono y el manifiesto de Windows y compila para Windows. El resultado es:
 
 - `out/Rebootera-Desktop-<version>.exe`: un único archivo, sin instalación. Necesita Microsoft Edge WebView2 Runtime, que ya viene con Windows 10 y 11. Cierra la aplicación antes de volver a construirla.
-- Con `--all`, `dist/rebootera-desktop-linux-amd64.tar.gz`, `-linux-arm64`, `-darwin-amd64` y `-darwin-arm64`: un binario cada uno, sin dependencias (`out/` solo lleva la ISO y el .exe). Para tener ventana propia usa un navegador basado en Chromium si hay uno instalado; si no, abre tu navegador predeterminado.
+- Con `--all`, `dist/rebootera-desktop-linux-amd64`, `-linux-arm64`, `-darwin-amd64` y `-darwin-arm64`: un binario cada uno, sin dependencias (`out/` solo lleva la ISO y el .exe). Para tener ventana propia usa un navegador basado en Chromium si hay uno instalado; si no, abre tu navegador predeterminado.
 
 ### 4. Crear un USB de Rebootera
 

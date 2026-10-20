@@ -118,7 +118,8 @@ pre {
 }
 
 /* Modo ligero (renderizado por software o pocas CPU): sin desenfoques, sin
-   sombras de brillo y sin animaciones continuas. Lo activa prefs.ts. */
+   sombras de brillo y sin animaciones continuas. Lo activa prefs.ts. Las órbitas del fondo quedan fuera: su desenfoque
+   lo decide data-blur (en Rebootera Desktop el modo ligero está siempre activo y el desenfoque del fondo es barato). */
 :root[data-gfx="lite"] {
   --accent-glow: transparent;
 }
@@ -127,6 +128,6 @@ pre {
   backdrop-filter: none;
 }
 :root[data-gfx="lite"] [class*="glow"],
-:root[data-gfx="lite"] svg {
+:root[data-gfx="lite"] svg:not(.orbit) {
   filter: none !important;
 }

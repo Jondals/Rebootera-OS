@@ -3,6 +3,46 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.20.0] - 2026-10-20
+
+### Added
+
+- **Rename partitions** (ext4, NTFS, exFAT and FAT): the name shows in Windows and Linux and the files are not touched.
+- **A light browser that opens at once.** The Browser button no longer starts Firefox from the USB (it took ages): it opens a window in the same process as the interface, with back, forward, reload, an address bar that also searches, a loading bar and a close button. Nothing is saved (no cookies, no history) and it does not download files. Firefox, uBlock Origin and Dark Reader are gone from the image, which also makes it smaller.
+- **Wi-Fi networks are remembered.** When you connect there is a "Remember this network on the USB" switch (on by default); at the next start Rebootera connects by itself as soon as the adapter is ready. Remembered networks are marked in the list and "Disconnect" forgets them. The password is stored in the Vault of your own USB.
+- **No internet, no stuck download.** Pressing Download without a connection takes you to the Wi-Fi panel (already searching for networks) with a notice, instead of failing.
+- **Downloads resume by themselves.** A download cut by the network is retried every few seconds from where it stopped, and one that was running when the computer was switched off continues at the next start. Windows links expire after about a day: Rebootera asks Microsoft for a new one and keeps the part already downloaded.
+- **The window follows the theme in Rebootera Desktop:** the icon (title bar, taskbar, Alt+Tab) and the title bar color change with the theme, and so does the tab icon in any browser. The logo and the intro already did.
+- **Partition changes are safer.** A copy of the partition table is saved before every change (in memory and in the USB Vault); if a step fails before any data is moved, the previous table is restored; and nothing is changed while a download is running.
+
+### Changed
+
+- **Order of the top bar.** Rebootera Desktop: Home, Create USB, Download, Drivers, My images, Settings. Rebootera OS: Home, Disks, Install, My images, Drivers, Download, This PC, Settings.
+- **Pointer and keyboard layout apply at once, without restarting the screen** (before, every change closed and reopened the interface, and in some computers it did not come back). The pointer is applied by reloading the compositor settings; the keyboard has both layouts loaded and switches with a virtual Scroll Lock key.
+- **Touchpad:** double tap no longer waits for a possible drag (it failed at times) and the scroll direction is set explicitly for touchpads.
+- **Smoother on the USB.** Every section is read from the USB in the background once the interface is up, so switching is instant; while one is still being read a pulsing dot shows the tap was received; the Browser button says "Opening…". Without GPU the background is flat (no noise, vignette or blurred shadows), which is what cost most when scrolling or changing section.
+- **Joining partitions is clearer and much faster.** Each choice says in one line which partition stays, how big it becomes, which one is erased, and whether it is quick (nothing is copied) or slow (and how long). When the one that stays is on the right, it is first shrunk to what it really uses and only that is copied, instead of the whole partition (that is what took 20 minutes).
+- **Drivers:** more space between blocks and rows. A partition labelled DRIVERS is now always listed under "where drivers are searched", even if it only holds installers and no .inf packages (it says so).
+
+### Fixed
+
+- **Background blur did not work in Rebootera Desktop:** the light mode (always on there) turned off every SVG filter, including the one of the background. It is now stronger too (4, 10 and 22 px).
+- Windows 10 and 11 (Home and Pro) download directly from Microsoft in the Download page (the entries were already in the code but not in the released build).
+
+## [0.18.0] - 2026-10-20
+
+### Changed
+
+- **Installing is now three clear steps: System, Where, Install.** The "Where" step shows your disks drawn to scale and you pick a partition or a free space, not just a whole disk. It tells you at once whether the system fits and what will happen ("this partition will be formatted" or "nothing is erased"). If it does not fit, **Make room** lists the partitions that can be shrunk and opens the resize with the amount already set; the progress is shown in the same screen. The last step lists what to pick in the original installer ("pick the partition of 200 GB", "pick the Unallocated space of 120 GB") and a short plan; the old step with the hardware inspection and the driver checkbox is gone from the way: the drivers of this computer go to the Windows installer by themselves, a missing one is flagged with a button to the Drivers page, and everything technical (automatic answers, Windows 11 requirements, drivers, start only once) is inside "More options". If the computer does not meet Windows 11, one notice says so with a button to skip the check.
+- **Disks, in plain words.** "Resize" is now "Bigger or smaller" and says that what you remove becomes free space; "Merge" is now "Join with a neighbor" and each choice shows the result ("one partition of 300 GB") and, in red, what is erased. The free space has "Create a partition here" and "Add the space to <the partition before it>", and the end message tells you to tap the free space to use it. The resize no longer talks about sharing the difference unless there is a neighbor, and says it as "Leave it as free space" or "Share it with <name>".
+- **Drivers, rebuilt.** One answer at the top ("All set" or "Missing drivers: 1, without them Windows may not see the Wi-Fi") and, below, what matters for installing (network and disks), each piece with Ready (and where the driver was found) or Missing (with a button to search the web with the Rebootera browser and, folded, three steps to add it). Other devices and where drivers are searched are folded. In Rebootera Desktop the page explains in three steps how it works, shows a summary with a warning if a package has no valid signature, groups the drivers by folder with their type (network, storage...) and has a help text on which drivers are needed.
+- **The browser is no longer hidden:** Rebootera OS has a **Browser** button in the top bar on every page (not only a card on Home).
+- Shorter texts in all these pages, in English and Spanish.
+
+### Fixed
+
+- A partition that is open (mounted) could be offered for resizing and then fail; the button now says why it is disabled.
+
 ## [0.17.0] - 2026-10-20
 
 ### Added

@@ -46,6 +46,23 @@ if [ "$MODE" = "desktop" ]; then
 	echo iso >"$FAKE/rebootera/rebootera-os.iso"
 	echo rebootera-os-preview-amd64.iso >"$FAKE/rebootera/VERSION"
 	echo x >"$FAKE/isos/linux/debian-13.1.0-amd64-netinst.iso"
+	printf '[Version]
+Signature="$WINDOWS NT$"
+Class=Net
+Provider=%%Intel
+DriverVer=03/01/2024,12.19.0
+CatalogFile=e1d.cat
+[Strings]
+Intel="Intel"
+' >"$FAKE/drivers/intel-red/e1d.inf"
+	printf '[Version]
+Signature="$WINDOWS NT$"
+Class=SCSIAdapter
+Provider=%%Intel
+DriverVer=02/01/2024,19.5.0
+[Strings]
+Intel="Intel"
+' >"$FAKE/drivers/intel-red/iaStorVD.inf"
 	(cd "$WORK/src/core" && go build -o "$WORK/rebootera-desktop" ./cmd/rebootera-desktop)
 	"$WORK/rebootera-desktop" -no-window -url-file "$URL_FILE" -usb-root "$FAKE" &
 else

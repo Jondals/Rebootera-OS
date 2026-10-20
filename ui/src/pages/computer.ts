@@ -125,7 +125,7 @@ function disksPanel(disks: Disk[]): HTMLElement {
           return item(
             disk.model || disk.name,
             [
-              fmt.bytes(disk.sizeBytes),
+              fmt.disk(disk.sizeBytes),
               kind,
               disk.partTable.toUpperCase(),
               t("overview.partitions", { n: disk.partitions.length }),

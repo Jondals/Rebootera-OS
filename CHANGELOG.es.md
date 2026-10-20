@@ -3,6 +3,46 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.20.0] - 2026-10-20
+
+### Añadido
+
+- **Cambiar el nombre de las particiones** (ext4, NTFS, exFAT y FAT): el nombre se ve en Windows y Linux y no se tocan los archivos.
+- **Un navegador ligero que abre al instante.** El botón Navegador ya no arranca Firefox desde el USB (tardaba muchísimo): abre una ventana en el mismo proceso de la interfaz, con atrás, adelante, recargar, barra de direcciones que también busca, barra de carga y botón de cerrar. No se guarda nada (ni cookies ni historial) y no descarga archivos. Firefox, uBlock Origin y Dark Reader salen de la imagen, que además pesa menos.
+- **Las redes Wi-Fi se recuerdan.** Al conectar hay un interruptor "Recordar esta red en el USB" (activado por defecto); en el siguiente arranque Rebootera se conecta sola en cuanto el adaptador está listo. Las redes recordadas se marcan en la lista y "Desconectar" las olvida. La contraseña se guarda en el Vault de tu propio USB.
+- **Sin internet, la descarga no se queda colgada.** Al pulsar Descargar sin conexión te lleva al panel de Wi-Fi (ya buscando redes) con un aviso, en vez de fallar.
+- **Las descargas se reanudan solas.** Una descarga cortada por la red se reintenta cada pocos segundos desde donde se quedó, y la que estaba en marcha al apagar el equipo sigue en el siguiente arranque. Los enlaces de Windows caducan al cabo de un día: Rebootera pide uno nuevo a Microsoft y conserva lo ya descargado.
+- **La ventana sigue al tema en Rebootera Desktop:** el icono (barra de título, barra de tareas y Alt+Tab) y el color de la barra de título cambian con el tema, y también el icono de la pestaña en cualquier navegador. El logotipo y la intro ya lo hacían.
+- **Los cambios de particiones son más seguros.** Antes de cada cambio se guarda una copia de la tabla de particiones (en memoria y en el Vault del USB); si un paso falla antes de mover datos se restaura la tabla anterior; y no se cambia nada mientras hay una descarga en marcha.
+
+### Cambiado
+
+- **Orden de la barra superior.** Rebootera Desktop: Inicio, Crear USB, Descargar, Drivers, Mis imágenes, Ajustes. Rebootera OS: Inicio, Discos, Instalar, Mis imágenes, Drivers, Descargar, Este PC, Ajustes.
+- **El puntero y el teclado se aplican al momento, sin reiniciar la pantalla** (antes cada cambio cerraba y volvía a abrir la interfaz, y en algunos equipos no volvía). El puntero se aplica recargando la configuración del compositor; el teclado tiene las dos distribuciones cargadas y cambia con una tecla Bloq Despl virtual.
+- **Panel táctil:** el doble toque ya no espera a un posible arrastre (fallaba a veces) y el sentido del desplazamiento se fija explícitamente para los paneles táctiles.
+- **Más fluido en el USB.** Cada sección se lee del USB en segundo plano cuando la interfaz ya está, así que cambiar es instantáneo; mientras una aún se lee, un punto que late muestra que la pulsación se atendió; el botón Navegador dice "Abriendo…". Sin GPU el fondo es plano (sin ruido, viñeta ni sombras desenfocadas), que era lo que más costaba al desplazarse o cambiar de sección.
+- **Unir particiones es más claro y mucho más rápido.** Cada opción dice en una línea cuál se queda, cuánto pasa a medir, cuál se borra y si es rápido (no se copia nada) o lento (y cuánto tarda). Si la que se queda está a la derecha, primero se encoge a lo que realmente ocupa y solo se copia eso, en vez de la partición entera (eso era lo que tardaba 20 minutos).
+- **Drivers:** más espacio entre bloques y filas. Una partición etiquetada DRIVERS aparece siempre en "dónde se buscan los drivers", aunque solo traiga instaladores y ningún paquete .inf (lo dice).
+
+### Corregido
+
+- **El desenfoque del fondo no funcionaba en Rebootera Desktop:** el modo ligero (siempre activo allí) quitaba todos los filtros SVG, también el del fondo. Ahora además es más fuerte (4, 10 y 22 px).
+- Windows 10 y 11 (Home y Pro) se descargan directamente de Microsoft en la página Descargar (las entradas ya estaban en el código pero no en la versión publicada).
+
+## [0.18.0] - 2026-10-20
+
+### Cambiado
+
+- **Instalar ahora son tres pasos claros: Sistema, Dónde, Instalar.** El paso «Dónde» enseña tus discos dibujados a escala y eliges una partición o un hueco libre, no solo un disco entero. Te dice al momento si el sistema cabe y qué pasará («esta partición se formateará» o «no se borra nada»). Si no cabe, **Hacer sitio** lista las particiones que se pueden encoger y abre el cambio de tamaño con la cantidad ya puesta; el avance se ve en la misma pantalla. El último paso dice qué elegir en el instalador original («elige la partición de 200 GB», «elige el Espacio sin asignar de 120 GB») y enseña un plan corto; el paso viejo con la revisión del hardware y la casilla de drivers ya no estorba: los drivers de este equipo van solos al instalador de Windows, si falta alguno se avisa con un botón a la página de Drivers, y todo lo técnico (respuestas automáticas, requisitos de Windows 11, drivers, arrancar una sola vez) está dentro de «Más opciones». Si el equipo no cumple Windows 11, un aviso lo dice con un botón para saltar la comprobación.
+- **Discos, en palabras sencillas.** «Cambiar el tamaño» pasa a «Más grande o más pequeña» y dice que lo que quites queda como espacio libre; «Fusionar» pasa a «Unir con la vecina» y cada opción enseña el resultado («una partición de 300 GB») y, en rojo, lo que se borra. El hueco libre tiene «Crear una partición aquí» y «Añadir el espacio a <la partición de antes>», y el mensaje final dice que toques el espacio libre para usarlo. El cambio de tamaño ya no habla de repartir la diferencia salvo que haya vecina, y lo dice como «Dejarla como espacio libre» o «Repartir con <nombre>».
+- **Drivers, rehechos.** Una respuesta arriba («Todo listo» o «Drivers que faltan: 1, sin ellos Windows puede no ver el Wi-Fi») y, debajo, lo importante para instalar (red y discos), cada pieza con Listo (y dónde se encontró el driver) o Falta (con un botón para buscarlo en internet con el navegador de Rebootera y, plegados, tres pasos para añadirlo). Los otros dispositivos y dónde se buscan los drivers están plegados. En Rebootera Desktop la página explica en tres pasos cómo funciona, enseña un resumen con aviso si algún paquete no tiene firma válida, agrupa los drivers por carpeta con su tipo (red, discos...) y tiene una ayuda sobre qué drivers hacen falta.
+- **El navegador ya no está escondido:** Rebootera OS tiene un botón **Navegador** en la barra superior de todas las páginas (no solo una tarjeta en Inicio).
+- Textos más cortos en todas estas páginas, en inglés y en español.
+
+### Corregido
+
+- Una partición abierta (montada) se podía ofrecer para cambiar su tamaño y luego fallaba; el botón ahora dice por qué está desactivado.
+
 ## [0.17.0] - 2026-10-20
 
 ### Añadido

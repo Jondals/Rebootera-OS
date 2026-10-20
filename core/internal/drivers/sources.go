@@ -159,13 +159,17 @@ func Discover(vaultRoot, mediaRoot string) []Source {
 }
 
 // * ScanSources recorre todos los orígenes y devuelve sus paquetes (cada uno con su origen anotado) y los
-// * orígenes con su recuento. Los orígenes sin ningún paquete x64 se descartan.
+// * orígenes con su recuento. Los orígenes sin ningún paquete x64 se descartan, salvo una partición etiquetada
+// * "DRIVERS": esa se enseña siempre (con 0 paquetes si solo trae instaladores .exe) para que se vea que se encontró.
 func ScanSources(sources []Source) ([]*Package, []Source) {
 	var packages []*Package
 	var used []Source
 	for _, source := range sources {
 		found := Scan(source.Root)
 		if len(found) == 0 {
+			if strings.HasSuffix(source.ID, ":label") {
+				used = append(used, source)
+			}
 			continue
 		}
 		for _, pkg := range found {

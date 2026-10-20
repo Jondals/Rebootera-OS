@@ -191,3 +191,9 @@
   transform: none;
   animation: none !important;
 }
+
+/* La intro espera a que se apliquen los ajustes guardados (tema): así sale con sus colores desde el primer fotograma */
+.intro-wait * {
+  visibility: hidden;
+  animation-play-state: paused !important;
+}

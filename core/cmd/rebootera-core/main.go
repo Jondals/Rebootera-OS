@@ -80,6 +80,9 @@ func main() {
 		}
 	}
 
+	// * Si el USB recuerda alguna red Wi-Fi, se conecta sola en cuanto el adaptador esté listo.
+	go api.AutoConnectWifi(api.SocketAgent{})
+
 	lib := library.New()
 	queue := transfers.New(lib)
 	go queue.Run()

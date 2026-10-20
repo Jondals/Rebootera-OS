@@ -10,7 +10,7 @@ import { el, icon } from "./dom.js";
 import * as fmt from "./format.js";
 import { t, translateStatic } from "./i18n.js";
 import { icons } from "./icons.js";
-import { reportReady } from "./bridge.js";
+import { browserAvailable, openBrowser, reportReady } from "./bridge.js";
 import { onlineInterface } from "./insights.js";
 import { playIntro } from "./intro.js";
 import { appMode, isDesktop, loadMode } from "./mode.js";
@@ -22,6 +22,7 @@ import {
   desktopRoutes,
   navigate,
   register,
+  preloadPages,
   registerLazy,
   renderCurrent,
   routes,
@@ -104,6 +105,34 @@ function renderShell(): void {
   }
   byId("status-chip").replaceChildren(...(notice ? [notice] : []));
   renderDriveCard();
+  renderBrowserButton();
+}
+
+/** Botón "Navegador" de la cabecera: solo dentro de Rebootera OS, donde hay un navegador que abrir. */
+function renderBrowserButton(): void {
+  const node = byId("browser-button");
+  const show = !isDesktop() && browserAvailable();
+  node.hidden = !show;
+  if (!show) {
+    return;
+  }
+  node.replaceChildren(icon(icons.browser), el("span", {}, [t("nav.browser")]));
+  node.title = t("home.browserText");
+}
+
+/** Abre el navegador del sistema; el botón dice "Abriendo…" un momento para que se vea que la pulsación se atendió. */
+function onBrowserClick(): void {
+  const node = byId("browser-button");
+  if (node.classList.contains("is-busy")) {
+    return;
+  }
+  openBrowser();
+  node.classList.add("is-busy");
+  node.replaceChildren(icon(icons.browser), el("span", {}, [t("nav.opening")]));
+  window.setTimeout(function done() {
+    node.classList.remove("is-busy");
+    renderBrowserButton();
+  }, 2500);
 }
 
 /** Indicador del USB en la cabecera: el USB de Rebootera con su espacio libre o, en el sistema, "sesión live". */
@@ -225,6 +254,7 @@ async function init(): Promise<void> {
   loadPrefs();
   translateStatic(document);
   byId("power-button").addEventListener("click", openPowerDialog);
+  byId("browser-button").addEventListener("click", onBrowserClick);
   document.addEventListener("rebootera:language", relabel);
   byId("power-icon").innerHTML = icons.power;
   // * El kiosco no ofrece menú contextual: no hay nada útil que mostrar en él.
@@ -252,9 +282,24 @@ async function init(): Promise<void> {
   registerLazy("settings", loadSettings);
 
   subscribe(renderShell);
-  const ready = Promise.all([loadVersion(), start(isDesktop()), applyVaultPrefs()]);
+  const prefsApplied = applyVaultPrefs();
+  const ready = Promise.all([loadVersion(), start(isDesktop()), prefsApplied]);
+  // * La intro espera a los ajustes del USB (tema incluido) para salir ya con los colores buenos y no cambiar a mitad;
+  // * como mucho espera un momento.
+  void Promise.race([
+    prefsApplied.catch(function ignore() {}),
+    new Promise(function limit(resolve) {
+      window.setTimeout(resolve, 1200);
+    }),
+  ]).then(function showIntro() {
+    document.getElementById("intro")?.classList.remove("intro-wait");
+  });
   startRouter(byId("view"), renderNav);
   playIntro(ready);
+  // * Cuando ya se ve la interfaz, el resto de páginas se leen del USB sin prisa.
+  void ready.then(function afterReady() {
+    window.setTimeout(preloadPages, 2500);
+  });
   // * start-kiosk espera este aviso: la interfaz ya dibujó (dos fotogramas) y la sesión es buena.
   window.requestAnimationFrame(function firstFrame() {
     window.requestAnimationFrame(reportReady);

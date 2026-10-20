@@ -2310,3 +2310,385 @@ button.target-card.target-selected {
 .look-message {
   margin-top: 8px;
 }
+
+/* Instalar: destino, avisos y ayuda del instalador */
+
+.pm-dim {
+  opacity: 0.45;
+}
+
+.notice-warn {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.notice .btn {
+  flex: none;
+  margin-left: auto;
+}
+
+.target-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+
+.target-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.target-skip {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.about-list dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.about-list dd .btn {
+  min-height: 26px;
+  padding-inline: 10px;
+  font-size: 12px;
+}
+
+/* Gestor de particiones: unir y hacer sitio */
+
+.pm-merge-line {
+  margin: 6px 0 0;
+  font-weight: 600;
+}
+
+.pm-merge-loss {
+  margin: 0 0 8px;
+  color: var(--danger);
+}
+
+.pm-room-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.pm-room-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Drivers: la respuesta grande de arriba y los pasos */
+
+.driver-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.driver-hero-ok {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: var(--ok-bg);
+}
+
+.driver-hero-warn {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.09);
+}
+
+.driver-hero-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.driver-hero-ok .driver-hero-icon {
+  color: var(--ok);
+}
+
+.driver-hero-warn .driver-hero-icon {
+  color: var(--warn);
+}
+
+.driver-hero-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.driver-hero-text strong {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.driver-hero-text span {
+  color: var(--text-muted);
+}
+
+.device-missing {
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.how-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.how-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.how-step > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.how-num {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Botón del navegador en la cabecera */
+
+.browser-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--accent-border);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.browser-button[hidden] {
+  display: none;
+}
+
+.browser-button:hover {
+  background: var(--panel-hover);
+}
+
+.browser-button .icon {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 860px) {
+  .browser-button span {
+    display: none;
+  }
+  .driver-hero {
+    flex-wrap: wrap;
+  }
+}
+
+.plan-list {
+  align-items: center;
+}
+
+.plan-list dd {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.notice > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Cambiar el tamaño: qué hacer con la diferencia */
+
+.pm-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+.pm-modes-title {
+  display: block;
+  margin-top: 14px;
+}
+
+.pm-mode {
+  padding: 8px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pm-mode:hover {
+  border-color: var(--accent-border);
+}
+
+.pm-mode[aria-checked="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Mientras una página se lee del USB: un punto que late en el centro, para que se vea que la pulsación se atendió */
+
+.page-waiting {
+  display: grid;
+  place-items: center;
+  min-height: 40vh;
+}
+
+.page-waiting-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: waiting-pulse 700ms ease-in-out infinite alternate;
+}
+
+@keyframes waiting-pulse {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.is-busy {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Equipos sin GPU (el pen): el fondo se queda plano y sin sombras difusas. Cada fotograma se dibuja por CPU, y el ruido
+   del fondo, la viñeta y las sombras con desenfoque son lo que más cuesta al desplazarse o al cambiar de sección. */
+:root[data-gfx="lite"][data-motion="reduced"] {
+  --lift: none;
+  --shadow: none;
+  --edge: none;
+}
+
+:root[data-gfx="lite"][data-motion="reduced"] .bg-grain,
+:root[data-gfx="lite"][data-motion="reduced"] .bg::after {
+  display: none;
+}
+
+:root[data-gfx="lite"][data-motion="reduced"] .page,
+:root[data-gfx="lite"][data-motion="reduced"] main {
+  animation: none;
+}
+
+/* Drivers: más aire entre bloques y entre filas */
+
+.drivers-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.drivers-body .driver-hero {
+  margin-bottom: 0;
+}
+
+.drivers-body .device-row {
+  padding: 14px 18px;
+  gap: 16px;
+}
+
+.drivers-body .panel-body,
+.drivers-body .more-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.driver-source {
+  padding: 12px 14px;
+  gap: 14px;
+}
+
+.driver-source-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.how-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.how-step {
+  gap: 14px;
+}
+
+.source-row {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+/* Respuesta inmediata al pulsar: aunque el efecto tarde (páginas que se leen del USB, enlaces que se piden a una web),
+   el botón se hunde al instante, sin transición */
+button:not(:disabled):active,
+.tab:active,
+.wifi-row:not(:disabled):active {
+  transform: scale(0.97);
+  filter: brightness(1.15);
+  transition: none;
+}

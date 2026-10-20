@@ -4,14 +4,16 @@
 # * del arranque por la cookie de sesión y muestra la interfaz a pantalla completa.
 # * Bloquea cualquier navegación fuera de la interfaz local, desactiva el menú
 # * contextual y las herramientas de desarrollo, y recarga la interfaz si su proceso
-# * se cierra inesperadamente. La interfaz puede pedirle abrir el navegador del sistema
-# * (Firefox ya configurado) con un mensaje {"action": "browser"} y le avisa de que ya se dibuja con {"action": "ready"}.
+# * se cierra inesperadamente. La interfaz puede pedirle abrir el navegador con un mensaje {"action": "browser"} (una
+# * ventana WebKit ligera en este mismo proceso, sin historial ni cookies guardados) y le avisa de que ya se dibuja con
+# * {"action": "ready"}.
 
 import json
 import os
 import re
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 
 import gi
@@ -24,7 +26,6 @@ CORE_URL = "http://127.0.0.1:7080"
 TOKEN_FILE = "/run/rebootera-core/ui-token"
 POLL_MS = 500
 BACKGROUND = "#0b0d11"
-BROWSER = "/usr/lib/rebootera/browser"
 # * Única forma de dirección que el navegador acepta de la interfaz: https, sin espacios ni comillas.
 SAFE_URL = re.compile(r"https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~:/?#@!$&()*+,;=%-]*)?")
 # * Archivo que start-kiosk vigila: la interfaz avisa de que ya dibujó su primer fotograma y aquí se marca.
@@ -53,6 +54,150 @@ def read_token():
 def is_local(uri):
     """Indica si una URI pertenece a la interfaz local."""
     return uri == CORE_URL or uri.startswith(CORE_URL + "/")
+
+
+def to_address(text):
+    """Convierte lo escrito en la barra del navegador en una dirección: web tal cual, dominio con https o búsqueda."""
+    text = text.strip()
+    if re.match(r"https?://\S+$", text):
+        return text
+    if " " not in text and "." in text and not text.startswith("."):
+        return "https://" + text
+    return "https://duckduckgo.com/?q=" + urllib.parse.quote_plus(text)
+
+
+BROWSER_CSS = """
+.browser-bar { background: #0b0d11; padding: 6px 8px; }
+.browser-bar button { min-width: 38px; min-height: 34px; color: #e8e6e1; background: #171a21; border: 1px solid #262a33; border-radius: 8px; }
+.browser-bar button:hover { background: #20242d; }
+.browser-bar entry { min-height: 34px; color: #e8e6e1; background: #171a21; border: 1px solid #262a33; border-radius: 8px; padding: 0 10px; }
+progressbar trough, progressbar progress { min-height: 3px; }
+progressbar progress { background: #c9a45c; }
+"""
+
+
+class BrowserWindow:
+    """Navegador ligero: otra ventana WebKit del mismo proceso (arranca al instante). Sin cookies ni historial en disco."""
+
+    def __init__(self, app, url, on_closed):
+        """Abre la ventana con barra de direcciones y la lleva a la página pedida."""
+        self.on_closed = on_closed
+        self.window = Gtk.Window(application=app, title="Rebootera OS")
+        self.window.set_decorated(False)
+        provider = Gtk.CssProvider()
+        provider.load_from_string(BROWSER_CSS)
+        Gtk.StyleContext.add_provider_for_display(
+            self.window.get_display(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        session = WebKit.NetworkSession.new_ephemeral()
+        session.connect("download-started", self.on_download)
+        self.view = WebKit.WebView(network_session=session)
+        settings = self.view.get_settings()
+        settings.set_enable_developer_extras(False)
+        settings.set_enable_smooth_scrolling(False)
+        settings.set_enable_page_cache(False)
+        settings.set_javascript_can_open_windows_automatically(False)
+        if os.environ.get("REBOOTERA_LITE") == "1":
+            settings.set_hardware_acceleration_policy(WebKit.HardwareAccelerationPolicy.NEVER)
+        self.view.set_background_color(_rgba(BACKGROUND))
+        self.view.set_vexpand(True)
+        self.view.connect("decide-policy", self.on_decide_policy)
+        self.view.connect("notify::uri", self.on_uri)
+        self.view.connect("notify::estimated-load-progress", self.on_progress)
+
+        self.entry = Gtk.Entry()
+        self.entry.set_hexpand(True)
+        self.entry.set_placeholder_text("Buscar o escribir una dirección")
+        self.entry.connect("activate", self.on_enter)
+        bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        bar.add_css_class("browser-bar")
+        for label, handler in (("‹", self.on_back), ("›", self.on_forward), ("↻", self.on_reload)):
+            button = Gtk.Button(label=label)
+            button.connect("clicked", handler)
+            bar.append(button)
+        bar.append(self.entry)
+        close = Gtk.Button(label="✕")
+        close.connect("clicked", self.on_close)
+        bar.append(close)
+
+        self.progress = Gtk.ProgressBar()
+        self.progress.set_visible(False)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.append(bar)
+        box.append(self.progress)
+        box.append(self.view)
+        self.window.set_child(box)
+        self.window.connect("close-request", self.on_close_request)
+        self.window.fullscreen()
+        self.window.present()
+        self.go(url)
+
+    def go(self, url):
+        """Lleva el navegador a una dirección."""
+        if url:
+            self.view.load_uri(url)
+        else:
+            self.view.load_uri("about:blank")
+            self.entry.grab_focus()
+
+    def on_enter(self, entry):
+        """Va a lo escrito en la barra."""
+        text = entry.get_text()
+        if text.strip():
+            self.view.load_uri(to_address(text))
+            self.view.grab_focus()
+
+    def on_back(self, button):
+        """Página anterior."""
+        self.view.go_back()
+
+    def on_forward(self, button):
+        """Página siguiente."""
+        self.view.go_forward()
+
+    def on_reload(self, button):
+        """Recarga la página."""
+        self.view.reload()
+
+    def on_close(self, button):
+        """Cierra el navegador y vuelve a la interfaz."""
+        self.window.close()
+
+    def on_close_request(self, window):
+        """Libera el navegador entero (la memoria vuelve a la interfaz)."""
+        self.view.terminate_web_process()
+        self.on_closed()
+        return False
+
+    def on_uri(self, view, param):
+        """Muestra la dirección actual en la barra (salvo mientras se escribe)."""
+        uri = view.get_uri()
+        if uri and uri != "about:blank" and not self.entry.has_focus():
+            self.entry.set_text(uri)
+
+    def on_progress(self, view, param):
+        """Barra fina de progreso: así se ve al momento que la página está cargando."""
+        value = view.get_estimated_load_progress()
+        self.progress.set_visible(0 < value < 1)
+        self.progress.set_fraction(value)
+
+    def on_decide_policy(self, view, decision, decision_type):
+        """Solo web (http y https); las ventanas nuevas se abren en esta misma."""
+        if decision_type in (WebKit.PolicyDecisionType.NAVIGATION_ACTION, WebKit.PolicyDecisionType.NEW_WINDOW_ACTION):
+            uri = decision.get_navigation_action().get_request().get_uri() or ""
+            if not re.match(r"(https?://|about:blank$)", uri):
+                decision.ignore()
+                return True
+            if decision_type == WebKit.PolicyDecisionType.NEW_WINDOW_ACTION:
+                decision.ignore()
+                view.load_uri(uri)
+                return True
+        return False
+
+    def on_download(self, session, download):
+        """Sin descargas: para eso están las secciones de la interfaz."""
+        download.cancel()
 
 
 class Shell:
@@ -97,6 +242,7 @@ class Shell:
         manager = self.view.get_user_content_manager()
         manager.register_script_message_handler("rebootera", None)
         manager.connect("script-message-received::rebootera", self.on_message)
+        self.app = app
         self.browser = None
         self.view.connect("decide-policy", self.on_decide_policy)
         self.view.connect("context-menu", self.on_context_menu)
@@ -139,15 +285,19 @@ class Shell:
                 pass
 
     def open_browser(self, url=None):
-        """Abre el navegador del sistema, en una página https si la interfaz la pide (si ya hay uno, se sustituye)."""
-        command = [BROWSER]
-        if isinstance(url, str) and SAFE_URL.fullmatch(url):
-            command.append(url)
-            if self.browser is not None and self.browser.poll() is None:
-                self.browser.terminate()
-        elif self.browser is not None and self.browser.poll() is None:
+        """Abre el navegador, en una página https si la interfaz la pide (si ya hay uno abierto, se lleva a ella)."""
+        address = url if isinstance(url, str) and SAFE_URL.fullmatch(url) else None
+        if self.browser is not None:
+            if address:
+                self.browser.go(address)
+            self.browser.window.present()
             return
-        self.browser = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.browser = BrowserWindow(self.app, address, self.on_browser_closed)
+
+    def on_browser_closed(self):
+        """El navegador se cerró: vuelve a mostrarse la interfaz."""
+        self.browser = None
+        self.window.present()
 
     def on_decide_policy(self, view, decision, decision_type):
         """Permite solo la navegación dentro de la interfaz local."""

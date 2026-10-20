@@ -33,6 +33,7 @@ const (
 	OpMerge    = "merge"
 	OpDelete   = "delete"
 	OpCreate   = "create"
+	OpRename   = "rename"
 )
 
 // Tipos de paso del plan.
@@ -43,6 +44,7 @@ const (
 	StepMove     = "move"
 	StepTable    = "table"
 	StepMkfs     = "mkfs"
+	StepLabel    = "label"
 )
 
 // Errores de planificación: el texto es un código estable que la interfaz traduce.
@@ -250,7 +252,7 @@ func segmentOf(part storage.Partition) Segment {
 		Role:      part.Role,
 		Mounted:   mounted,
 		UsedBytes: part.UsedBytes,
-		Resizable: IsResizable(part.FSType) && !mounted,
+		Resizable: IsResizable(part.FSType),
 	}
 }
 
@@ -321,11 +323,13 @@ func Make(layout Layout, op Op, info Info) (Plan, error) {
 	case OpBoundary:
 		return planBoundary(layout, op, info)
 	case OpMerge:
-		return planMerge(layout, op)
+		return planMerge(layout, op, info)
 	case OpDelete:
 		return planDelete(layout, op)
 	case OpCreate:
 		return planCreate(layout, op)
+	case OpRename:
+		return planRename(layout, op)
 	}
 	return Plan{}, ErrBadRequest
 }
@@ -480,7 +484,7 @@ func boundaryShrinkLeft(left, right Segment, want uint64, info Info) (Plan, erro
 }
 
 // * planMerge junta dos particiones vecinas en la que se conserva; los datos de la otra se pierden.
-func planMerge(layout Layout, op Op) (Plan, error) {
+func planMerge(layout Layout, op Op, info Info) (Plan, error) {
 	left, right, err := neighbours(layout, op.Part, op.Other)
 	if err != nil {
 		return Plan{}, err
@@ -514,7 +518,23 @@ func planMerge(layout Layout, op Op) (Plan, error) {
 		}
 		return plan, nil
 	}
-	// * La que se conserva está a la derecha: se borra la de la izquierda y sus datos se desplazan a su sitio.
+	// * La que se conserva está a la derecha: se borra la de la izquierda y sus datos se desplazan a su sitio. Si se sabe
+	// * cuánto ocupa de verdad, primero se encoge al mínimo y solo se copia eso (mucho menos que la partición entera).
+	if floor, err := minSectors(keep.Number, info); err == nil && floor+Align < keep.Sectors {
+		plan.MovesBytes = floor * SectorSize
+		plan.Steps = []Step{
+			{Kind: StepCheck, Part: keep.Number},
+			{Kind: StepShrinkFS, Part: keep.Number, Bytes: floor * SectorSize},
+			{Kind: StepTable, Edits: []TableEdit{
+				{Part: gone.Number, Delete: true},
+				{Part: keep.Number, Start: keep.Start, Sectors: floor},
+			}},
+			{Kind: StepMove, Part: keep.Number, From: keep.Start, To: gone.Start, Length: floor},
+			{Kind: StepTable, Edits: []TableEdit{{Part: keep.Number, Start: gone.Start, Sectors: joined}}},
+			{Kind: StepGrowFS, Part: keep.Number},
+		}
+		return plan, nil
+	}
 	plan.MovesBytes = keep.Sectors * SectorSize
 	plan.Steps = []Step{
 		{Kind: StepCheck, Part: keep.Number},
@@ -538,6 +558,29 @@ func planDelete(layout Layout, op Op) (Plan, error) {
 	return Plan{Destructive: true, Affected: []int{part.Number}, Steps: []Step{
 		{Kind: StepTable, Edits: []TableEdit{{Part: part.Number, Delete: true}}},
 	}}, nil
+}
+
+// labelLimits es el largo máximo de la etiqueta según el sistema de archivos.
+var labelLimits = map[string]int{"ext2": 16, "ext3": 16, "ext4": 16, "ntfs": 32, "exfat": 15, "fat32": 11, "vfat": 11, "fat16": 11}
+
+// * planRename cambia la etiqueta (el nombre) de una partición sin tocar sus datos.
+func planRename(layout Layout, op Op) (Plan, error) {
+	part, ok := layout.find(op.Part)
+	if !ok {
+		return Plan{}, ErrNotFound
+	}
+	if err := needIdle(part); err != nil {
+		return Plan{}, err
+	}
+	limit, known := labelLimits[part.FSType]
+	if !known {
+		return Plan{}, ErrUnsupported
+	}
+	label := strings.TrimSpace(op.Label)
+	if label == "" || len([]rune(label)) > limit || strings.ContainsAny(label, "\"'\\`$;&|<>\n\r\x00/") {
+		return Plan{}, ErrBadRequest
+	}
+	return Plan{Affected: []int{part.Number}, Steps: []Step{{Kind: StepLabel, Part: part.Number, Label: label}}}, nil
 }
 
 // * planCreate crea una partición nueva dentro de un hueco libre y la formatea.

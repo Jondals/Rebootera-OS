@@ -33,6 +33,17 @@ let lastStatusAt = 0;
 let searching = false;
 /** Resultado de buscar drivers en los discos del equipo para los adaptadores de red sin driver (null: sin buscar). */
 let searchResult: string | null = null;
+/** Si se recuerda la red en el USB al conectar (por defecto sí). */
+let remember = true;
+/** Aviso con el motivo por el que se llegó aquí (por ejemplo, una descarga sin conexión). */
+let reason: string | null = null;
+let scrollPending = false;
+
+/** La interfaz lleva a Ajustes porque hace falta internet: el panel de Wi-Fi saldrá con ese aviso y a la vista. */
+export function needWifi(message: string): void {
+  reason = message;
+  scrollPending = true;
+}
 
 /** Adaptadores de red o Wi-Fi que Linux ha detectado pero para los que no hay driver cargado. */
 function adaptersWithoutDriver(): Device[] {
@@ -135,9 +146,10 @@ async function connect(): Promise<void> {
   failure = null;
   draw();
   try {
-    await postJSON("/api/wifi/connect", { ssid, password, hidden });
+    await postJSON("/api/wifi/connect", { ssid, password, hidden, remember });
     selected = null;
     hidden = false;
+    reason = null;
   } catch (error) {
     failure = error;
   }
@@ -183,6 +195,11 @@ function cancelForm(): void {
   draw();
 }
 
+/** Cambia si se recuerda la red. */
+function onRemember(event: Event): void {
+  remember = (event.currentTarget as HTMLInputElement).checked;
+}
+
 /** Envía el formulario con la tecla Intro. */
 function submitOnEnter(event: KeyboardEvent): void {
   if (event.key === "Enter") {
@@ -204,6 +221,7 @@ function networkRow(network: WifiNetwork): HTMLElement {
       icon(icons.wifi),
       el("span", { class: "wifi-name" }, [network.ssid]),
       el("span", { class: "mono-small muted" }, [t("wifi.signal", { n: network.signal })]),
+      status?.remembered?.includes(network.ssid) ? badge(t("wifi.remembered"), "ok") : null,
       badge(securityLabel(network.security), network.security === "open" ? "amber" : "muted"),
     ],
   );
@@ -234,6 +252,8 @@ function connectForm(): HTMLElement {
         placeholder: t("wifi.password"),
       })
     : null;
+  const rememberBox = el("input", { type: "checkbox", class: "switch-input", checked: remember });
+  rememberBox.addEventListener("change", onRemember);
   nameInput?.addEventListener("keydown", submitOnEnter);
   passwordInput?.addEventListener("keydown", submitOnEnter);
   const go = button(connecting ? t("wifi.connecting") : t("wifi.connect"), connect, {
@@ -245,6 +265,9 @@ function connectForm(): HTMLElement {
     el("strong", {}, [hidden ? t("wifi.hiddenToggle") : (selected?.ssid ?? "")]),
     nameInput,
     passwordInput,
+    snapshot.vault?.available
+      ? el("label", { class: "setting-row" }, [el("span", {}, [t("wifi.remember")]), rememberBox])
+      : null,
     el("div", { class: "wifi-actions" }, [go, button(t("wifi.cancel"), cancelForm)]),
   ]);
 }
@@ -261,7 +284,12 @@ function draw(): void {
       return;
     }
   }
-  const children: (Node | null)[] = [missingDriverNotice()];
+  const children: (Node | null)[] = [
+    reason !== null
+      ? el("div", { class: "notice" }, [icon(icons.alert), el("span", {}, [reason])])
+      : null,
+    missingDriverNotice(),
+  ];
   if (status === null) {
     children.push(el("p", { class: "muted" }, [t("common.loading")]));
   } else if (!status.adapter) {
@@ -299,6 +327,10 @@ function draw(): void {
     children.push(errorBox(failure));
   }
   body.replaceChildren(...children.filter(notNull));
+  if (scrollPending) {
+    scrollPending = false;
+    body.scrollIntoView({ block: "center" });
+  }
 }
 
 /** Filtra los nulos de una lista de nodos. */
@@ -327,6 +359,7 @@ export function wifiPanel(): HTMLElement {
   hidden = false;
   failure = null;
   loadStatus();
+  void autoScan();
   return panel(t("wifi.title"), [body], { subtitle: t("wifi.subtitle"), iconPaths: icons.wifi });
 }
 
@@ -337,5 +370,12 @@ export function wifiUpdate(): void {
   }
   if (Date.now() - lastStatusAt > STATUS_EVERY_MS && !scanning && !connecting) {
     loadStatus();
+  }
+}
+
+/** Si se llegó aquí por falta de internet, la lista de redes se busca sola: un toque menos. */
+async function autoScan(): Promise<void> {
+  if (reason !== null) {
+    await scan();
   }
 }

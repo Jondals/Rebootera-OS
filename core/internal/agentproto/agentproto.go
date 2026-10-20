@@ -37,10 +37,10 @@ const (
 	OpWifiScan       = "wifi.scan"
 	OpWifiConnect    = "wifi.connect"
 	OpWifiDisconnect = "wifi.disconnect"
-	// * Teclado del kiosco: consultar la distribución y cambiarla (reinicia la interfaz).
+	// * Teclado del kiosco: consultar la distribución y cambiarla (se aplica al momento).
 	OpKeyboardGet = "keyboard.get"
 	OpKeyboardSet = "keyboard.set"
-	// * Puntero y panel táctil del kiosco: consultar los ajustes y cambiarlos (reinicia la interfaz).
+	// * Puntero y panel táctil del kiosco: consultar los ajustes y cambiarlos (se aplican al momento).
 	OpInputGet = "input.get"
 	OpInputSet = "input.set"
 	// * Gestor de particiones: mínimos de un sistema de archivos, empezar una operación y ver su estado.

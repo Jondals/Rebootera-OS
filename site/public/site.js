@@ -249,15 +249,15 @@
     macos: {
       name: "macOS",
       variants: [
-        { label: "Apple silicon", asset: "rebootera-desktop-darwin-arm64.tar.gz" },
-        { label: "Intel", asset: "rebootera-desktop-darwin-amd64.tar.gz" },
+        { label: "Apple silicon", asset: "rebootera-desktop-darwin-arm64" },
+        { label: "Intel", asset: "rebootera-desktop-darwin-amd64" },
       ],
     },
     linux: {
       name: "Linux",
       variants: [
-        { label: "x64", asset: "rebootera-desktop-linux-amd64.tar.gz" },
-        { label: "arm64", asset: "rebootera-desktop-linux-arm64.tar.gz" },
+        { label: "x64", asset: "rebootera-desktop-linux-amd64" },
+        { label: "arm64", asset: "rebootera-desktop-linux-arm64" },
       ],
     },
   };

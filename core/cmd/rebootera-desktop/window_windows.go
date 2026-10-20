@@ -90,7 +90,9 @@ func openWindow(url string) {
 	}
 	defer view.Destroy()
 	hideStatusBar(view)
-	darkTitleBar(uintptr(view.Window()))
+	windowHandle = uintptr(view.Window())
+	darkTitleBar(windowHandle)
+	view.Bind("rebooteraTheme", setWindowTheme)
 	view.Navigate(url)
 	view.Run()
 }

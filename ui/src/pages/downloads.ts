@@ -21,11 +21,13 @@ import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { getLanguage, t } from "../i18n.js";
 import { icons } from "../icons.js";
-import { appMode } from "../mode.js";
+import { onlineInterface } from "../insights.js";
+import { appMode, isDesktop } from "../mode.js";
 import { navigate, type Page } from "../router.js";
 import { refreshVault, snapshot } from "../state.js";
 import { linkPanel } from "./linkpanel.js";
 import { takePresetSearch } from "./search.js";
+import { needWifi } from "./wifi.js";
 
 /** Pestañas de la lista. */
 const TABS = ["all", "windows", "linux", "servers", "boards", "rescue", "other"] as const;
@@ -299,6 +301,17 @@ async function startDownload(event: MouseEvent): Promise<void> {
   const entry = catalog?.find(function sameId(item) {
     return item.id === id;
   });
+  // * Sin internet no hay nada que descargar: se lleva al usuario a conectar el Wi-Fi en vez de dejarle esperando.
+  if (offlineLive()) {
+    sendToWifi();
+    return;
+  }
+  // * Hasta que la fuente da el enlace (Windows: unos segundos) se ve que la pulsación se atendió.
+  const pressed = event.currentTarget as HTMLButtonElement;
+  pressed.disabled = true;
+  message?.replaceChildren(
+    el("div", { class: "notice" }, [icon(icons.download), t("downloads.preparing")]),
+  );
   try {
     await postJSON("/api/transfers/download", { id });
     message?.replaceChildren(
@@ -309,8 +322,25 @@ async function startDownload(event: MouseEvent): Promise<void> {
     );
     await refreshVault();
   } catch (error) {
+    if (offlineLive()) {
+      sendToWifi();
+      return;
+    }
     message?.replaceChildren(errorBox(error));
+  } finally {
+    pressed.disabled = false;
   }
+}
+
+/** Indica si Rebootera OS no tiene salida a internet (en el escritorio lo decide el propio Windows). */
+function offlineLive(): boolean {
+  return !isDesktop() && snapshot.system !== null && onlineInterface(snapshot.system) === null;
+}
+
+/** Abre Ajustes en el panel de Wi-Fi con el motivo. */
+function sendToWifi(): void {
+  needWifi(t("wifi.needForDownload"));
+  navigate("settings");
 }
 
 /** Pausa, reanuda o cancela según data-action. */

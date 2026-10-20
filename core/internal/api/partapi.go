@@ -83,6 +83,8 @@ func (s *Server) minimums(op partman.Op) partman.Info {
 		numbers = []int{op.Part}
 	case partman.OpBoundary:
 		numbers = []int{op.Part, op.Other}
+	case partman.OpMerge:
+		numbers = []int{op.Part}
 	}
 	for _, number := range numbers {
 		lines, err := s.agent.Send(agentproto.Request{Op: agentproto.OpPartInfo, Disk: op.Disk, Part: number})
@@ -153,6 +155,12 @@ func (s *Server) handlePartApply(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Confirm != "CHANGE "+req.Op.Disk {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "falta la confirmación escrita", "code": "part-confirm"})
+		return
+	}
+	// ! Con una descarga en marcha el USB está escribiendo y la memoria y el disco van justos: un cambio de particiones
+	// ! a la vez es justo cuando algo sale mal. Se pide pausar o esperar a que termine.
+	if s.deps.Transfers != nil && s.deps.Transfers.Busy() {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "hay descargas en marcha", "code": "part-downloading"})
 		return
 	}
 	if _, err := s.agent.Send(agentproto.Request{Op: agentproto.OpPartApply, Partition: &req.Op, Confirm: req.Confirm}); err != nil {

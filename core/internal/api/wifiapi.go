@@ -34,6 +34,8 @@ type wifiStatusResponse struct {
 	wifi.Status
 	// Enabled indica que el interruptor de radio de Wi-Fi está activo.
 	Enabled bool `json:"enabled"`
+	// Remembered son los nombres de las redes recordadas en el USB (nunca sus contraseñas).
+	Remembered []string `json:"remembered"`
 }
 
 // * handleWifiStatus devuelve el estado del adaptador Wi-Fi.
@@ -43,7 +45,10 @@ func (s *Server) handleWifiStatus(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": err.Error(), "code": codeAgent})
 		return
 	}
-	response := wifiStatusResponse{Enabled: true}
+	response := wifiStatusResponse{Enabled: true, Remembered: []string{}}
+	for _, network := range loadSavedWifi() {
+		response.Remembered = append(response.Remembered, network.SSID)
+	}
 	for _, line := range lines {
 		if strings.HasPrefix(line, "radio:") {
 			response.Enabled = strings.TrimPrefix(line, "radio:") == "enabled"
@@ -68,6 +73,8 @@ type connectRequest struct {
 	SSID     string `json:"ssid"`
 	Password string `json:"password"`
 	Hidden   bool   `json:"hidden"`
+	// Remember pide recordar la red en el USB para volver a conectar sola (por defecto, sí).
+	Remember *bool `json:"remember"`
 }
 
 // * handleWifiConnect conecta a una red. La seguridad la decide el agente con
@@ -95,6 +102,9 @@ func (s *Server) handleWifiConnect(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, status, map[string]string{"error": err.Error(), "code": wifiCode(err)})
 		return
 	}
+	if req.Remember == nil || *req.Remember {
+		rememberWifi(req.SSID, req.Password, req.Hidden)
+	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "connected"})
 }
 
@@ -104,6 +114,7 @@ func (s *Server) handleWifiDisconnect(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error(), "code": codeWifiFailed})
 		return
 	}
+	forgetWifi()
 	writeJSON(w, http.StatusOK, map[string]string{"status": "disconnected"})
 }
 

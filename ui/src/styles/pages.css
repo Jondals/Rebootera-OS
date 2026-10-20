@@ -367,7 +367,7 @@
 /* Adaptación a pantallas medianas */
 
 @media (max-width: 1180px) {
-    .stepper {
+  .stepper {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

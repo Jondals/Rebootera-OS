@@ -99,9 +99,6 @@ main() {
 		printf 'hostapd\ndnsmasq-base\nstrace\n' >"$LIVE/config/package-lists/debug.list.chroot"
 	fi
 
-	log "Descargando las extensiones del navegador (uBlock Origin y Dark Reader)"
-	bash "$WORK/src/scripts/build/fetch-extensions.sh" "$INC/usr/share/rebootera/browser"
-
 	log "Generando los gráficos de arranque"
 	bash "$WORK/src/scripts/build/make-boot-art.sh" "$WORK/src/branding/logo.svg" \
 		"$LIVE/config/bootloaders/grub-pc" "$INC/usr/share/plymouth/themes/rebootera"
@@ -110,7 +107,7 @@ main() {
 	# ! dentro de la imagen se dejan los permisos normales de un sistema Debian.
 	find "$INC" -type d -exec chmod 0755 {} +
 	find "$INC" -type f -exec chmod 0644 {} +
-	chmod 0755 "$INC/usr/lib/rebootera/rebootera-core" "$INC/usr/lib/rebootera/rebootera-agent" "$INC/usr/bin/rebootera-shell" "$INC/usr/lib/rebootera/start-kiosk" "$INC/usr/lib/rebootera/session" "$INC/usr/lib/rebootera/browser"
+	chmod 0755 "$INC/usr/lib/rebootera/rebootera-core" "$INC/usr/lib/rebootera/rebootera-agent" "$INC/usr/bin/rebootera-shell" "$INC/usr/lib/rebootera/start-kiosk" "$INC/usr/lib/rebootera/session" "$INC/usr/lib/rebootera/write-labwc-config"
 	find "$LIVE/config/hooks" -type f -exec chmod 0755 {} +
 	chmod 0755 "$LIVE/auto/config"
 

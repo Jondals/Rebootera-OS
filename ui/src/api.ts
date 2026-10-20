@@ -334,6 +334,7 @@ export interface WifiStatus {
   state: string;
   connection: string;
   enabled: boolean;
+  remembered: string[];
 }
 
 /** Red Wi-Fi de /api/wifi/scan. */

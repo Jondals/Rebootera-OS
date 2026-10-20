@@ -13,11 +13,14 @@
 # ! por arrancado cuando la propia interfaz avisa de que dibujó su primer fotograma (archivo READY_FILE).
 set -u
 
-# * Distribución de teclado elegida en la interfaz (la escribe el agente).
-# * Solo se aceptan nombres de letras: el valor acaba en una variable de entorno.
+# * Distribución de teclado elegida en la interfaz (la escribe el agente). Solo se aceptan nombres de letras: el valor
+# * acaba en una variable de entorno. Se cargan las dos distribuciones (la elegida primero) y el agente cambia de una
+# * a otra con Bloq Despl (grp:sclk_toggle) sin reiniciar la sesión; el agente lee cuál está activa del entorno de labwc.
 KEYBOARD="$(cat /run/rebootera/keyboard 2>/dev/null)"
 case "$KEYBOARD" in
-es | us) export XKB_DEFAULT_LAYOUT="$KEYBOARD" ;;
+es) export XKB_DEFAULT_LAYOUT="es,us" XKB_DEFAULT_OPTIONS="grp:sclk_toggle" ;;
+us) export XKB_DEFAULT_LAYOUT="us,es" XKB_DEFAULT_OPTIONS="grp:sclk_toggle" ;;
+*) KEYBOARD=es ; export XKB_DEFAULT_LAYOUT="es,us" XKB_DEFAULT_OPTIONS="grp:sclk_toggle" ;;
 esac
 
 RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
@@ -43,59 +46,6 @@ level_env() {
 	4) echo "REBOOTERA_KIOSK_LEVEL=4 REBOOTERA_LITE=$LITE" ;;
 	5) echo "REBOOTERA_KIOSK_LEVEL=5 REBOOTERA_LITE=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 GSK_RENDERER=cairo WEBKIT_DISABLE_COMPOSITING_MODE=1" ;;
 	esac
-}
-
-# * input_value lee un ajuste de /run/rebootera/input.conf (speed, tap, natural) o devuelve el valor por defecto.
-# * Solo se aceptan números: el valor acaba dentro de un archivo XML.
-input_value() {
-	local key="$1" default="$2" value
-	value="$(sed -n "s/^$key=//p" /run/rebootera/input.conf 2>/dev/null | head -1)"
-	case "$value" in
-	'' | *[!0-9]*) echo "$default" ;;
-	*) echo "$value" ;;
-	esac
-}
-
-# * yes_no convierte 1 en yes y cualquier otra cosa en no (el formato que lee labwc).
-yes_no() {
-	[ "$1" = "1" ] && echo yes || echo no
-}
-
-# * write_config genera la configuración de labwc a partir de los ajustes guardados.
-write_config() {
-	local speed tap natural accel
-	speed="$(input_value speed 50)"
-	[ "$speed" -gt 100 ] && speed=100
-	tap="$(input_value tap 1)"
-	natural="$(input_value natural 0)"
-	# * 0..100 pasa al rango -1.0..1.0 de libinput (50 = 0.0).
-	accel="$(awk -v s="$speed" 'BEGIN { printf "%.2f", (s - 50) / 50 }')"
-	mkdir -p "$CONFIG_DIR"
-	cat >"$CONFIG_DIR/rc.xml" <<EOF
-<?xml version="1.0"?>
-<labwc_config>
-  <core><gap>0</gap></core>
-  <libinput>
-    <device category="default">
-      <tap>$(yes_no "$tap")</tap>
-      <tapAndDrag>yes</tapAndDrag>
-      <dragLock>no</dragLock>
-      <naturalScroll>$(yes_no "$natural")</naturalScroll>
-      <pointerSpeed>$accel</pointerSpeed>
-      <accelProfile>adaptive</accelProfile>
-      <disableWhileTyping>yes</disableWhileTyping>
-      <middleEmulation>no</middleEmulation>
-    </device>
-  </libinput>
-  <windowRules>
-    <windowRule identifier="os.rebootera.Shell" serverDecoration="no"/>
-    <windowRule identifier="firefox*">
-      <action name="Maximize"/>
-    </windowRule>
-  </windowRules>
-</labwc_config>
-EOF
-	printf '%s\n' '/usr/lib/rebootera/session &' >"$CONFIG_DIR/autostart"
 }
 
 # * compositor_cmd imprime la orden del compositor de un nivel.
@@ -150,7 +100,7 @@ try_level() {
 # * main prueba los niveles empezando por el último que funcionó.
 main() {
 	local first=1 level
-	write_config
+	/usr/lib/rebootera/write-labwc-config "$CONFIG_DIR"
 	if [ -r "$LEVEL_FILE" ]; then
 		first="$(cat "$LEVEL_FILE")"
 	fi

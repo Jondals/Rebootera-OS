@@ -1,6 +1,6 @@
 // * Panel del puntero de la página de Ajustes: sensibilidad del ratón y del panel táctil, toque para hacer clic y
-// * desplazamiento natural. Solo existe en Rebootera OS: Core se lo pide al agente, que reinicia el kiosco con
-// * los ajustes nuevos (la pantalla parpadea un par de segundos), así que el cambio se envía al soltar el control.
+// * desplazamiento natural. Solo existe en Rebootera OS: Core se lo pide al agente, que recarga la configuración
+// * del compositor sin reiniciar la pantalla; el cambio se envía al soltar el control.
 
 import { getJSON, postJSON } from "../api.js";
 import { errorBox, panel } from "../components.js";
@@ -36,7 +36,7 @@ async function load(): Promise<void> {
   draw();
 }
 
-/** Envía los ajustes nuevos y deja la pantalla avisando de que se reinicia. */
+/** Envía los ajustes nuevos y los aplica al momento. */
 async function apply(next: PointerSettings): Promise<void> {
   if (applying) {
     return;

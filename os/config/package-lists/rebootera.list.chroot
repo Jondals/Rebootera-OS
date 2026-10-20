@@ -55,7 +55,3 @@ intel-microcode
 
 # Idioma
 locales
-
-# Navegador del sistema (Firefox ESR ya configurado: solo navegar, con uBlock Origin y Dark Reader)
-firefox-esr
-firefox-esr-l10n-es-es

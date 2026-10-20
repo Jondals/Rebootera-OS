@@ -46,7 +46,7 @@ function previewBar(pieces: Piece[]): HTMLElement {
   for (const piece of pieces) {
     const node = el("span", { class: "pm-piece pm-tone-" + piece.tone }, [
       el("strong", {}, [piece.label]),
-      el("span", { class: "mono-small" }, [fmt.bytes(mibBytes(piece.mib))]),
+      el("span", { class: "mono-small" }, [fmt.disk(mibBytes(piece.mib))]),
     ]);
     node.style.flexGrow = String(Math.max(piece.mib, 1));
     bar.append(node);
@@ -70,50 +70,71 @@ function toneOf(segment: Segment): string {
   return "muted";
 }
 
-/** Deslizador con campo numérico sincronizado (en MiB); avisa con cada cambio. */
+/** MiB que tiene un GB de los que enseñan Windows y los instaladores (1 GB = 1024 MiB). */
+const MIB_PER_GB = 1024;
+
+/** Un tamaño en MiB como número de GB, sin decimales de más (50 si son 51200 MiB justos). */
+function gbText(valueMiB: number): string {
+  return String(Math.round((valueMiB / MIB_PER_GB) * 10) / 10);
+}
+
+/**
+ * Deslizador con campo numérico sincronizado; avisa con cada cambio en MiB. Si hay sitio de sobra va en pasos de 1 GB
+ * (un novato no tiene por qué acertar con valores raros) y el campo también está en GB: escribir 50 son 50 GB justos,
+ * los mismos que verá el instalador. Los extremos del rango son exactos aunque no sean GB enteros. Con poco sitio
+ * (menos de 2 GB) va en MiB.
+ */
 function sizeInput(
   min: number,
   max: number,
   value: number,
   onChange: (value: number) => void,
 ): HTMLElement {
+  const inGB = max >= 2 * MIB_PER_GB;
+  const unit = inGB ? MIB_PER_GB : 1;
+  const clamp = function clamp(valueMiB: number): number {
+    return Math.min(max, Math.max(min, Math.round(valueMiB)));
+  };
   const range = el("input", {
     type: "range",
     class: "pm-range",
-    min: String(min),
-    max: String(max),
+    min: String(Math.floor(min / unit)),
+    max: String(Math.ceil(max / unit)),
     step: "1",
-    value: String(value),
+    value: String(Math.round(value / unit)),
     "aria-label": t("pm.size"),
   });
   const number = el("input", {
     type: "number",
     class: "text-input pm-number",
-    min: String(min),
-    max: String(max),
-    value: String(value),
-    "aria-label": t("pm.sizeMiB"),
+    min: inGB ? String(Math.ceil((min / unit) * 10) / 10) : String(min),
+    max: inGB ? String(Math.floor((max / unit) * 10) / 10) : String(max),
+    step: inGB ? "1" : "any",
+    value: inGB ? gbText(value) : String(value),
+    "aria-label": t("pm.sizeUnit"),
   });
 
-  /** El deslizador manda: se copia al campo. */
+  /** El deslizador manda: salto de 1 GB (o el extremo exacto) y se copia al campo. */
   function fromRange(): void {
-    number.value = range.value;
-    onChange(Number(range.value));
+    const next = clamp(Number(range.value) * unit);
+    number.value = inGB ? gbText(next) : String(next);
+    onChange(next);
   }
 
   /** El campo manda: se limita al rango y se copia al deslizador. */
   function fromNumber(): void {
-    const clamped = Math.min(max, Math.max(min, Number(number.value) || 0));
-    range.value = String(clamped);
-    number.value = String(clamped);
-    onChange(clamped);
+    const typed = Number(number.value.replace(",", ".")) || 0;
+    const next = clamp(typed * unit);
+    range.value = String(Math.round(next / unit));
+    number.value = inGB ? gbText(next) : String(next);
+    onChange(next);
   }
 
   range.addEventListener("input", fromRange);
   number.addEventListener("change", fromNumber);
   return el("div", { class: "pm-size" }, [
     range,
-    el("label", { class: "pm-number-label" }, [number, el("span", {}, ["MiB"])]),
+    el("label", { class: "pm-number-label" }, [number, el("span", {}, [inGB ? "GB" : "MiB"])]),
   ]);
 }
 
@@ -126,7 +147,7 @@ function copyTime(bytes: number): string {
 function stepText(step: Plan["steps"][number]): string {
   return t("pm.steps." + step.kind, {
     n: step.part,
-    size: step.length ? fmt.bytes(step.length * 512) : "",
+    size: step.length ? fmt.disk(step.length * 512) : "",
   });
 }
 
@@ -165,7 +186,7 @@ async function review(
   if (plan.movesBytes > 0) {
     warnings.push(
       el("div", { class: "notice" }, [
-        t("pm.warnMove", { size: fmt.bytes(plan.movesBytes), time: copyTime(plan.movesBytes) }),
+        t("pm.warnMove", { size: fmt.disk(plan.movesBytes), time: copyTime(plan.movesBytes) }),
       ]),
     );
   }
@@ -212,12 +233,25 @@ function spaceModes(layout: Layout, segment: Segment): SpaceMode[] {
   return modes;
 }
 
+/** Tamaño con el que arranca el deslizador: encoger para dejar sitio, o crecer al máximo. */
+interface ResizePreset {
+  /** MiB que se quieren liberar (la partición se encoge esa cantidad, o lo que pueda). */
+  freeMiB?: number;
+  /** Empezar con la partición lo más grande posible. */
+  grow?: boolean;
+}
+
 /**
  * Cambiar el tamaño de una partición. Un solo deslizador con el tamaño nuevo y, si tiene vecinas, un
  * selector de qué pasa con la diferencia: queda libre (cambia el final) o se reparte con la vecina (se mueve
  * el límite entre las dos: una gana lo que la otra cede).
  */
-export async function openResize(layout: Layout, segment: Segment, done: Done): Promise<void> {
+export async function openResize(
+  layout: Layout,
+  segment: Segment,
+  done: Done,
+  preset: ResizePreset = {},
+): Promise<void> {
   const body = el("div", { class: "pm-dialog" }, [
     el("p", { class: "muted" }, [t("pm.measuring")]),
   ]);
@@ -232,6 +266,11 @@ export async function openResize(layout: Layout, segment: Segment, done: Done): 
   }
   let mode = modes[0];
   let value = mib(segment);
+  if (preset.freeMiB !== undefined) {
+    value = Math.max(floors.get(segment.number) ?? 1, mib(segment) - preset.freeMiB);
+  } else if (preset.grow) {
+    value = Number.MAX_SAFE_INTEGER;
+  }
   const preview = el("div", {});
   const info = el("p", { class: "muted" });
   const slider = el("div", {});
@@ -295,8 +334,8 @@ export async function openResize(layout: Layout, segment: Segment, done: Done): 
     } else if (mode.kind === "free") {
       info.textContent =
         delta > 0
-          ? t("pm.grows", { size: fmt.bytes(mibBytes(delta)) })
-          : t("pm.shrinks", { size: fmt.bytes(mibBytes(-delta)) });
+          ? t("pm.grows", { size: fmt.disk(mibBytes(delta)) })
+          : t("pm.shrinks", { size: fmt.disk(mibBytes(-delta)) });
     } else {
       const other = mode.other as Segment;
       const moved =
@@ -308,7 +347,7 @@ export async function openResize(layout: Layout, segment: Segment, done: Done): 
       info.textContent = t("pm.shareInfo", {
         to: delta > 0 ? nameOf(segment) : nameOf(other),
         from: delta > 0 ? nameOf(other) : nameOf(segment),
-        size: fmt.bytes(mibBytes(Math.abs(delta))),
+        size: fmt.disk(mibBytes(Math.abs(delta))),
         move: copyTime(mibBytes(Math.max(moved, 0))),
       });
     }
@@ -385,7 +424,7 @@ export async function openResize(layout: Layout, segment: Segment, done: Done): 
   drawSlider();
 }
 
-/** Fusionar dos particiones vecinas en una. */
+/** Fusionar dos particiones vecinas en una: se elige cuál se queda; la otra se borra y su espacio pasa a la que se queda. */
 export function openMerge(layout: Layout, segment: Segment, done: Done): void {
   const sides = [neighbour(layout, segment, "left"), neighbour(layout, segment, "right")].filter(
     function exists(other): other is Segment {
@@ -396,7 +435,6 @@ export function openMerge(layout: Layout, segment: Segment, done: Done): void {
   const dialog = openModal(t("pm.mergeTitle", { name: nameOf(segment) }), [body], "modal-wide");
   const choices: HTMLElement[] = [];
   for (const other of sides) {
-    // * Se conserva la que puede crecer; la otra se absorbe y pierde sus datos.
     for (const [keep, gone] of [
       [segment, other],
       [other, segment],
@@ -407,16 +445,31 @@ export function openMerge(layout: Layout, segment: Segment, done: Done): void {
       const op = newOp("merge", layout.disk);
       op.part = keep.number;
       op.other = gone.number;
+      // * Si la que se queda está a la derecha hay que copiar todos sus datos hacia atrás: tarda mucho más.
+      const slow = keep.start > gone.start;
+      const total = fmt.disk(mibBytes(mib(keep) + mib(gone)));
       const choose = button(
-        t("pm.mergeKeep", { keep: nameOf(keep), gone: nameOf(gone) }),
+        t("pm.mergeKeep", { keep: nameOf(keep) }),
         function pick(): void {
           review(dialog, body, op, done);
         },
-        { variant: "ghost" },
+        { variant: "primary" },
       );
       choices.push(
-        el("div", { class: "pm-choice" }, [
+        el("div", { class: "pm-choice pm-merge-choice" }, [
           previewBar([{ label: nameOf(keep), mib: mib(keep) + mib(gone), tone: toneOf(keep) }]),
+          el("p", { class: "pm-merge-line" }, [
+            el("strong", {}, [t("pm.mergeStays", { keep: nameOf(keep), size: total })]),
+          ]),
+          el("p", { class: "pm-merge-loss" }, [t("pm.mergeLoses", { gone: nameOf(gone) })]),
+          slow
+            ? el("p", { class: "muted" }, [
+                t("pm.mergeSlow", {
+                  size: fmt.disk(keep.usedBytes > 0 ? keep.usedBytes : mibBytes(mib(keep))),
+                  time: copyTime(keep.usedBytes > 0 ? keep.usedBytes : mibBytes(mib(keep))),
+                }),
+              ])
+            : el("p", { class: "muted" }, [t("pm.mergeFast")]),
           choose,
         ]),
       );
@@ -426,6 +479,40 @@ export function openMerge(layout: Layout, segment: Segment, done: Done): void {
     el("p", { class: "muted" }, [t("pm.mergeText")]),
     ...(choices.length > 0 ? choices : [el("p", { class: "muted" }, [t("pm.mergeNone")])]),
   );
+}
+
+/** Cambiar el nombre (etiqueta) de una partición. */
+export function openRename(layout: Layout, segment: Segment, done: Done): void {
+  const body = el("div", { class: "pm-dialog" });
+  const dialog = openModal(t("pm.renameTitle", { name: nameOf(segment) }), [body], "modal-wide");
+  const input = el("input", {
+    class: "text-input",
+    type: "text",
+    maxlength: "16",
+    value: segment.label ?? "",
+    placeholder: t("pm.renamePlaceholder"),
+  });
+  const go = function go(): void {
+    const label = input.value.trim();
+    if (label === "") {
+      return;
+    }
+    const op = newOp("rename", layout.disk);
+    op.part = segment.number;
+    op.label = label;
+    review(dialog, body, op, done);
+  };
+  input.addEventListener("keydown", function onEnter(event: KeyboardEvent): void {
+    if (event.key === "Enter") {
+      go();
+    }
+  });
+  body.append(
+    el("p", { class: "muted" }, [t("pm.renameText")]),
+    input,
+    el("div", { class: "modal-actions" }, [button(t("pm.continue"), go, { variant: "primary" })]),
+  );
+  input.focus();
 }
 
 /** Borrar una partición. */
@@ -481,7 +568,7 @@ export function openCreate(layout: Layout, free: Segment, done: Done): void {
     { variant: "primary" },
   );
   body.append(
-    el("p", { class: "muted" }, [t("pm.createText", { size: fmt.bytes(mibBytes(space)) })]),
+    el("p", { class: "muted" }, [t("pm.createText", { size: fmt.disk(mibBytes(space)) })]),
     preview,
     size,
     el("label", { class: "confirm-field" }, [el("span", {}, [t("pm.fs")]), fsSelect]),
@@ -489,4 +576,79 @@ export function openCreate(layout: Layout, free: Segment, done: Done): void {
     el("div", { class: "modal-actions" }, [next]),
   );
   draw(space);
+}
+
+/** Una partición que se puede encoger para dejar sitio. */
+interface Shrinkable {
+  segment: Segment;
+  /** Lo que se podría liberar, a ojo (lo exacto se mide al abrir el diálogo de tamaño). */
+  roomBytes: number;
+}
+
+/** Margen que se deja a una partición al calcular lo que se puede liberar (10 % más 1 GiB). */
+function usableRoom(segment: Segment): number {
+  const size = segment.sectors * 512;
+  return Math.max(0, size - segment.usedBytes * 1.1 - 1073741824);
+}
+
+/**
+ * "Hacer sitio": enseña qué particiones del disco se pueden encoger para conseguir `needBytes` libres y, al
+ * elegir una, abre el cambio de tamaño ya con la cantidad puesta. `free` es el hueco libre elegido, si hay.
+ */
+export function openMakeRoom(
+  layout: Layout,
+  needBytes: number,
+  free: Segment | null,
+  done: Done,
+): void {
+  const body = el("div", { class: "pm-dialog" });
+  const dialog = openModal(t("pm.roomTitle"), [body], "modal-wide");
+  const alreadyFree = free ? free.sectors * 512 : 0;
+  const lack = Math.max(0, needBytes - alreadyFree);
+  const candidates: Shrinkable[] = layout.segments
+    .filter(function canShrink(segment) {
+      return (
+        segment.number > 0 &&
+        segment.resizable &&
+        !segment.mounted &&
+        usableRoom(segment) >= 1073741824
+      );
+    })
+    .map(function toShrinkable(segment) {
+      return { segment, roomBytes: usableRoom(segment) };
+    })
+    .sort(function biggestFirst(a, b) {
+      return b.roomBytes - a.roomBytes;
+    });
+  const rows = candidates.map(function row(candidate) {
+    const enough = candidate.roomBytes >= lack;
+    const pick = button(
+      t("pm.roomPick"),
+      function choose(): void {
+        dialog.close();
+        void openResize(layout, candidate.segment, done, {
+          freeMiB: Math.ceil(lack / 1048576) + 64,
+        });
+      },
+      { variant: enough ? "primary" : "ghost" },
+    );
+    pick.disabled = !enough;
+    return el("div", { class: "pm-room-row" }, [
+      el("div", {}, [
+        el("strong", {}, [nameOf(candidate.segment)]),
+        el("span", { class: "muted" }, [
+          t("pm.roomInfo", {
+            size: fmt.disk(candidate.segment.sectors * 512),
+            used: fmt.disk(candidate.segment.usedBytes),
+            room: fmt.disk(candidate.roomBytes),
+          }),
+        ]),
+      ]),
+      pick,
+    ]);
+  });
+  body.append(
+    el("p", {}, [t("pm.roomText", { size: fmt.disk(lack) })]),
+    ...(rows.length > 0 ? rows : [el("p", { class: "muted" }, [t("pm.roomNone")])]),
+  );
 }
