@@ -1,9 +1,7 @@
 # Compila Rebootera OS (ISO) y Rebootera Desktop (.exe) en cada push y los
 # publica en una release, de donde los descarga la landing page y Rebootera
-# Desktop ("Crear USB" y "Actualizar"). El código es privado: las releases se
-# publican en el repositorio público Jondals/Rebootera-OS-downloads con el secreto
-# RELEASES_TOKEN (token de acceso fino con "Contents: read and write" solo sobre ese
-# repositorio). Sin el secreto, las releases se publican en este mismo repositorio.
+# Desktop ("Crear USB" y "Actualizar"). Las releases se publican en este mismo repositorio
+# con el token que da GitHub a cada ejecución (no hace falta ningún secreto).
 # Hay dos canales:
 #
 #   master -> release "latest" (estable). Al publicarla, si la rama "beta" no
@@ -79,8 +77,8 @@ jobs:
 
       - name: Publish the release of this channel
         env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN || github.token }}
-          REL_REPO: ${{ secrets.RELEASES_TOKEN && 'Jondals/Rebootera-OS-downloads' || github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          REL_REPO: ${{ github.repository }}
           BRANCH: ${{ github.ref_name }}
         run: |
           TARGET=()
@@ -112,8 +110,8 @@ jobs:
       - name: Create or advance the beta branch and publish the beta release
         if: github.ref_name == 'master'
         env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN || github.token }}
-          REL_REPO: ${{ secrets.RELEASES_TOKEN && 'Jondals/Rebootera-OS-downloads' || github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          REL_REPO: ${{ github.repository }}
         run: |
           TARGET=()
           [ "$REL_REPO" = "$GITHUB_REPOSITORY" ] && TARGET=(--target "$GITHUB_SHA")

@@ -70,7 +70,7 @@ func TestCatalogoEmbebido(t *testing.T) {
 	}
 	for _, e := range entries {
 		// * SourceForge y el Internet Archive se indican por el nombre del proyecto o elemento; el resto, por una URL HTTPS.
-		if e.Resolver.Type != "manual" && e.Resolver.Type != "sourceforge" && e.Resolver.Type != "archive" && !strings.HasPrefix(e.Resolver.Index, "https://") {
+		if e.Resolver.Type != "manual" && e.Resolver.Type != "microsoft" && e.Resolver.Type != "sourceforge" && e.Resolver.Type != "archive" && !strings.HasPrefix(e.Resolver.Index, "https://") {
 			t.Fatalf("%s no usa HTTPS: %s", e.ID, e.Resolver.Index)
 		}
 		if e.Notes["en"] == "" || e.Notes["es"] == "" {
@@ -115,12 +115,9 @@ func TestAlpine(t *testing.T) {
 	}
 }
 
-// * TestManual comprueba que Windows no se intenta descargar.
+// * TestManual comprueba que una entrada manual no se intenta descargar.
 func TestManual(t *testing.T) {
-	entry, err := Find("windows-11")
-	if err != nil {
-		t.Fatal(err)
-	}
+	entry := Entry{ID: "x", Resolver: Resolver{Type: "manual"}}
 	if _, err := Resolve(entry); err != ErrManual {
 		t.Fatalf("esperaba ErrManual, obtuve %v", err)
 	}

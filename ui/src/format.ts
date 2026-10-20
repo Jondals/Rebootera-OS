@@ -25,6 +25,21 @@ export function bytes(value: number): string {
   return number(size, size < 10 ? 1 : 0) + " " + units[unit];
 }
 
+/**
+ * Formatea el tamaño de un disco o una partición en base 1024 con el nombre corto de siempre (GB), que es como lo
+ * enseñan Windows, GParted y los instaladores: si aquí pone 50 GB, allí también pone 50 GB.
+ */
+export function disk(value: number): string {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let size = value;
+  let unit = 0;
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024;
+    unit++;
+  }
+  return number(size, size < 10 ? 1 : size < 100 && unit >= 3 ? 1 : 0) + " " + units[unit];
+}
+
 /** Formatea bytes por segundo. */
 export function rate(bytesPerSecond: number): string {
   return bytes(bytesPerSecond) + "/s";

@@ -314,18 +314,20 @@
     "id": "windows-11",
     "name": "Windows 11",
     "vendor": "Microsoft",
-    "version": "latest",
+    "version": "25H2",
     "arch": "x64",
     "category": "windows",
     "homepage": "https://www.microsoft.com/software-download/windows11",
     "resolver": {
-      "type": "manual"
+      "type": "microsoft",
+      "edition": "3321",
+      "language": "Spanish"
     },
     "secureBoot": "signed",
     "signature": "none",
     "notes": {
-      "en": "Microsoft only offers temporary download links from its website. Download the ISO there and add it with \"Add images\" or copy it to the isos/windows folder of this USB.",
-      "es": "Microsoft solo ofrece enlaces de descarga temporales desde su web. Descarga allí la ISO y añádela con \"Añadir imágenes\" o cópiala a la carpeta isos/windows de este USB."
+      "en": "Downloaded straight from Microsoft's servers with a temporary official link. Microsoft publishes no checksum for it, so it is protected by HTTPS and the Microsoft domain only.",
+      "es": "Se descarga directamente de los servidores de Microsoft con un enlace oficial temporal. Microsoft no publica suma de comprobación, así que solo la protegen HTTPS y el dominio de Microsoft."
     },
     "boot": {
       "status": "untested",
@@ -337,10 +339,42 @@
     },
     "family": "windows-11",
     "group": "windows",
-    "edition": "Home / Pro (from Microsoft)",
+    "edition": "Home / Pro (Spanish)",
     "tags": [
       "recommended"
     ]
+  },
+  {
+    "id": "windows-11-en",
+    "name": "Windows 11",
+    "vendor": "Microsoft",
+    "version": "25H2",
+    "arch": "x64",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/software-download/windows11",
+    "resolver": {
+      "type": "microsoft",
+      "edition": "3321",
+      "language": "English"
+    },
+    "secureBoot": "signed",
+    "signature": "none",
+    "notes": {
+      "en": "Downloaded straight from Microsoft's servers with a temporary official link. Microsoft publishes no checksum for it, so it is protected by HTTPS and the Microsoft domain only.",
+      "es": "Se descarga directamente de los servidores de Microsoft con un enlace oficial temporal. Microsoft no publica suma de comprobación, así que solo la protegen HTTPS y el dominio de Microsoft."
+    },
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "family": "windows-11",
+    "group": "windows",
+    "edition": "Home / Pro (English)",
+    "tags": []
   },
   {
     "arch": "x64",
@@ -428,14 +462,50 @@
     "category": "windows",
     "homepage": "https://www.microsoft.com/software-download/windows10",
     "resolver": {
-      "type": "manual"
+      "type": "microsoft",
+      "edition": "2618",
+      "language": "Spanish"
     },
     "family": "windows-10",
     "group": "windows",
-    "edition": "Home / Pro (from Microsoft)",
+    "edition": "Home / Pro (Spanish)",
     "notes": {
-      "en": "Microsoft only offers temporary download links from its website. Download the ISO there and add it with \"Add images\" or copy it to the isos/windows folder of this USB.",
-      "es": "Microsoft solo ofrece enlaces de descarga temporales desde su web. Descarga allí la ISO y añádela con \"Añadir imágenes\" o cópiala a la carpeta isos/windows de este USB."
+      "en": "Downloaded straight from Microsoft's servers with a temporary official link. Microsoft publishes no checksum for it, so it is protected by HTTPS and the Microsoft domain only.",
+      "es": "Se descarga directamente de los servidores de Microsoft con un enlace oficial temporal. Microsoft no publica suma de comprobación, así que solo la protegen HTTPS y el dominio de Microsoft."
+    }
+  },
+  {
+    "arch": "x64",
+    "secureBoot": "signed",
+    "signature": "none",
+    "boot": {
+      "status": "untested",
+      "tested": "",
+      "notes": {
+        "en": "Not tested yet from the Rebootera USB.",
+        "es": "Todavía no se ha probado desde el USB de Rebootera."
+      }
+    },
+    "tags": [
+      "legacy"
+    ],
+    "id": "windows-10-en",
+    "name": "Windows 10",
+    "vendor": "Microsoft",
+    "version": "22H2",
+    "category": "windows",
+    "homepage": "https://www.microsoft.com/software-download/windows10",
+    "resolver": {
+      "type": "microsoft",
+      "edition": "2618",
+      "language": "English"
+    },
+    "family": "windows-10",
+    "group": "windows",
+    "edition": "Home / Pro (English)",
+    "notes": {
+      "en": "Downloaded straight from Microsoft's servers with a temporary official link. Microsoft publishes no checksum for it, so it is protected by HTTPS and the Microsoft domain only.",
+      "es": "Se descarga directamente de los servidores de Microsoft con un enlace oficial temporal. Microsoft no publica suma de comprobación, así que solo la protegen HTTPS y el dominio de Microsoft."
     }
   },
   {

@@ -35,7 +35,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 
 ## Cómo conseguir un USB de Rebootera
 
-**Descarga:** la web y las releases públicas (repositorio `Jondals/Rebootera-OS-downloads`; el código fuente es privado) ofrecen siempre la última compilación: `Rebootera-Desktop.exe` para Windows y `rebootera-os-amd64.iso`. Ambas se recompilan en cada push a `master` y se publican en la [release `latest`](https://github.com/Jondals/Rebootera-OS-downloads/releases/tag/latest).
+**Descarga:** la web y las releases públicas (repositorio `Jondals/Rebootera-OS`; el código fuente es privado) ofrecen siempre la última compilación: `Rebootera-Desktop.exe` para Windows y `rebootera-os-amd64.iso`. Ambas se recompilan en cada push a `master` y se publican en la [release `latest`](https://github.com/Jondals/Rebootera-OS/releases/tag/latest).
 
 **Canales:** `master` es el canal estable (release `latest`). La rama `beta` se crea sola a partir de la primera release estable y publica la prerelease `beta` en cada push: ahí se prueban los cambios antes de pasarlos a `master`.
 
@@ -44,7 +44,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 **Desde Linux**, como root:
 
 ```bash
-scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.17.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.18.0-amd64.iso
 ```
 
 El script rechaza los discos no extraíbles y el disco del sistema.

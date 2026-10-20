@@ -28,7 +28,7 @@ const (
 )
 
 // BaseURL es la carpeta de descargas de la última release (se cambia en pruebas).
-var BaseURL = "https://github.com/Jondals/Rebootera-OS-downloads/releases/download/latest/"
+var BaseURL = "https://github.com/Jondals/Rebootera-OS/releases/download/latest/"
 
 // UserAgent identifica a Rebootera ante GitHub.
 var UserAgent = "RebooteraDesktop"

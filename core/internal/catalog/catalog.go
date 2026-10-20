@@ -2,8 +2,8 @@
 // * El catálogo no guarda hashes ni nombres de archivo fijos: cada entrada dice
 // * dónde está el índice oficial de sumas de control y cómo leerlo, y Resolve
 // * obtiene en ese momento el archivo más reciente y su SHA-256 por HTTPS.
-// ! Una entrada "manual" (Windows) no se descarga: el fabricante solo ofrece
-// ! enlaces temporales desde su web y Rebootera no los inventa ni los rasca.
+// ! Una entrada "manual" no se descarga: se añade a mano desde la web del fabricante. Windows 10/11 usa
+// ! el resolvedor "microsoft" (microsoft.go): pide el enlace temporal oficial en el momento.
 package catalog
 
 import (
@@ -88,6 +88,10 @@ type Resolver struct {
 	Type    string `json:"type"`
 	Index   string `json:"index,omitempty"`
 	Pattern string `json:"pattern,omitempty"`
+	// Edition y Language (resolvedor "microsoft") son el identificador de producto de la página de descargas de
+	// Microsoft y el idioma en inglés tal como lo nombra su API ("Spanish", "English").
+	Edition  string `json:"edition,omitempty"`
+	Language string `json:"language,omitempty"`
 	// Link, si está, es la URL de la imagen cuando no cuelga del mismo directorio que el índice
 	// (por ejemplo, el enlace "latest" de NixOS, que redirige al archivo con nombre y versión).
 	Link string `json:"link,omitempty"`
@@ -171,6 +175,8 @@ func Resolve(entry Entry) (Resolved, error) {
 		resolved, err = resolveManifest(entry.Resolver)
 	case "latest-sum":
 		resolved, err = resolveLatestSum(entry.Resolver)
+	case "microsoft":
+		resolved, err = resolveMicrosoft(entry.Resolver, entry.Homepage)
 	case "manual":
 		return Resolved{}, ErrManual
 	default:

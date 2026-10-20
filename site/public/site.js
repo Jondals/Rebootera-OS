@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  var REPO = "Jondals/Rebootera-OS-downloads";
+  var REPO = "Jondals/Rebootera-OS";
   var BASE = "https://github.com/" + REPO + "/releases/download/latest/";
   var body = document.body;
   var root = document.documentElement;
