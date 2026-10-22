@@ -97,6 +97,27 @@ export function button(
   return node;
 }
 
+/**
+ * Envuelve la acción de un botón de "buscar otra vez" para que su icono gire mientras trabaja (como mínimo un instante,
+ * para que se vea aunque la respuesta sea inmediata). El botón no admite otra pulsación hasta que termine.
+ */
+export function spinning(action: () => unknown): (event: MouseEvent) => void {
+  return function onClick(event: MouseEvent): void {
+    const node = event.currentTarget as HTMLElement;
+    if (node.classList.contains("is-spinning")) {
+      return;
+    }
+    node.classList.add("is-spinning");
+    const minimum = new Promise<void>(function wait(resolve) {
+      window.setTimeout(resolve, 700);
+    });
+    function stop(): void {
+      node.classList.remove("is-spinning");
+    }
+    Promise.all([Promise.resolve(action()), minimum]).then(stop, stop);
+  };
+}
+
 /** Tarjeta grande y pulsable: icono, título y una frase. Es la pieza de las portadas. */
 /** Indica si hay que evitar las animaciones (ajuste de movimiento reducido). */
 function motionReduced(): boolean {

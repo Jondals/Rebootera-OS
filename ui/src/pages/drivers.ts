@@ -19,6 +19,7 @@ import { icons } from "../icons.js";
 import { onlineInterface } from "../insights.js";
 import type { Page } from "../router.js";
 import { scanHardware, snapshot } from "../state.js";
+import { driverLinks } from "./driverlinks.js";
 
 /** Estado de un dispositivo respecto a los drivers de Windows. */
 type DeviceState = "ready" | "missing" | "fine";
@@ -109,10 +110,24 @@ function nameOf(device: Device): string {
   return device.name || device.className || t("common.unknown");
 }
 
-/** Busca el driver de un dispositivo en la web, con el navegador de Rebootera. */
-function searchWeb(device: Device): void {
-  const query = [device.vendor, nameOf(device), "Windows driver"].filter(Boolean).join(" ");
-  openBrowser("https://duckduckgo.com/?q=" + encodeURIComponent(query));
+/**
+ * Botones para conseguir el driver de un dispositivo en las webs oficiales, abiertas en el navegador de Rebootera: el
+ * fabricante del chip, el soporte del fabricante del equipo (con su modelo) y el Catálogo de Microsoft.
+ */
+function webButtons(device: Device): HTMLElement {
+  const buttons = driverLinks(device, snapshot.system).map(function linkButton(link) {
+    const node = button(
+      t(link.labelKey, { maker: link.maker }),
+      function open(): void {
+        openBrowser(link.url);
+      },
+      { iconPaths: icons.globe },
+    );
+    node.classList.add("btn-small");
+    node.title = link.url;
+    return node;
+  });
+  return el("div", { class: "driver-links" }, buttons);
 }
 
 /** Indica si se puede ofrecer buscar en la web (navegador de la sesión y red). */
@@ -135,12 +150,7 @@ function importantRow(device: Device): HTMLElement {
   } else {
     note = t("drivers.fineHint");
   }
-  const search =
-    state === "missing" && canSearchWeb()
-      ? button(t("drivers.searchWeb"), function web(): void {
-          searchWeb(device);
-        })
-      : null;
+  const search = state === "missing" && canSearchWeb() ? webButtons(device) : null;
   return el("article", { class: "device-row device-" + state }, [
     el("span", { class: "device-icon" }, [icon(CATEGORY_ICONS[device.category] ?? icons.drivers)]),
     el("div", { class: "device-main" }, [
@@ -192,6 +202,7 @@ function statusCard(missing: Device[], ready: number): HTMLElement {
     iconPaths: icons.refresh,
   });
   again.disabled = searching;
+  again.classList.toggle("is-spinning", searching);
   return el("div", { class: "driver-hero " + (good ? "driver-hero-ok" : "driver-hero-warn") }, [
     el("span", { class: "driver-hero-icon" }, [icon(good ? icons.check : icons.alert)]),
     el("div", { class: "driver-hero-text" }, [
@@ -237,11 +248,15 @@ function sourcesBlock(): Node[] {
             icon(sourceIcon),
             el("div", { class: "driver-source-text" }, [
               el("span", {}, [sourceName(source)]),
-              source.packages === 0
-                ? el("small", { class: "muted" }, [t("drivers.sourceEmpty")])
-                : null,
+              source.error
+                ? el("small", { class: "muted" }, [t("drivers.sourceError", { why: source.error })])
+                : source.packages === 0
+                  ? el("small", { class: "muted" }, [t("drivers.sourceEmpty")])
+                  : null,
             ]),
-            badge(t("drivers.sourcePackages", { n: source.packages }), "muted"),
+            source.error
+              ? badge(t("drivers.sourceNotOpened"), "warn")
+              : badge(t("drivers.sourcePackages", { n: source.packages }), "muted"),
           ]);
         })
       : [el("p", { class: "muted" }, [t("drivers.noSources")])];

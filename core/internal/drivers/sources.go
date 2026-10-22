@@ -14,6 +14,11 @@ import (
 // byLabelDir es donde udev publica un enlace por cada etiqueta de partición (se cambia en las pruebas).
 var byLabelDir = "/dev/disk/by-label"
 
+// ReportPath es el archivo donde el agente anota qué particiones de drivers encontró y cuáles no pudo abrir: una línea por
+// partición, "nombre<TAB>etiqueta<TAB>estado" con el estado "open" o "error: motivo". Sirve de respaldo cuando udev no
+// publicó la etiqueta (by-label) y para decir por qué no se pudo abrir una partición de drivers (se cambia en las pruebas).
+var ReportPath = "/run/rebootera/drivers-scan"
+
 // Tipos de origen.
 const (
 	// KindUSB es la carpeta drivers/ del USB de Rebootera.
@@ -38,6 +43,8 @@ type Source struct {
 	Root string `json:"-"`
 	// Packages es cuántos paquetes x64 se encontraron.
 	Packages int `json:"packages"`
+	// Error es el motivo por el que no se pudo abrir una partición de drivers que sí se encontró (vacío si se abrió).
+	Error string `json:"error,omitempty"`
 }
 
 // folderGuesses son las carpetas de una partición que suelen traer drivers (se buscan sin distinguir mayúsculas).
@@ -45,8 +52,35 @@ var folderGuesses = []string{"drivers", "driver", "swsetup", "oem/drivers", "win
 
 // driversLabel indica si la etiqueta de una partición dice que es de drivers (una partición "DRIVERS" de fábrica).
 func driversLabel(label string) bool {
-	lower := strings.ToLower(label)
-	return strings.Contains(lower, "driver") || lower == "swsetup" || lower == "sw_setup"
+	lower := strings.ToLower(strings.TrimSpace(label))
+	return strings.Contains(lower, "driver") || strings.Contains(lower, "controlador") ||
+		strings.HasPrefix(lower, "drv") || lower == "swsetup" || lower == "sw_setup"
+}
+
+// * IsDriversLabel indica si una etiqueta de partición dice que es de drivers.
+func IsDriversLabel(label string) bool {
+	return driversLabel(label)
+}
+
+// scanLine es una línea del informe del agente.
+type scanLine struct {
+	name, label, state string
+}
+
+// * readReport lee el informe de la última búsqueda del agente (vacío si no hay).
+func readReport() []scanLine {
+	data, err := os.ReadFile(ReportPath)
+	if err != nil {
+		return nil
+	}
+	var lines []scanLine
+	for _, raw := range strings.Split(string(data), "\n") {
+		fields := strings.SplitN(strings.TrimRight(raw, "\r"), "\t", 3)
+		if len(fields) == 3 && fields[0] != "" {
+			lines = append(lines, scanLine{name: fields[0], label: fields[1], state: fields[2]})
+		}
+	}
+	return lines
 }
 
 // * unescapeLabel deshace el escape de udev en los nombres de by-label (un espacio llega como "\x20").
@@ -71,8 +105,14 @@ func LabelledPartitions() map[string]string {
 }
 
 // * driverPartitions devuelve las particiones cuya etiqueta dice que son de drivers: nombre de la partición ("sda3") y etiqueta.
+// * Salen de los enlaces de udev (by-label) y, si udev no los publicó, de lo que anotó el agente al leer la etiqueta él mismo.
 func driverPartitions() map[string]string {
 	found := map[string]string{}
+	for _, line := range readReport() {
+		if driversLabel(line.label) {
+			found[line.name] = line.label
+		}
+	}
 	entries, err := os.ReadDir(byLabelDir)
 	if err != nil {
 		return found
@@ -155,7 +195,29 @@ func Discover(vaultRoot, mediaRoot string) []Source {
 			})
 		}
 	}
-	return found
+	return append(found, unreadable(found)...)
+}
+
+// * unreadable devuelve las particiones de drivers que se encontraron pero que el agente no pudo abrir (sistema de archivos
+// * dañado o desconocido, partición en uso...). Así la interfaz dice por qué no salen en vez de callar.
+func unreadable(opened []Source) []Source {
+	var failed []Source
+	for _, line := range readReport() {
+		reason, isError := strings.CutPrefix(line.state, "error:")
+		if !isError || !driversLabel(line.label) {
+			continue
+		}
+		duplicated := false
+		for _, source := range opened {
+			if source.Device == line.name {
+				duplicated = true
+			}
+		}
+		if !duplicated {
+			failed = append(failed, Source{ID: line.name + ":label", Kind: KindPartition, Device: line.name, Folder: line.label, Error: strings.TrimSpace(reason)})
+		}
+	}
+	return failed
 }
 
 // * ScanSources recorre todos los orígenes y devuelve sus paquetes (cada uno con su origen anotado) y los
@@ -165,6 +227,11 @@ func ScanSources(sources []Source) ([]*Package, []Source) {
 	var packages []*Package
 	var used []Source
 	for _, source := range sources {
+		if source.Root == "" {
+			// * Una partición de drivers que no se pudo abrir: se enseña con su motivo.
+			used = append(used, source)
+			continue
+		}
 		found := Scan(source.Root)
 		if len(found) == 0 {
 			if strings.HasSuffix(source.ID, ":label") {

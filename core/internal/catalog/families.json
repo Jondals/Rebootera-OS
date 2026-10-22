@@ -7,8 +7,8 @@
     "icon": "windows",
     "homepage": "https://www.microsoft.com/windows/windows-11",
     "summary": {
-      "en": "The current Windows. Microsoft's own images: Home, Pro and the evaluation editions download directly from Microsoft.",
-      "es": "El Windows actual. Imágenes de Microsoft: Home, Pro y las ediciones de evaluación se descargan directamente de Microsoft."
+      "en": "The current Windows. Microsoft's own images: Home and Pro download directly from Microsoft.",
+      "es": "El Windows actual. Imágenes de Microsoft: Home y Pro se descargan directamente de Microsoft."
     }
   },
   {
@@ -21,18 +21,6 @@
     "summary": {
       "en": "Windows for older computers.",
       "es": "Windows para equipos antiguos."
-    }
-  },
-  {
-    "id": "windows-server",
-    "name": "Windows Server",
-    "vendor": "Microsoft",
-    "group": "servers",
-    "icon": "server",
-    "homepage": "https://www.microsoft.com/windows-server",
-    "summary": {
-      "en": "Microsoft's server system, evaluation editions.",
-      "es": "El sistema de servidores de Microsoft, ediciones de evaluación."
     }
   },
   {

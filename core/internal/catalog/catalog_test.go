@@ -185,3 +185,25 @@ func TestLatestSumRechazaOtraSuma(t *testing.T) {
 		t.Fatal("sin sumSuffix debería fallar")
 	}
 }
+
+// * TestSinEvaluacion comprueba que el catálogo no ofrece ediciones de evaluación (las de 90 o 180 días de Windows y
+// * Windows Server): solo imágenes que no caducan.
+func TestSinEvaluacion(t *testing.T) {
+	entries, _ := Entries()
+	for _, e := range entries {
+		text := strings.ToLower(e.ID + " " + e.Edition + " " + e.Version + " " + e.Notes["en"])
+		if strings.Contains(text, "evaluation") || strings.Contains(text, "-eval") || e.Resolver.Type == "direct" {
+			t.Fatalf("%s parece una edición de evaluación: %q", e.ID, text)
+		}
+	}
+	families, _ := Families()
+	used := map[string]bool{}
+	for _, e := range entries {
+		used[e.Family] = true
+	}
+	for _, f := range families {
+		if !used[f.ID] {
+			t.Fatalf("la familia %s no tiene ninguna imagen", f.ID)
+		}
+	}
+}

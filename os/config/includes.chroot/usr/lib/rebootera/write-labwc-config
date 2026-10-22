@@ -1,68 +1,18 @@
 #!/bin/bash
-# * write-labwc-config: genera la configuración de labwc (panel táctil, puntero y reglas de ventana) a partir de los
-# * ajustes guardados en /run/rebootera/input.conf. Lo ejecutan start-kiosk al arrancar y el agente al cambiar un ajuste
-# * (después manda SIGHUP a labwc, que recarga sin cerrar la interfaz). Argumento: carpeta de la configuración.
+# * write-labwc-config: genera la configuración de labwc (solo las reglas de ventana). El puntero y el panel táctil
+# * se dejan con los valores por defecto de libinput/labwc: tocar y arrastrar, clic con toque, etc. funcionan como en
+# * cualquier Linux. Lo ejecuta start-kiosk al arrancar. Argumento: carpeta de la configuración.
 set -u
 CONFIG_DIR="${1:?falta la carpeta}"
 
-# * input_value lee un ajuste de /run/rebootera/input.conf (speed, tap, natural) o devuelve el valor por defecto.
-# * Solo se aceptan números: el valor acaba dentro de un archivo XML.
-input_value() {
-	local key="$1" default="$2" value
-	value="$(sed -n "s/^$key=//p" /run/rebootera/input.conf 2>/dev/null | head -1)"
-	case "$value" in
-	'' | *[!0-9]*) echo "$default" ;;
-	*) echo "$value" ;;
-	esac
-}
-
-# * yes_no convierte 1 en yes y cualquier otra cosa en no (el formato que lee labwc).
-yes_no() {
-	[ "$1" = "1" ] && echo yes || echo no
-}
-
-speed=; tap=; natural=; accel=
-	speed="$(input_value speed 50)"
-	[ "$speed" -gt 100 ] && speed=100
-	tap="$(input_value tap 1)"
-	natural="$(input_value natural 0)"
-	# * 0..100 pasa al rango -1.0..1.0 de libinput (50 = 0.0).
-	accel="$(awk -v s="$speed" 'BEGIN { printf "%.2f", (s - 50) / 50 }')"
-	mkdir -p "$CONFIG_DIR"
-	cat >"$CONFIG_DIR/rc.xml" <<EOF
+mkdir -p "$CONFIG_DIR"
+cat >"$CONFIG_DIR/rc.xml" <<'XML'
 <?xml version="1.0"?>
 <labwc_config>
   <core><gap>0</gap></core>
-  <libinput>
-    <device category="default">
-      <tap>$(yes_no "$tap")</tap>
-      <tapButtonMap>lrm</tapButtonMap>
-      <tapAndDrag>no</tapAndDrag>
-      <dragLock>no</dragLock>
-      <naturalScroll>$(yes_no "$natural")</naturalScroll>
-      <scrollMethod>twofinger</scrollMethod>
-      <pointerSpeed>$accel</pointerSpeed>
-      <accelProfile>adaptive</accelProfile>
-      <disableWhileTyping>yes</disableWhileTyping>
-      <middleEmulation>no</middleEmulation>
-    </device>
-    <device category="touchpad">
-      <tap>$(yes_no "$tap")</tap>
-      <tapButtonMap>lrm</tapButtonMap>
-      <tapAndDrag>no</tapAndDrag>
-      <dragLock>no</dragLock>
-      <naturalScroll>$(yes_no "$natural")</naturalScroll>
-      <scrollMethod>twofinger</scrollMethod>
-      <pointerSpeed>$accel</pointerSpeed>
-      <accelProfile>adaptive</accelProfile>
-      <disableWhileTyping>yes</disableWhileTyping>
-      <middleEmulation>no</middleEmulation>
-    </device>
-  </libinput>
   <windowRules>
     <windowRule identifier="os.rebootera.Shell" serverDecoration="no"/>
   </windowRules>
 </labwc_config>
-EOF
-	printf '%s\n' '/usr/lib/rebootera/session &' >"$CONFIG_DIR/autostart"
-
+XML
+printf '%s\n' '/usr/lib/rebootera/session &' >"$CONFIG_DIR/autostart"

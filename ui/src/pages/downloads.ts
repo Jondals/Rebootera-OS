@@ -4,7 +4,7 @@
 // * ancho de banda. La última versión y su tamaño se consultan en segundo plano y Core las
 // * guarda unos minutos, así que la página sale al instante.
 // * Windows Home y Pro no tienen enlace directo (Microsoft solo da enlaces temporales desde su
-// * web); sus ediciones de evaluación sí se descargan directamente.
+// * web); no se ofrecen ediciones de evaluación.
 
 import {
   getJSON,
@@ -75,6 +75,15 @@ let query = "";
 let openPicker = "";
 let drive: Drive | null = null;
 let lastQueue = "";
+/** Huella de lo que cambia la forma de las tarjetas (no el avance de una descarga): con ella solo se repinta lo que cambió. */
+let lastStructure = "";
+/** Ventana de la cola abierta (se mantiene al día sola) y la huella de sus filas. */
+let queueDialog: HTMLDialogElement | null = null;
+let queueBody: HTMLElement | null = null;
+let queueKey = "";
+/** Última barra inferior dibujada (si es la misma, solo se actualizan sus números). */
+let barKey = "";
+let libraryCount = -1;
 let doneCount = -1;
 const picked = new Map<string, string>();
 const resolved = new Map<string, Resolved | "error">();
@@ -110,7 +119,7 @@ function render(root: HTMLElement): void {
         el("p", { class: "page-subtitle" }, [t("downloads.subtitle")]),
       ]),
       el("div", { class: "page-actions" }, [
-        button(t("downloads.viewQueue"), openQueue, { iconPaths: icons.library }),
+        button(t("downloads.viewQueue"), openQueue, { iconPaths: icons.list }),
         button(t("downloads.bandwidth"), openBandwidth, { iconPaths: icons.activity }),
       ]),
     ]),
@@ -123,6 +132,9 @@ function render(root: HTMLElement): void {
   ]);
   root.append(page);
   lastQueue = "";
+  lastStructure = "";
+  barKey = "";
+  queueDialog = null;
   openPicker = "";
   document.addEventListener("click", closePicker);
   drawTabs();
@@ -202,6 +214,7 @@ function closePickerAnimated(after: () => void): void {
 
 /** Elige la versión de una familia y cierra el selector. */
 function chooseVersion(event: MouseEvent): void {
+  event.stopPropagation();
   const node = event.currentTarget as HTMLElement;
   picked.set(node.dataset.family ?? "", node.dataset.value ?? "");
   closePickerAnimated(function done(): void {
@@ -291,7 +304,7 @@ function scheduleRender(): void {
   }
   renderTimer = window.setTimeout(function draw(): void {
     renderTimer = 0;
-    renderList();
+    renderList(true);
   }, 200);
 }
 
@@ -348,16 +361,6 @@ async function transferAction(event: MouseEvent): Promise<void> {
   const target = event.currentTarget as HTMLElement;
   try {
     await postJSON("/api/transfers/" + target.dataset.action, { id: target.dataset.id });
-    await refreshVault();
-  } catch (error) {
-    message?.replaceChildren(errorBox(error));
-  }
-}
-
-/** Quita de la lista las transferencias terminadas. */
-async function clearFinished(): Promise<void> {
-  try {
-    await postJSON("/api/transfers/clear", {});
     await refreshVault();
   } catch (error) {
     message?.replaceChildren(errorBox(error));
@@ -564,21 +567,65 @@ function openDetails(event: MouseEvent): void {
   openModal(entry.name + " " + entry.version, rows);
 }
 
-/** Barra de progreso de una descarga dentro de la tarjeta. */
-function inlineProgress(job: Job): HTMLElement {
-  const fraction = job.totalBytes > 0 ? job.doneBytes / job.totalBytes : 0;
+/** Fracción descargada de un trabajo (0 a 1). */
+function jobFraction(job: Job): number {
+  if (job.status === "verifying") {
+    return 1;
+  }
+  return job.totalBytes > 0 ? job.doneBytes / job.totalBytes : 0;
+}
+
+/** Línea de detalle de un trabajo: lo descargado, la velocidad y, si se pide, el tiempo que falta. */
+function progressDetails(job: Job, withEta: boolean): string {
   const details: string[] = [];
   if (job.totalBytes > 0) {
     details.push(fmt.bytes(job.doneBytes) + " / " + fmt.bytes(job.totalBytes));
   }
   if (job.status === "running" && job.speedBps > 0) {
     details.push(fmt.rate(job.speedBps));
-    if (job.totalBytes > job.doneBytes) {
+    if (withEta && job.totalBytes > job.doneBytes) {
       details.push(
         t("downloads.eta", { time: fmt.duration((job.totalBytes - job.doneBytes) / job.speedBps) }),
       );
     }
   }
+  return details.join(" · ");
+}
+
+/** Actualiza en su sitio los números de la barra de una tarjeta, sin rehacer sus botones. */
+function patchInlineProgress(node: HTMLElement, job: Job): void {
+  const percent = node.querySelector(".fam-progress-head strong");
+  if (percent) {
+    percent.textContent = Math.round(jobFraction(job) * 100) + " %";
+  }
+  const fill = node.querySelector<HTMLElement>(".progress-fill");
+  if (fill) {
+    fill.style.width = Math.round(jobFraction(job) * 100) + "%";
+  }
+  const info = node.querySelector(".mono-small");
+  if (info) {
+    info.textContent = progressDetails(job, true);
+  }
+}
+
+/** Avanza las barras de las tarjetas con los datos nuevos sin repintar la lista. */
+function patchProgress(): void {
+  if (listBody === null) {
+    return;
+  }
+  for (const node of listBody.querySelectorAll<HTMLElement>(".fam-progress[data-job]")) {
+    const job = snapshot.transfers.find(function sameJob(item) {
+      return item.id === node.dataset.job;
+    });
+    if (job) {
+      patchInlineProgress(node, job);
+    }
+  }
+}
+
+/** Barra de progreso de una descarga dentro de la tarjeta. */
+function inlineProgress(job: Job): HTMLElement {
+  const fraction = jobFraction(job);
   const actions: HTMLElement[] = [];
   if (job.status === "paused") {
     actions.push(jobButton(job, "resume", t("downloads.resume"), icons.download));
@@ -588,16 +635,13 @@ function inlineProgress(job: Job): HTMLElement {
   if (job.status !== "verifying") {
     actions.push(jobButton(job, "cancel", t("downloads.cancel"), icons.x));
   }
-  return el("div", { class: "fam-progress" }, [
+  return el("div", { class: "fam-progress", "data-job": job.id }, [
     el("div", { class: "fam-progress-head" }, [
       badge(t("downloads.status." + job.status), STATUS_TONES[job.status]),
       el("strong", {}, [Math.round(fraction * 100) + " %"]),
     ]),
-    progress(
-      job.status === "verifying" ? 1 : fraction,
-      job.status === "paused" ? "warn" : "accent",
-    ),
-    el("span", { class: "mono-small muted" }, [details.join(" · ")]),
+    progress(fraction, job.status === "paused" ? "warn" : "accent"),
+    el("span", { class: "mono-small muted" }, [progressDetails(job, true)]),
     el("div", { class: "image-actions" }, actions),
   ]);
 }
@@ -654,7 +698,7 @@ function familyCard(family: Family, entries: CatalogEntry[]): HTMLElement {
     }) ??
     entries[0];
   queueResolve(chosen.id);
-  return el("article", { class: "fam-card" }, [
+  return el("article", { class: "fam-card" + (openPicker === family.id ? " fam-open" : "") }, [
     el("header", { class: "fam-head" }, [
       logoTile(family.id, family.name),
       el("div", { class: "fam-title" }, [
@@ -691,9 +735,16 @@ function matches(family: Family, entries: CatalogEntry[]): boolean {
   });
 }
 
-/** Dibuja las tarjetas según la pestaña y el buscador. */
-function renderList(): void {
+/**
+ * Dibuja las tarjetas según la pestaña y el buscador. Con `soft` (cambios que llegan solos: un tamaño recién
+ * consultado, una descarga que avanza) no se toca la lista mientras haya un desplegable abierto: rehacerla lo hacía
+ * parpadear y volvía a lanzar su animación. Al cerrarlo se dibuja con lo último que llegó.
+ */
+function renderList(soft = false): void {
   if (listBody === null || families === null || catalog === null || !listBody.isConnected) {
+    return;
+  }
+  if (soft && openPicker !== "") {
     return;
   }
   const byFamily = new Map<string, CatalogEntry[]>();
@@ -795,12 +846,9 @@ function drawDestination(): void {
   );
 }
 
-/** Texto y números de la barra inferior. */
-function drawBar(): void {
-  if (barBody === null) {
-    return;
-  }
-  const active = snapshot.transfers.filter(function isActive(job) {
+/** Pasa la cola de trabajos a los que siguen activos (en cola, en marcha, verificando o en pausa). */
+function activeJobs(): Job[] {
+  return snapshot.transfers.filter(function isActive(job) {
     return (
       job.status === "running" ||
       job.status === "queued" ||
@@ -808,38 +856,76 @@ function drawBar(): void {
       job.status === "paused"
     );
   });
-  const running = active.find(function isRunning(job) {
-    return job.status === "running" || job.status === "verifying";
-  });
-  let summary: HTMLElement;
-  if (active.length === 0) {
-    summary = el("span", { class: "muted" }, [t("downloads.queueIdle")]);
-  } else {
-    const lead = running ?? active[0];
-    const fraction = lead.totalBytes > 0 ? lead.doneBytes / lead.totalBytes : 0;
-    const speed = running && running.speedBps > 0 ? " · " + fmt.rate(running.speedBps) : "";
-    summary = el("div", { class: "dl-bar-summary" }, [
-      el("strong", {}, [t("downloads.queueActive", { n: active.length })]),
-      el("span", { class: "mono-small" }, [
-        lead.name + " · " + Math.round(fraction * 100) + " %" + speed,
-      ]),
-      progress(fraction, "accent"),
-    ]);
+}
+
+/** Cifras de la barra inferior de un trabajo: porcentaje, velocidad y tiempo que falta. */
+function barStats(job: Job): string {
+  const parts = [Math.round(jobFraction(job) * 100) + " %"];
+  if (job.status === "running" && job.speedBps > 0) {
+    parts.push(fmt.rate(job.speedBps));
+    if (job.totalBytes > job.doneBytes) {
+      parts.push(
+        t("downloads.eta", { time: fmt.duration((job.totalBytes - job.doneBytes) / job.speedBps) }),
+      );
+    }
+  } else if (job.status === "paused") {
+    parts.push(t("downloads.status.paused"));
   }
+  return parts.join(" · ");
+}
+
+/**
+ * Barra inferior: un icono, cuántas descargas hay, el archivo que va delante con su porcentaje, velocidad y tiempo, la
+ * barra de progreso a todo lo ancho y el botón que abre la cola. Mientras solo cambian los números se actualizan en su
+ * sitio (así el botón no se rehace en mitad de un clic).
+ */
+function drawBar(): void {
+  if (barBody === null) {
+    return;
+  }
+  const active = activeJobs();
   barBody.hidden = active.length === 0;
-  barBody.replaceChildren(summary);
+  if (active.length === 0) {
+    barKey = "";
+    barBody.replaceChildren();
+    return;
+  }
+  const lead =
+    active.find(function isRunning(job) {
+      return job.status === "running" || job.status === "verifying";
+    }) ?? active[0];
+  const key = active.length + ":" + lead.id + ":" + lead.status;
+  if (key === barKey && barBody.firstElementChild !== null) {
+    const stats = barBody.querySelector(".dl-bar-stats");
+    const fill = barBody.querySelector<HTMLElement>(".progress-fill");
+    if (stats) {
+      stats.textContent = barStats(lead);
+    }
+    if (fill) {
+      fill.style.width = Math.round(jobFraction(lead) * 100) + "%";
+    }
+    return;
+  }
+  barKey = key;
+  const queue = button(t("downloads.viewQueue"), openQueue, { iconPaths: icons.list });
+  queue.classList.add("btn-small");
+  barBody.replaceChildren(
+    el("span", { class: "dl-bar-icon" }, [icon(icons.download)]),
+    el("div", { class: "dl-bar-main" }, [
+      el("div", { class: "dl-bar-head" }, [
+        el("strong", {}, [t("downloads.queueActive", { n: active.length })]),
+        el("span", { class: "dl-bar-stats mono-small" }, [barStats(lead)]),
+      ]),
+      el("span", { class: "dl-bar-name", title: lead.name }, [lead.name]),
+      progress(jobFraction(lead), lead.status === "paused" ? "warn" : "accent"),
+    ]),
+    queue,
+  );
 }
 
 /** Fila de una transferencia en la ventana de la cola. */
 function jobRow(job: Job): HTMLElement {
-  const fraction = job.totalBytes > 0 ? job.doneBytes / job.totalBytes : 0;
-  const details: string[] = [];
-  if (job.totalBytes > 0) {
-    details.push(fmt.bytes(job.doneBytes) + " / " + fmt.bytes(job.totalBytes));
-  }
-  if (job.status === "running" && job.speedBps > 0) {
-    details.push(fmt.rate(job.speedBps));
-  }
+  const fraction = jobFraction(job);
   const actions: HTMLElement[] = [];
   if (job.status === "running" || job.status === "queued") {
     actions.push(jobButton(job, "pause", t("downloads.pause"), icons.clock));
@@ -854,7 +940,7 @@ function jobRow(job: Job): HTMLElement {
     actions.push(jobButton(job, "cancel", t("downloads.cancel"), icons.x));
   }
   const errorKey = "errors.codes." + (job.errorCode ?? "failed");
-  return el("article", { class: "transfer-row" }, [
+  return el("article", { class: "transfer-row", "data-job": job.id }, [
     el("span", { class: "device-icon" }, [
       icon(job.kind === "import" ? icons.usb : icons.download),
     ]),
@@ -864,12 +950,9 @@ function jobRow(job: Job): HTMLElement {
         badge(t("downloads.status." + job.status), STATUS_TONES[job.status]),
       ]),
       job.status === "running" || job.status === "paused" || job.status === "verifying"
-        ? progress(
-            job.status === "verifying" ? 1 : fraction,
-            job.status === "paused" ? "warn" : "accent",
-          )
+        ? progress(fraction, job.status === "paused" ? "warn" : "accent")
         : null,
-      el("span", { class: "mono-small muted" }, [details.join(" · ") || job.fileName]),
+      el("span", { class: "mono-small muted" }, [progressDetails(job, false) || job.fileName]),
       job.status === "failed"
         ? el("span", { class: "transfer-error", title: job.error ?? "" }, [t(errorKey)])
         : null,
@@ -878,21 +961,66 @@ function jobRow(job: Job): HTMLElement {
   ]);
 }
 
+/** Dibuja las filas de la ventana de la cola (las terminadas se quitan solas, así que no hay botón de limpiar). */
+function drawQueue(): void {
+  if (queueBody === null) {
+    return;
+  }
+  const jobs = [...snapshot.transfers].reverse();
+  queueKey = JSON.stringify(
+    jobs.map(function identity(job) {
+      return [job.id, job.status];
+    }),
+  );
+  queueBody.replaceChildren(
+    ...(jobs.length > 0
+      ? jobs.map(jobRow)
+      : [el("p", { class: "muted" }, [t("downloads.queueEmpty")])]),
+  );
+}
+
+/** Mantiene al día la ventana de la cola: se rehace si cambia algún estado y, si no, solo se mueven los números. */
+function updateQueue(): void {
+  if (queueDialog === null || queueBody === null) {
+    return;
+  }
+  if (!queueDialog.isConnected || !queueDialog.open) {
+    queueDialog = null;
+    queueBody = null;
+    return;
+  }
+  const key = JSON.stringify(
+    [...snapshot.transfers].reverse().map(function identity(job) {
+      return [job.id, job.status];
+    }),
+  );
+  if (key !== queueKey) {
+    drawQueue();
+    return;
+  }
+  for (const row of queueBody.querySelectorAll<HTMLElement>(".transfer-row[data-job]")) {
+    const job = snapshot.transfers.find(function sameJob(item) {
+      return item.id === row.dataset.job;
+    });
+    if (!job) {
+      continue;
+    }
+    const fill = row.querySelector<HTMLElement>(".progress-fill");
+    if (fill) {
+      fill.style.width = Math.round(jobFraction(job) * 100) + "%";
+    }
+    const info = row.querySelector(".transfer-main > .mono-small");
+    if (info) {
+      info.textContent = progressDetails(job, false) || job.fileName;
+    }
+  }
+}
+
 /** Abre la ventana con la cola de transferencias. */
 function openQueue(): void {
-  const jobs = [...snapshot.transfers].reverse();
-  const clear = button(t("downloads.clear"), clearFinished, { iconPaths: icons.check });
-  clear.classList.add("btn-small");
-  openModal(
-    t("downloads.queue"),
-    [
-      ...(jobs.length > 0
-        ? jobs.map(jobRow)
-        : [el("p", { class: "muted" }, [t("downloads.queueEmpty")])]),
-      el("div", { class: "modal-actions" }, [clear]),
-    ],
-    "modal-wide",
-  );
+  queueBody = el("div", { class: "queue-body" });
+  queueDialog = openModal(t("downloads.queue"), [queueBody], "modal-wide");
+  drawQueue();
 }
 
 /** Velocidades máximas que se ofrecen (MB/s); 0 es sin límite. */
@@ -1002,12 +1130,28 @@ function update(): void {
   lastQueue = signature;
   drawDestination();
   drawBar();
+  updateQueue();
+  // * Las tarjetas solo se rehacen si cambia su forma (empieza, se pausa o termina una descarga); mientras solo avanza el
+  // * porcentaje se mueven los números en su sitio, sin parpadeos y sin cerrar un desplegable abierto.
+  const structure = JSON.stringify([
+    snapshot.vault.available,
+    snapshot.transfers.map(function shape(job) {
+      return [job.id, job.status, job.catalogId];
+    }),
+  ]);
+  if (structure === lastStructure) {
+    patchProgress();
+    return;
+  }
+  lastStructure = structure;
   // * Cuando termina una transferencia se recarga el catálogo para marcar "en tu biblioteca".
   const done = snapshot.transfers.filter(isDone).length;
-  if (doneCount >= 0 && done > doneCount) {
+  const grew = libraryCount >= 0 && snapshot.library.length > libraryCount;
+  libraryCount = snapshot.library.length;
+  if ((doneCount >= 0 && done > doneCount) || grew) {
     reloadCatalog();
   } else {
-    renderList();
+    renderList(true);
   }
   doneCount = done;
 }

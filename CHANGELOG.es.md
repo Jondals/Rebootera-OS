@@ -3,6 +3,42 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.21.0] - 2026-10-22
+
+### Añadido
+
+- **Un GIF como vista previa de una imagen.** En Mis imágenes, «Personalizar» deja elegir un GIF (hasta 6 MB) para cualquier imagen que hayas descargado o añadido. Sale como vista previa de la imagen, quieto al principio y en movimiento al pasar el puntero. Se guarda en el USB junto a la imagen y se va con ella.
+- **Más sistemas y versiones en la página de Descargar:** Kubuntu, Xubuntu, Lubuntu, Ubuntu Budgie y Ubuntu Cinnamon 26.04 (y Kubuntu 22.04), Linux Mint 22.2, Debian 13 DVD, Kali netinst, openSUSE Leap 15.6 y los instaladores completos en DVD de Rocky Linux 9 y 10 y AlmaLinux 9 y 10. Todos salen de las fuentes oficiales, con sus sumas (y firmas donde las hay) comprobadas.
+- **Páginas oficiales para un driver que falta.** Junto a cada pieza que falta hay botones que abren, en el navegador de Rebootera, la página oficial del fabricante del chip (Intel, Realtek, NVIDIA, AMD...), la página de soporte del fabricante de tu equipo con su modelo exacto (Lenovo, HP, Dell, ASUS...) y el Catálogo de Microsoft Update con el identificador de hardware.
+- **El navegador de Rebootera descarga al USB.** Lo que descargues va a `drivers/Descargas` del USB; un .zip de drivers se descomprime solo para que Rebootera lea sus .inf. Descompresión segura: nada puede salirse de su carpeta y no se ejecuta nada.
+- **«Sin red» ahora es un botón.** El aviso de la barra superior te lleva directo al panel del Wi-Fi, ya buscando redes, para elegir la tuya y escribir la clave.
+- **Mostrar la contraseña del Wi-Fi** con un ojo en el campo de la clave.
+- **Iconos que giran** en todos los botones de «Buscar otra vez», «Actualizar» y «Buscar redes» mientras trabajan.
+
+### Cambiado
+
+- **Fuera las ediciones de evaluación.** Ya no se ofrece ninguna imagen de evaluación de Windows ni de Windows Server (las de 90 y 180 días): solo Windows 10 y 11 Home y Pro, que se descargan directamente de Microsoft.
+- **Las notas de la release** llevan ahora los cambios de esa versión (en inglés y en español) en vez de una suma.
+- **El menú de arranque del USB solo enseña Rebootera** (y otra versión de Rebootera si hay una instalada al lado). Tus imágenes de Windows o Linux ya no salen ahí: se arrancan desde el asistente de instalación, que añade al menú solo la elegida durante esa instalación y la quita cuando Rebootera vuelve a arrancar. Los USB de versiones anteriores se arreglan al actualizarlos.
+- **La barra de descargas** está rehecha: un icono, cuántas descargas hay, el archivo que va delante con su porcentaje, velocidad y tiempo que falta, la barra de progreso a todo el ancho y un botón de la cola. La ventana de la cola se actualiza sola y las descargas terminadas se quitan solas a los pocos segundos (las fallidas se quedan, con el botón de Reintentar).
+- **Mucho más fluido.** La página de Descargar ya no rehace todas las tarjetas con cada avance (eso hacía parpadear los desplegables de versión y la volvía pesada): solo se mueve el porcentaje. Se quitó el ruido del fondo, el fondo animado ya no se desenfoca por defecto y, con él activado, los paneles son opacos y, sin GPU, se mueve a saltos en vez de arrastrarlo todo. El fondo ya se puede activar en Rebootera OS.
+- **Esquinas menos redondeadas** en todas partes.
+- **Iconos más claros:** elegir carpeta, foto, GIF o imagen de disco, y personalizar una imagen, tienen cada uno su icono.
+- **El asistente deja seguir con una partición más pequeña.** «Siguiente» ya no se queda apagado cuando la partición o el hueco está por debajo del tamaño recomendado: se puede continuar con un aviso (el instalador tiene la última palabra); solo se rechaza la que es de verdad demasiado pequeña.
+- **Pausar y Cancelar** ya no se pegan a la barra de progreso al crear un USB.
+
+### Corregido
+
+- Los desplegables de versión de la página de Descargar parpadeaban y, en Rebootera Desktop, la lista abierta podía quedar tapada por la tarjeta de debajo.
+- La etiqueta «WPA2» del Wi-Fi saltaba de línea en la red conectada con su panel abierto; ahora la red conectada también dice «Conectada».
+- El idioma ahora cambia al momento, sin reiniciar nada, incluso si falla el guardado del ajuste.
+- Los drivers de una partición llamada DRIVERS no se encontraban al arrancar: ahora se buscan solos nada más empezar y cada vez que aparece un disco o una partición (no solo al abrir la página de Drivers), la etiqueta también se lee del disco si udev no la ha publicado, cuentan más etiquetas (Drivers, Controladores, SWSetup...) y, si una partición DRIVERS no se puede abrir, la página de Drivers dice por qué.
+- El deslizador de las particiones obligaba a pulsar y arrastrar con el panel táctil: ahora el panel táctil conserva el toque y arrastre normal.
+
+### Eliminado
+
+- **Los ajustes del puntero y del panel táctil** (velocidad del puntero, toque para hacer clic y desplazamiento natural), con todo su código (interfaz, API, agente y configuración de labwc). El panel táctil usa ahora el comportamiento normal de Linux. El cargador de drivers del panel táctil (`rebootera-input.service`) se queda: solo hace funcionar los paneles que no se detectan solos.
+
 ## [0.20.1] - 2026-10-22
 
 ### Cambiado

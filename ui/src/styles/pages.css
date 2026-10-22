@@ -129,7 +129,7 @@
   height: 38px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--bg-elevated);
   color: var(--accent);
 }
@@ -178,7 +178,7 @@
   height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 7px;
   background: var(--bg-elevated);
   color: var(--accent);
   flex: none;
@@ -212,7 +212,7 @@
   gap: 10px;
   padding: 10px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 7px;
   background: transparent;
   text-align: left;
   color: var(--text-muted);
@@ -229,7 +229,7 @@
   height: 28px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid var(--border-strong);
   font-family: var(--mono);
   font-size: 12px;
@@ -289,7 +289,7 @@
   height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 9px;
+  border-radius: 5px;
 }
 
 .req-ok {
@@ -502,7 +502,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   text-align: left;
@@ -520,7 +520,7 @@
 .category-select {
   height: 32px;
   padding: 0 10px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid var(--border-strong);
   background: var(--panel-2);
   color: var(--text);
@@ -583,7 +583,7 @@
 .text-input {
   height: 42px;
   padding: 0 14px;
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1px solid var(--border-strong);
   background: var(--bg-elevated);
   color: var(--text);
@@ -648,7 +648,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--panel-2);
   color: var(--text);
@@ -777,7 +777,7 @@ select.text-input {
   align-items: center;
   gap: 8px;
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
@@ -814,7 +814,7 @@ select.text-input {
   flex-direction: column;
   gap: 12px;
   padding: 18px;
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg-elevated);
 }
@@ -877,7 +877,7 @@ select.text-input {
   flex-wrap: wrap;
   margin: 22px -4px 0;
   padding: 14px 18px;
-  border-radius: 14px 14px 0 0;
+  border-radius: 8px 8px 0 0;
   border: 1px solid var(--border);
   border-bottom: 0;
   background: var(--bg-elevated);
@@ -938,7 +938,7 @@ select.text-input {
   justify-content: center;
   gap: 2px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 2px solid transparent;
   color: var(--text);
   font: inherit;

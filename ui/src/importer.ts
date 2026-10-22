@@ -214,7 +214,7 @@ function imageRow(entry: BrowseEntry): HTMLElement {
   add.classList.add("btn-small");
   add.dataset.path = entry.path;
   return el("div", { class: "browse-row browse-image" }, [
-    icon(icons.library),
+    icon(icons.fileDisc),
     el("div", { class: "device-main" }, [
       el("strong", {}, [entry.name]),
       el("span", { class: "muted" }, [fmt.bytes(entry.sizeBytes)]),

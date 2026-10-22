@@ -36,6 +36,7 @@ const en: Dictionary = {
   },
   topbar: {
     offline: "No network",
+    offlineHint: "No network: tap to connect to Wi-Fi",
     secureBootOn: "Secure Boot: Active",
     secureBootOff: "Secure Boot: Off",
     secureBootUnknown: "Secure Boot: Unknown",
@@ -83,8 +84,8 @@ const en: Dictionary = {
     media: "Installation media",
     mediaText: "Add an installation made with any tool: Rufus, a folder, an ISO.",
     browser: "Web browser",
-    browserText: "Surf the web with Firefox.",
-    settingsText: "Theme, background, pointer, language, network.",
+    browserText: "Browse the web in dark mode. Downloads go straight to your USB.",
+    settingsText: "Theme, background, language, network.",
     search: "Search or type a system name...",
     downloadSystem: "Download {name}",
     noMatch: "Nothing matches. Try another word.",
@@ -205,6 +206,12 @@ const en: Dictionary = {
     save: "Save",
     edit: "Customize",
     badImage: "That file is not a usable picture.",
+    gifHint:
+      "Optional: a GIF that plays as the preview of this image (up to 6 MB). It moves when you point at it.",
+    gifChoose: "Choose a GIF…",
+    gifRemove: "Remove the GIF",
+    badGif: "That file is not a GIF.",
+    gifTooBig: "That GIF is too big (6 MB at most).",
   },
   link: {
     title: "Download from a link",
@@ -379,6 +386,16 @@ const en: Dictionary = {
     privacyShort: "Telemetry",
     privacyNote:
       "While installing, turns off diagnostic data collection, advertising and the express-settings screen. It works fully on Enterprise, Education and LTSC; on Home and Pro Windows keeps its basic level.",
+    noOnlineTitle: "Do not require an online Microsoft account",
+    noOnlineNote:
+      "Lets you finish the first-run setup with a local account and no internet connection (Windows 11).",
+    noBitLockerTitle: "Turn off automatic disk encryption (BitLocker)",
+    noBitLockerNote:
+      "Stops Windows from encrypting the disk by itself after installing. Keep it off if you want encryption.",
+    qolTitle:
+      "Quality-of-life tweaks (no Copilot, Recall, OneDrive, Widgets, new Outlook or Fast Startup)",
+    qolNote:
+      "Sets machine policies during installation. You can undo each of them later from Windows settings.",
     winBypassTitle: "Skip the Windows 11 requirements check (TPM, Secure Boot, RAM)",
     winBypassNote:
       "Only for computers that do not meet them. Microsoft does not support Windows 11 on them.",
@@ -413,11 +430,16 @@ const en: Dictionary = {
     bootMenuNote: "If Rebootera starts again instead, pick the image in the boot menu.",
     incompatibleNote:
       "This image is known not to start from the Rebootera boot menu. Write it alone to a separate USB drive (for example with Rufus) to install it.",
-    targetNeed: "It needs at least {size}. Parts that are too small look faded.",
+    targetNeed:
+      "It needs at least {min} ({size} recommended). Parts that are too small look faded.",
     freeOk: "There is room ({size}). Nothing is erased.",
-    freeSmall: "There is only {have} here and {need} are needed.",
+    freeSmall: "There is only {have} here and at least {need} are needed.",
+    freeTight:
+      "There is {have} here, less than the {need} recommended. You can continue; the installer has the last word.",
     partOk: "This partition will be formatted: everything on it ({used}) is erased.",
-    partSmall: "This partition is too small ({have}); it needs {need}.",
+    partTight:
+      "This partition has {have}, less than the {need} recommended. It will be formatted: everything on it ({used}) is erased. You can continue; the installer has the last word.",
+    partSmall: "This partition is too small ({have}); it needs at least {need}.",
     makeRoom: "Make room",
     openDisks: "Edit partitions",
     askInstaller: "I'll choose in the installer",
@@ -456,6 +478,8 @@ const en: Dictionary = {
     sourceWindows: "Installed Windows ({where})",
     sourcePackages: "{n} packages",
     sourceEmpty: "Found, but it has no driver packages (.inf) Windows can use: only installers.",
+    sourceError: "Found, but it could not be opened: {why}",
+    sourceNotOpened: "Not opened",
     noSources: "No driver source found on this computer yet.",
     searchAgain: "Search again",
     from: "From: {source}",
@@ -481,9 +505,13 @@ const en: Dictionary = {
     missingHint: "No driver on this computer or your USB.",
     fineHint: "Nothing to do.",
     searchWeb: "Search the web",
+    linkChip: "{maker} drivers",
+    linkPc: "{maker} support",
+    linkCatalog: "Microsoft Catalog",
+    linkSearch: "Search the web",
     howTitle: "How to add a missing driver",
-    how1: "Download it from the maker of your computer or of that part (from another device if this one has no network).",
-    how2: "Copy its folder into the “drivers” folder of your Rebootera USB, or add it with Rebootera Desktop.",
+    how1: "Use the buttons next to the missing part: they open the official page of its maker in the Rebootera browser (it needs a network).",
+    how2: "Download the driver there. A .zip goes by itself to the “drivers/Descargas” folder of your USB and is unpacked; an installer (.exe) is saved as it is. Or copy a driver folder into “drivers” yourself.",
     how3: "Press “Search again”. It turns to Ready and goes to Windows by itself.",
     othersTitle: "Other devices ({n})",
     optional: "Optional",
@@ -651,16 +679,6 @@ const en: Dictionary = {
     kernel: "Kernel",
     uptime: "Uptime",
   },
-  pointer: {
-    title: "Pointer and touchpad",
-    speed: "Pointer speed",
-    slow: "Slow",
-    fast: "Fast",
-    tap: "Tap to click on the touchpad",
-    natural: "Natural scrolling",
-    hint: "Changes apply right away.",
-    applying: "Applying…",
-  },
   keyboard: {
     title: "Keyboard",
     hint: "Layout of this computer's keyboard. It changes right away.",
@@ -701,6 +719,11 @@ const en: Dictionary = {
     note: "If you choose to remember a network, its password is saved on the USB and Rebootera connects again by itself next time.",
     remember: "Remember this network on the USB",
     remembered: "Remembered",
+    inUse: "Connected",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    needOffline:
+      "There is no internet connection. Pick your Wi-Fi network below and type its password.",
     needForDownload:
       "There is no internet connection. Connect to a Wi-Fi network and then start the download again.",
   },
@@ -906,6 +929,7 @@ const es: Dictionary = {
   },
   topbar: {
     offline: "Sin red",
+    offlineHint: "Sin red: toca para conectarte al Wi-Fi",
     secureBootOn: "Secure Boot: activo",
     secureBootOff: "Secure Boot: desactivado",
     secureBootUnknown: "Secure Boot: desconocido",
@@ -954,8 +978,8 @@ const es: Dictionary = {
     mediaText:
       "Añade una instalación hecha con cualquier herramienta: Rufus, una carpeta, una ISO.",
     browser: "Navegador web",
-    browserText: "Navega por internet con Firefox.",
-    settingsText: "Tema, fondo, puntero, idioma, red.",
+    browserText: "Navega por internet en modo oscuro. Lo que descargues pasa directo a tu USB.",
+    settingsText: "Tema, fondo, idioma, red.",
     search: "Busca o escribe el nombre de un sistema...",
     downloadSystem: "Descargar {name}",
     noMatch: "No hay coincidencias. Prueba otra palabra.",
@@ -1081,6 +1105,12 @@ const es: Dictionary = {
     save: "Guardar",
     edit: "Personalizar",
     badImage: "Ese archivo no es una imagen utilizable.",
+    gifHint:
+      "Opcional: un GIF que se ve como vista previa de esta imagen (hasta 6 MB). Se mueve al pasar el puntero por encima.",
+    gifChoose: "Elegir un GIF…",
+    gifRemove: "Quitar el GIF",
+    badGif: "Ese archivo no es un GIF.",
+    gifTooBig: "Ese GIF es demasiado grande (6 MB como máximo).",
   },
   link: {
     title: "Descargar desde un enlace",
@@ -1256,6 +1286,16 @@ const es: Dictionary = {
     privacyShort: "Telemetría",
     privacyNote:
       "Durante la instalación desactiva la recogida de datos de diagnóstico, los anuncios y la pantalla de configuración rápida. Funciona del todo en Enterprise, Education y LTSC; en Home y Pro Windows mantiene su nivel básico.",
+    noOnlineTitle: "No exigir una cuenta de Microsoft en línea",
+    noOnlineNote:
+      "Permite terminar la configuración inicial con una cuenta local y sin conexión a internet (Windows 11).",
+    noBitLockerTitle: "Desactivar el cifrado automático del disco (BitLocker)",
+    noBitLockerNote:
+      "Evita que Windows cifre el disco por su cuenta tras instalar. Déjalo sin marcar si quieres cifrado.",
+    qolTitle:
+      "Mejoras de uso (sin Copilot, Recall, OneDrive, Widgets, Outlook nuevo ni inicio rápido)",
+    qolNote:
+      "Aplica directivas del equipo durante la instalación. Puedes deshacer cada una después desde los ajustes de Windows.",
     winBypassTitle: "Saltarse la comprobación de requisitos de Windows 11 (TPM, Secure Boot, RAM)",
     winBypassNote:
       "Solo para equipos que no los cumplen. Microsoft no da soporte a Windows 11 en ellos.",
@@ -1290,11 +1330,16 @@ const es: Dictionary = {
     bootMenuNote: "Si vuelve a arrancar Rebootera, elige la imagen en el menú de arranque.",
     incompatibleNote:
       "Se sabe que esta imagen no arranca desde el menú de Rebootera. Grábala sola en otro pendrive (por ejemplo con Rufus) para instalarla.",
-    targetNeed: "Necesita al menos {size}. Las partes demasiado pequeñas se ven apagadas.",
+    targetNeed:
+      "Necesita al menos {min} (se recomiendan {size}). Las partes demasiado pequeñas se ven apagadas.",
     freeOk: "Hay sitio ({size}). No se borra nada.",
-    freeSmall: "Aquí solo hay {have} y se necesitan {need}.",
+    freeSmall: "Aquí solo hay {have} y se necesitan al menos {need}.",
+    freeTight:
+      "Aquí hay {have}, menos de los {need} recomendados. Puedes continuar; el instalador tiene la última palabra.",
     partOk: "Esta partición se formateará: se borra todo lo que tiene ({used}).",
-    partSmall: "Esta partición es pequeña ({have}); se necesitan {need}.",
+    partTight:
+      "Esta partición tiene {have}, menos de los {need} recomendados. Se formateará: se borra todo lo que tiene ({used}). Puedes continuar; el instalador tiene la última palabra.",
+    partSmall: "Esta partición es pequeña ({have}); se necesitan al menos {need}.",
     makeRoom: "Hacer sitio",
     openDisks: "Editar particiones",
     askInstaller: "Lo elijo en el instalador",
@@ -1334,6 +1379,8 @@ const es: Dictionary = {
     sourcePackages: "{n} paquetes",
     sourceEmpty:
       "Encontrada, pero no tiene paquetes de drivers (.inf) que Windows pueda usar: solo instaladores.",
+    sourceError: "Encontrada, pero no se pudo abrir: {why}",
+    sourceNotOpened: "Sin abrir",
     noSources: "Todavía no se ha encontrado ningún origen de drivers en este equipo.",
     searchAgain: "Buscar otra vez",
     from: "Origen: {source}",
@@ -1360,9 +1407,13 @@ const es: Dictionary = {
     missingHint: "No hay driver en este equipo ni en tu USB.",
     fineHint: "No hay nada que hacer.",
     searchWeb: "Buscar en internet",
+    linkChip: "Drivers de {maker}",
+    linkPc: "Soporte de {maker}",
+    linkCatalog: "Catálogo de Microsoft",
+    linkSearch: "Buscar en internet",
     howTitle: "Cómo añadir un driver que falta",
-    how1: "Descárgalo de la web del fabricante de tu equipo o de esa pieza (desde otro aparato si este no tiene red).",
-    how2: "Copia su carpeta a la carpeta «drivers» de tu USB de Rebootera, o añádela con Rebootera Desktop.",
+    how1: "Usa los botones junto a la pieza que falta: abren la página oficial de su fabricante en el navegador de Rebootera (hace falta red).",
+    how2: "Descarga allí el driver. Un .zip pasa solo a la carpeta «drivers/Descargas» de tu USB y se descomprime; un instalador (.exe) se guarda tal cual. O copia tú una carpeta de drivers a «drivers».",
     how3: "Pulsa «Buscar otra vez». Pasará a Listo e irá a Windows solo.",
     othersTitle: "Otros dispositivos ({n})",
     optional: "Opcional",
@@ -1530,16 +1581,6 @@ const es: Dictionary = {
     kernel: "Kernel",
     uptime: "Tiempo encendido",
   },
-  pointer: {
-    title: "Puntero y panel táctil",
-    speed: "Velocidad del puntero",
-    slow: "Lenta",
-    fast: "Rápida",
-    tap: "Tocar para hacer clic en el panel táctil",
-    natural: "Desplazamiento natural",
-    hint: "Los cambios se aplican al momento.",
-    applying: "Aplicando…",
-  },
   keyboard: {
     title: "Teclado",
     hint: "Distribución del teclado de este equipo. Cambia al momento.",
@@ -1580,6 +1621,11 @@ const es: Dictionary = {
     note: "Si eliges recordar una red, su contraseña se guarda en el USB y Rebootera vuelve a conectarse sola la próxima vez.",
     remember: "Recordar esta red en el USB",
     remembered: "Recordada",
+    inUse: "Conectada",
+    showPassword: "Mostrar contraseña",
+    hidePassword: "Ocultar contraseña",
+    needOffline:
+      "No hay conexión a internet. Elige tu red Wi-Fi aquí abajo y escribe su contraseña.",
     needForDownload:
       "No hay conexión a internet. Conéctate a una red Wi-Fi y vuelve a empezar la descarga.",
   },

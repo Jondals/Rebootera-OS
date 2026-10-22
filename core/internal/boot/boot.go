@@ -1,8 +1,11 @@
 // * Package boot: elige qué imagen arranca Ventoy la próxima vez. Edita
-// * ventoy/ventoy.json del Vault cambiando solo VTOY_DEFAULT_IMAGE y
-// * VTOY_MENU_TIMEOUT, y respeta el resto de la configuración.
+// * ventoy/ventoy.json del Vault cambiando solo VTOY_DEFAULT_IMAGE, VTOY_MENU_TIMEOUT y la lista de imágenes del
+// * menú, y respeta el resto de la configuración.
+// * El menú del USB solo enseña Rebootera OS (y otra versión de Rebootera si hay una instalada al lado): las
+// * imágenes de la biblioteca (Windows, Linux...) no salen en él, se arrancan desde el asistente de instalación, que
+// * añade al menú solo la elegida mientras dura esa instalación.
 // * Cuando Rebootera OS vuelve a arrancar, Restore deja otra vez Rebootera OS
-// * como imagen por defecto.
+// * como imagen por defecto y el menú solo con Rebootera.
 // ! Ventoy no tiene "arrancar una sola vez": mientras Rebootera no vuelva a
 // ! arrancar, el menú de Ventoy seguirá preseleccionando la imagen elegida
 // ! (con cuenta atrás, así que siempre se puede elegir otra entrada).
@@ -26,7 +29,13 @@ const (
 	installTimeout  = "10"
 	keyDefaultImage = "VTOY_DEFAULT_IMAGE"
 	keyMenuTimeout  = "VTOY_MENU_TIMEOUT"
+	// keyImageList es el plugin de Ventoy que limita las imágenes que salen en el menú.
+	keyImageList = "image_list"
+	keyAlias     = "menu_alias"
 )
+
+// rebooteraDir es la carpeta del USB (dentro de /rebootera) donde viven las versiones de Rebootera OS.
+const rebooteraDir = "rebootera"
 
 // * configPath es ventoy/ventoy.json dentro del Vault.
 func configPath() string {
@@ -83,6 +92,97 @@ func writeConfig(config map[string]any) error {
 	return vault.WriteJSON(configPath(), config)
 }
 
+// * ownImages lista las imágenes de Rebootera OS que hay en el USB: la actual y, si hay alguna más a su lado (otra versión
+// * que se dejó al instalar encima), esas también. Son las únicas que salen en el menú de Ventoy en reposo.
+func ownImages() []string {
+	return ownImagesIn(vault.Path(rebooteraDir))
+}
+
+// * ownImagesIn es ownImages para la carpeta rebootera/ de un USB cualquiera (Rebootera Desktop no tiene Vault montado).
+func ownImagesIn(dir string) []string {
+	list := []string{RebooteraImage}
+	entries, _ := os.ReadDir(dir)
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.Type().IsRegular() && strings.EqualFold(filepath.Ext(name), ".iso") && name != filepath.Base(RebooteraImage) {
+			list = append(list, "/"+rebooteraDir+"/"+name)
+		}
+	}
+	return list
+}
+
+// * setMenu deja en el menú de Ventoy solo las imágenes de Rebootera OS y, si se indica, la imagen extra (la que se va a
+// * instalar). A las otras versiones de Rebootera les pone un nombre que se entienda.
+func setMenu(config map[string]any, own []string, extra string) {
+	images := own
+	if extra != "" {
+		images = append(images, extra)
+	}
+	list := make([]any, 0, len(images))
+	for _, image := range images {
+		list = append(list, image)
+	}
+	config[keyImageList] = list
+	aliases, _ := config[keyAlias].([]any)
+	known := map[string]bool{}
+	for _, item := range aliases {
+		if entry, ok := item.(map[string]any); ok {
+			if image, ok := entry["image"].(string); ok {
+				known[image] = true
+			}
+		}
+	}
+	for _, image := range images[1:] {
+		if known[image] || image == extra {
+			continue
+		}
+		name := strings.TrimSuffix(filepath.Base(image), filepath.Ext(image))
+		alias := "Rebootera OS (" + name + ")"
+		if strings.Contains(name, "previous") {
+			alias = "Rebootera OS (previous version)"
+		}
+		aliases = append(aliases, map[string]any{"image": image, "alias": alias})
+	}
+	if len(aliases) > 0 {
+		config[keyAlias] = aliases
+	}
+}
+
+// * menuIs indica si el menú de Ventoy ya enseña exactamente las imágenes de Rebootera OS (sin extra).
+func menuIs(config map[string]any, want []string) bool {
+	list, ok := config[keyImageList].([]any)
+	if !ok || len(list) != len(want) {
+		return false
+	}
+	for index, item := range list {
+		if value, _ := item.(string); value != want[index] {
+			return false
+		}
+	}
+	return true
+}
+
+// * RestrictMenu hace que el menú del USB solo enseñe Rebootera OS. Es para USB hechos con versiones anteriores, donde el
+// * menú enseñaba todas las imágenes de la biblioteca: lo llama Rebootera Desktop al actualizar un USB.
+// ! Respeta lo demás de ventoy.json y, si el menú ya estaba así, no escribe nada.
+func RestrictMenu(configFile string) error {
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		return err
+	}
+	config := map[string]any{}
+	if err := json.Unmarshal(data, &config); err != nil {
+		return fmt.Errorf("la configuración de arranque está dañada: %w", err)
+	}
+	own := ownImagesIn(filepath.Join(filepath.Dir(filepath.Dir(configFile)), rebooteraDir))
+	if menuIs(config, own) {
+		return nil
+	}
+	setMenu(config, own, "")
+	os.WriteFile(configFile+".bak", data, 0o640)
+	return vault.WriteJSON(configFile, config)
+}
+
 // Prep son los extras de una instalación: archivo de respuestas, drivers
 // inyectados y el atajo de requisitos de Windows 11.
 type Prep struct {
@@ -94,6 +194,8 @@ type Prep struct {
 	DriversArchive string
 	// WinBypass quita las comprobaciones de TPM, Secure Boot y RAM de Windows 11.
 	WinBypass bool
+	// WinNoOnline quita solo la exigencia de cuenta de Microsoft en línea (OOBE).
+	WinNoOnline bool
 }
 
 // Rutas y claves de Ventoy que Rebootera gestiona. Todo lo que Rebootera crea
@@ -152,9 +254,15 @@ func Prepare(rel string, prep Prep) error {
 		bypass = bypassOn
 	}
 	setControl(config, keyBypassCheck, bypass)
-	setControl(config, keyBypassNRO, bypass)
+	nro := bypass
+	if prep.WinNoOnline {
+		nro = bypassOn
+	}
+	setControl(config, keyBypassNRO, nro)
 	setControl(config, keyDefaultImage, ventoyPath)
 	setControl(config, keyMenuTimeout, installTimeout)
+	// * Durante la instalación el menú enseña Rebootera y la imagen elegida, y nada más.
+	setMenu(config, ownImages(), ventoyPath)
 	return writeConfig(config)
 }
 
@@ -236,7 +344,7 @@ func Restore() (bool, error) {
 	hadWork := workErr == nil
 	dropped := dropOwnEntries(config)
 	bypassed := getControl(config, keyBypassCheck) == bypassOn || getControl(config, keyBypassNRO) == bypassOn
-	if !dropped && !hadWork && !bypassed &&
+	if !dropped && !hadWork && !bypassed && menuIs(config, ownImages()) &&
 		getControl(config, keyDefaultImage) == RebooteraImage && getControl(config, keyMenuTimeout) == defaultTimeout {
 		return false, nil
 	}
@@ -244,6 +352,7 @@ func Restore() (bool, error) {
 	setControl(config, keyBypassNRO, bypassOff)
 	setControl(config, keyDefaultImage, RebooteraImage)
 	setControl(config, keyMenuTimeout, defaultTimeout)
+	setMenu(config, ownImages(), "")
 	if err := writeConfig(config); err != nil {
 		return true, err
 	}

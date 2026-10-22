@@ -93,11 +93,16 @@ func deviceMatch(device hardware.Device) driverMatch {
 	}
 }
 
-// scan guarda cuándo se buscaron drivers por última vez en las particiones del equipo.
+// scan guarda cuándo se buscaron drivers por última vez en las particiones del equipo y si esa búsqueda encontró algo.
 var scan struct {
-	mu   sync.Mutex
-	last time.Time
+	mu    sync.Mutex
+	last  time.Time
+	found bool
 }
+
+// noDriversRetry es cuánto se espera para volver a buscar si la última búsqueda no encontró nada: un disco que acaba de
+// aparecer (un USB, una partición que udev tarda en publicar) no debe esperar los dos minutos de una búsqueda con resultado.
+const noDriversRetry = 15 * time.Second
 
 // * scanForDrivers pide al agente que abra en solo lectura las particiones que pueden traer drivers. Sin
 // * forzar, no se repite antes de dos minutos: la interfaz consulta el plan a menudo.
@@ -107,13 +112,54 @@ func (s *Server) scanForDrivers(force bool) {
 	}
 	scan.mu.Lock()
 	defer scan.mu.Unlock()
-	if !force && time.Since(scan.last) < 2*time.Minute {
+	wait := 2 * time.Minute
+	if !scan.found {
+		wait = noDriversRetry
+	}
+	if !force && time.Since(scan.last) < wait {
 		return
 	}
 	scan.last = time.Now()
-	if _, err := s.agent.Send(agentproto.Request{Op: agentproto.OpDriversScan}); err != nil {
+	lines, err := s.agent.Send(agentproto.Request{Op: agentproto.OpDriversScan})
+	if err != nil {
 		log.Printf("drivers: no se pudo buscar en las particiones: %v", err)
+		return
 	}
+	scan.found = len(lines) > 0
+}
+
+// * WatchDrivers busca drivers en las particiones del equipo nada más arrancar y cada vez que aparece o desaparece un disco
+// * o una partición (se conecta otro USB, se crea una partición "DRIVERS"). Así no hay que abrir la página de Drivers ni
+// * pulsar "Buscar otra vez" para que se vean.
+func (s *Server) WatchDrivers() {
+	if s.mode() != ModeLive || s.agent == nil {
+		return
+	}
+	time.Sleep(6 * time.Second)
+	s.scanForDrivers(true)
+	last := blockSignature()
+	for {
+		time.Sleep(8 * time.Second)
+		if now := blockSignature(); now != last {
+			last = now
+			// * Un instante para que udev publique la etiqueta de lo recién conectado.
+			time.Sleep(2 * time.Second)
+			s.scanForDrivers(true)
+		}
+	}
+}
+
+// * blockSignature resume los discos y particiones que hay ahora (cambia al conectar o quitar uno).
+func blockSignature() string {
+	entries, err := os.ReadDir("/sys/class/block")
+	if err != nil {
+		return ""
+	}
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		names = append(names, entry.Name())
+	}
+	return strings.Join(names, ",")
 }
 
 // * handleDriverPlan devuelve el casado de drivers con el hardware, buscando antes en las particiones.
@@ -142,6 +188,11 @@ type installRequest struct {
 	BootOnce bool `json:"bootOnce"`
 	// Privacy (solo Windows) reduce la telemetría y los anuncios durante la instalación.
 	Privacy bool `json:"privacy"`
+	// BitLocker (solo Windows) desactiva el cifrado automático del disco; QoL quita Copilot, OneDrive, etc.
+	BitLocker bool `json:"bitlocker"`
+	QoL       bool `json:"qol"`
+	// NoOnline (solo Windows 11) no exige una cuenta de Microsoft en línea.
+	NoOnline bool `json:"noOnline"`
 	// Unattended da respuestas de idioma, zona horaria y cuenta; nunca de disco.
 	Unattended *unattend.Options `json:"unattended"`
 }
@@ -186,13 +237,16 @@ func prepareInstall(item library.Item, req installRequest) (boot.Prep, string, s
 		}
 		prep.DriversArchive = archive
 	}
-	if req.Privacy && system != osWindows {
-		return prep, codeInvalid, "privacy settings only apply to Windows images"
+	if (req.Privacy || req.BitLocker || req.QoL || req.NoOnline) && system != osWindows {
+		return prep, codeInvalid, "these settings only apply to Windows images"
 	}
+	prep.WinNoOnline = req.NoOnline
 	if req.Unattended != nil {
 		options := *req.Unattended
 		options.Drivers = req.Drivers
 		options.ReduceTelemetry = req.Privacy
+		options.DisableBitLocker = req.BitLocker
+		options.QoL = req.QoL
 		var err error
 		switch system {
 		case osWindows:
@@ -207,10 +261,10 @@ func prepareInstall(item library.Item, req installRequest) (boot.Prep, string, s
 		if err != nil {
 			return prep, codeInvalid, err.Error()
 		}
-	} else if req.Drivers || req.Privacy {
+	} else if req.Drivers || req.Privacy || req.BitLocker || req.QoL {
 		// * Sin respuestas del usuario, un autounattend mínimo apunta a los drivers y/o reduce la telemetría,
 		// * sin tocar el idioma ni el teclado.
-		answers, err := unattend.WindowsAnswerFile(unattend.Options{Drivers: req.Drivers, ReduceTelemetry: req.Privacy})
+		answers, err := unattend.WindowsAnswerFile(unattend.Options{Drivers: req.Drivers, ReduceTelemetry: req.Privacy, DisableBitLocker: req.BitLocker, QoL: req.QoL})
 		if err != nil {
 			return prep, codeFailed, err.Error()
 		}

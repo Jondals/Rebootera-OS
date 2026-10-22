@@ -200,7 +200,7 @@ function itemRow(item: LibraryItem): HTMLElement {
       button(t("library.install"), installItem, { variant: "primary", iconPaths: icons.install }),
     );
   }
-  actions.push(button(t("look.edit"), editItem, { iconPaths: icons.sparkle }));
+  actions.push(button(t("look.edit"), editItem, { iconPaths: icons.palette }));
   actions.push(button(t("library.delete"), deleteItem, { iconPaths: icons.x }));
   for (const action of actions) {
     action.classList.add("btn-small");

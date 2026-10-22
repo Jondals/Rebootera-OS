@@ -97,10 +97,6 @@ export const LOGOS: Record<string, Logo> = {
     d: "M2 4.6 10.4 3.4v8H2zM11.6 3.2 22 1.7v9.7H11.6zM2 12.6h8.4v8L2 19.4zM11.6 12.6H22v9.7l-10.4-1.5z",
     color: "#00A4EF",
   },
-  "windows-server": {
-    d: "M2 4.6 10.4 3.4v8H2zM11.6 3.2 22 1.7v9.7H11.6zM2 12.6h8.4v8L2 19.4zM11.6 12.6H22v9.7l-10.4-1.5z",
-    color: "#00A4EF",
-  },
   systemrescue: {
     d: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 3.2a6.8 6.8 0 1 1 0 13.6 6.8 6.8 0 0 1 0-13.6Zm0 3.1a3.7 3.7 0 1 0 0 7.4 3.7 3.7 0 0 0 0-7.4Z",
     color: "#E8A33D",

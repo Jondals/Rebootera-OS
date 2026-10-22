@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"rebootera/core/internal/boot"
 )
 
 // Origen de Rebootera OS al actualizar un USB existente.
@@ -64,7 +66,7 @@ func applySteps(request ApplyRequest) {
 			finish("", err)
 			return
 		}
-		finish(request.Root, ApplyExtras(request.Root, request.Extras))
+		finish(request.Root, applyAndTidy(request))
 		return
 	}
 	if request.System != SystemKeep {
@@ -74,7 +76,15 @@ func applySteps(request ApplyRequest) {
 			return
 		}
 	}
-	finish(request.Root, ApplyExtras(request.Root, request.Extras))
+	finish(request.Root, applyAndTidy(request))
+}
+
+// * applyAndTidy copia lo añadido y deja el menú del USB solo con Rebootera (los USB de versiones anteriores enseñaban en él
+// * todas las imágenes de la biblioteca). Si lo del menú falla no se da por fallida la actualización: es solo el aspecto.
+func applyAndTidy(request ApplyRequest) error {
+	err := ApplyExtras(request.Root, request.Extras)
+	_ = boot.RestrictMenu(filepath.Join(request.Root, "ventoy", "ventoy.json"))
+	return err
 }
 
 // * downloadProgress informa del avance al descargar Rebootera OS.

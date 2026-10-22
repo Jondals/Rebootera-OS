@@ -5,8 +5,8 @@
 # * Bloquea cualquier navegación fuera de la interfaz local, desactiva el menú
 # * contextual y las herramientas de desarrollo, y recarga la interfaz si su proceso
 # * se cierra inesperadamente. La interfaz puede pedirle abrir el navegador con un mensaje {"action": "browser"} (una
-# * ventana WebKit ligera en este mismo proceso, sin historial ni cookies guardados) y le avisa de que ya se dibuja con
-# * {"action": "ready"}.
+# * ventana WebKit ligera en este mismo proceso, en modo oscuro, sin historial ni cookies guardados; lo que descarga va a
+# * DOWNLOAD_DIR y Core lo pasa al USB) y le avisa de que ya se dibuja con {"action": "ready"}.
 
 import json
 import os
@@ -30,6 +30,8 @@ BACKGROUND = "#0b0d11"
 SAFE_URL = re.compile(r"https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~:/?#@!$&()*+,;=%-]*)?")
 # * Archivo que start-kiosk vigila: la interfaz avisa de que ya dibujó su primer fotograma y aquí se marca.
 READY_FILE = os.environ.get("REBOOTERA_READY", "")
+# * Carpeta de grupo donde el navegador deja lo que descarga (la crea tmpfiles.d); Core lo pasa al USB.
+DOWNLOAD_DIR = "/run/rebootera/downloads"
 
 
 def core_ready():
@@ -66,6 +68,33 @@ def to_address(text):
     return "https://duckduckgo.com/?q=" + urllib.parse.quote_plus(text)
 
 
+# * Modo oscuro de las webs: las que ya responden a prefers-color-scheme salen oscuras solas (el navegador se declara
+# * oscuro); a las que siguen siendo claras (fondo blanco) se les invierte el color, menos las imágenes y los vídeos, que
+# * se vuelven a invertir para que se vean normales. Se decide al terminar de cargar, mirando el fondo real de la página.
+DARK_SCRIPT = r"""
+(function () {
+  function luminance(color) {
+    var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(color || "");
+    if (!m) { return 1; }
+    if (m[4] !== undefined && parseFloat(m[4]) === 0) { return -1; }
+    return (0.2126 * m[1] + 0.7152 * m[2] + 0.0722 * m[3]) / 255;
+  }
+  function apply() {
+    if (document.getElementById("rbt-dark")) { return; }
+    var back = luminance(getComputedStyle(document.documentElement).backgroundColor);
+    if (back === -1) { back = luminance(getComputedStyle(document.body || document.documentElement).backgroundColor); }
+    if (back === -1) { back = 1; }
+    if (back < 0.5) { return; }
+    var style = document.createElement("style");
+    style.id = "rbt-dark";
+    style.textContent = "html{background:#fff!important;filter:invert(1) hue-rotate(180deg)!important}" +
+      "img,picture,video,canvas,svg image,iframe,[style*='background-image']{filter:invert(1) hue-rotate(180deg)!important}";
+    document.documentElement.appendChild(style);
+  }
+  if (document.readyState === "complete") { apply(); } else { window.addEventListener("load", apply); }
+})();
+"""
+
 BROWSER_CSS = """
 .browser-bar { background: #0b0d11; padding: 6px 8px; }
 .browser-bar button { min-width: 38px; min-height: 34px; color: #e8e6e1; background: #171a21; border: 1px solid #262a33; border-radius: 8px; }
@@ -73,6 +102,7 @@ BROWSER_CSS = """
 .browser-bar entry { min-height: 34px; color: #e8e6e1; background: #171a21; border: 1px solid #262a33; border-radius: 8px; padding: 0 10px; }
 progressbar trough, progressbar progress { min-height: 3px; }
 progressbar progress { background: #c9a45c; }
+.browser-status { color: #c9a45c; padding: 0 8px; }
 """
 
 
@@ -102,6 +132,15 @@ class BrowserWindow:
             settings.set_hardware_acceleration_policy(WebKit.HardwareAccelerationPolicy.NEVER)
         self.view.set_background_color(_rgba(BACKGROUND))
         self.view.set_vexpand(True)
+        self.view.get_user_content_manager().add_script(
+            WebKit.UserScript.new(
+                DARK_SCRIPT,
+                WebKit.UserContentInjectedFrames.TOP_FRAME,
+                WebKit.UserScriptInjectionTime.END,
+                None,
+                None,
+            )
+        )
         self.view.connect("decide-policy", self.on_decide_policy)
         self.view.connect("notify::uri", self.on_uri)
         self.view.connect("notify::estimated-load-progress", self.on_progress)
@@ -117,6 +156,9 @@ class BrowserWindow:
             button.connect("clicked", handler)
             bar.append(button)
         bar.append(self.entry)
+        self.status = Gtk.Label()
+        self.status.add_css_class("browser-status")
+        bar.append(self.status)
         close = Gtk.Button(label="✕")
         close.connect("clicked", self.on_close)
         bar.append(close)
@@ -196,8 +238,35 @@ class BrowserWindow:
         return False
 
     def on_download(self, session, download):
-        """Sin descargas: para eso están las secciones de la interfaz."""
-        download.cancel()
+        """Guarda lo que se descarga en DOWNLOAD_DIR: Core lo pasa al USB (los .zip de drivers se descomprimen solos)."""
+        download.connect("decide-destination", self.on_destination)
+        download.connect("finished", self.on_download_finished)
+        download.connect("failed", self.on_download_failed)
+
+    def on_destination(self, download, suggested):
+        """Elige dónde se guarda: la carpeta de descargas, con un nombre sin caracteres raros y sin pisar otro archivo."""
+        name = re.sub(r"[^A-Za-z0-9._ ()-]", "_", os.path.basename(suggested or "")).strip(". ")[:120]
+        if not name or not os.path.isdir(DOWNLOAD_DIR) or not os.access(DOWNLOAD_DIR, os.W_OK):
+            download.cancel()
+            self.status.set_text("No se puede descargar aquí")
+            return True
+        stem, ext = os.path.splitext(name)
+        path = os.path.join(DOWNLOAD_DIR, name)
+        number = 2
+        while os.path.exists(path):
+            path = os.path.join(DOWNLOAD_DIR, "%s (%d)%s" % (stem, number, ext))
+            number += 1
+        download.set_destination(path)
+        self.status.set_text("Descargando " + name + "…")
+        return True
+
+    def on_download_finished(self, download):
+        """Aviso de que la descarga terminó (Core la pasa al USB en unos segundos)."""
+        self.status.set_text("Descargado: pasa solo al USB (drivers/Descargas)")
+
+    def on_download_failed(self, download, error):
+        """Aviso de que la descarga falló."""
+        self.status.set_text("La descarga falló")
 
 
 class Shell:
@@ -340,6 +409,10 @@ def _rgba(color):
 
 def on_activate(app):
     """Crea la ventana cuando GTK activa la aplicación."""
+    # * Todo en oscuro: los controles de GTK y, con ello, prefers-color-scheme de las páginas web.
+    settings = Gtk.Settings.get_default()
+    if settings is not None:
+        settings.set_property("gtk-application-prefer-dark-theme", True)
     app.shell = Shell(app)
 
 

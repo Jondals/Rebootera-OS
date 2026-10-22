@@ -219,14 +219,43 @@ function networkRow(network: WifiNetwork): HTMLElement {
     },
     [
       icon(icons.wifi),
-      el("span", { class: "wifi-name" }, [network.ssid]),
+      el("span", { class: "wifi-name", title: network.ssid }, [network.ssid]),
       el("span", { class: "mono-small muted" }, [t("wifi.signal", { n: network.signal })]),
-      status?.remembered?.includes(network.ssid) ? badge(t("wifi.remembered"), "ok") : null,
+      network.inUse ? badge(t("wifi.inUse"), "ok") : null,
+      !network.inUse && status?.remembered?.includes(network.ssid)
+        ? badge(t("wifi.remembered"), "ok")
+        : null,
       badge(securityLabel(network.security), network.security === "open" ? "amber" : "muted"),
     ],
   );
   row.addEventListener("click", chooseNetwork);
   return row;
+}
+
+/** Campo de contraseña con un ojo que la muestra o la oculta (en el kiosco no hay forma de ver lo que se escribe). */
+function passwordWithEye(input: HTMLInputElement): HTMLElement {
+  const eye = el(
+    "button",
+    {
+      class: "pw-toggle",
+      type: "button",
+      "aria-pressed": "false",
+      "aria-label": t("wifi.showPassword"),
+      title: t("wifi.showPassword"),
+    },
+    [icon(icons.eye)],
+  );
+  eye.addEventListener("click", function toggleVisible(): void {
+    const shown = input.type === "password";
+    input.type = shown ? "text" : "password";
+    eye.setAttribute("aria-pressed", String(shown));
+    const label = shown ? t("wifi.hidePassword") : t("wifi.showPassword");
+    eye.setAttribute("aria-label", label);
+    eye.title = label;
+    eye.replaceChildren(icon(shown ? icons.eyeOff : icons.eye));
+    input.focus();
+  });
+  return el("div", { class: "pw-field" }, [input, eye]);
 }
 
 /** Formulario de contraseña (o de nombre y contraseña si la red es oculta). */
@@ -252,6 +281,7 @@ function connectForm(): HTMLElement {
         placeholder: t("wifi.password"),
       })
     : null;
+  const passwordField = passwordInput === null ? null : passwordWithEye(passwordInput);
   const rememberBox = el("input", { type: "checkbox", class: "switch-input", checked: remember });
   rememberBox.addEventListener("change", onRemember);
   nameInput?.addEventListener("keydown", submitOnEnter);
@@ -264,7 +294,7 @@ function connectForm(): HTMLElement {
   return el("div", { class: "wifi-form" }, [
     el("strong", {}, [hidden ? t("wifi.hiddenToggle") : (selected?.ssid ?? "")]),
     nameInput,
-    passwordInput,
+    passwordField,
     snapshot.vault?.available
       ? el("label", { class: "setting-row" }, [el("span", {}, [t("wifi.remember")]), rememberBox])
       : null,
@@ -304,11 +334,13 @@ function draw(): void {
     if (!status.enabled) {
       children.push(el("p", { class: "muted small-note" }, [t("wifi.off")]));
     }
+    const scanButton = button(scanning ? t("wifi.scanning") : t("wifi.scan"), scan, {
+      iconPaths: icons.refresh,
+    });
+    scanButton.classList.toggle("is-spinning", scanning);
     children.push(
       el("div", { class: "wifi-actions" }, [
-        button(scanning ? t("wifi.scanning") : t("wifi.scan"), scan, {
-          iconPaths: icons.refresh,
-        }),
+        scanButton,
         button(t("wifi.hiddenToggle"), chooseHidden),
       ]),
     );

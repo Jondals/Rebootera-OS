@@ -4,7 +4,7 @@
 // ! Solo se lee la carpeta de origen: nunca se modifica.
 
 import { getJSON, postJSON, type InstallerFolder } from "../api.js";
-import { badge, button, errorBox, panel } from "../components.js";
+import { badge, button, errorBox, panel, spinning } from "../components.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
@@ -65,7 +65,7 @@ export function installersSection(onMessage: (node: Node | null) => void): HTMLE
       function onMake() {
         void make(targetOf(folder), folder.name);
       },
-      { variant: "primary", iconPaths: icons.library },
+      { variant: "primary", iconPaths: icons.install },
     );
     action.classList.add("btn-small");
     const modes: string[] = [];
@@ -133,9 +133,9 @@ export function installersSection(onMessage: (node: Node | null) => void): HTMLE
   const actions: HTMLElement[] = [
     button(
       t("installers.rescan"),
-      function onRescan() {
-        void scan();
-      },
+      spinning(function onRescan() {
+        return scan();
+      }),
       { iconPaths: icons.refresh },
     ),
   ];
@@ -146,14 +146,14 @@ export function installersSection(onMessage: (node: Node | null) => void): HTMLE
         function onPick() {
           void pickFolder();
         },
-        { iconPaths: icons.library },
+        { iconPaths: icons.folderOpen },
       ),
     );
   }
   root.append(
     panel(t("installers.title"), [el("p", { class: "muted" }, [t("installers.hint")]), list], {
       action: el("div", { class: "panel-actions" }, actions),
-      iconPaths: icons.library,
+      iconPaths: icons.folder,
     }),
   );
   void scan();

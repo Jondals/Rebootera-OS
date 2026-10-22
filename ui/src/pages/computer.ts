@@ -3,7 +3,7 @@
 // * driver y temperaturas. Sustituye al antiguo registro del kernel, que solo servía a quien sabe leerlo.
 
 import type { Device, Disk, NetIf, Reading, SystemInfo } from "../api.js";
-import { badge, button, emptyState, pageHeader, panel } from "../components.js";
+import { badge, button, emptyState, pageHeader, panel, spinning } from "../components.js";
 import { el } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
@@ -191,7 +191,7 @@ function render(root: HTMLElement): void {
   root.append(
     el("div", { class: "page" }, [
       pageHeader(t("computer.title"), t("computer.subtitle"), [
-        button(t("common.rescan"), rescan, { iconPaths: icons.refresh }),
+        button(t("common.rescan"), spinning(rescan), { iconPaths: icons.refresh }),
       ]),
       body,
     ]),

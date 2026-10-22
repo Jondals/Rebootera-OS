@@ -215,6 +215,24 @@ Crear USB / actualizar (Rebootera Desktop, Windows 11), sin tocar ningún disco 
 
 Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el ratón; solo se probó el análisis de su resultado), "Crear USB" borrando un pendrive real, instalar dentro de un USB ajeno (Rufus), un instalador real de Windows y la ejecución de los workflows de GitHub.
 
+## v0.21.0 (2026-10-22)
+
+| Prueba | Resultado |
+| --- | --- |
+| `gofmt`, `go vet ./...` y `go test ./...` (Linux) y `go vet` de `desktop` con `GOOS=windows` | sin avisos; pruebas nuevas: importación de descargas (zip seguro, sin zip slip), menú de Ventoy solo con Rebootera, partición «DRIVERS» sin abrir, catálogo sin evaluaciones |
+| Catálogo contra las fuentes reales (`go test -tags online`) con las 16 entradas nuevas | todas resuelven con su suma y, donde el proyecto firma, con su firma OpenPGP comprobada (Ubuntu, Mint, Debian, Kali, AlmaLinux); Rocky y openSUSE no publican firma de la suma. Kali live no está en el servidor (solo el torrent): se quitó |
+| `tsc`, `prettier --check` y compilación con esbuild de la interfaz | limpio |
+| Interfaz (Descargar con una descarga en marcha, cola, Crear USB con la descarga de Rebootera, Mis imágenes, Ajustes en español) | dibujada en WebKitGTK sin ventana (`PREVIEW_FIXTURE=transfers`) y revisada a mano |
+
+### No probado en la v0.21.0
+
+- **La ISO nueva en un equipo real**: no se compiló la ISO ni se arrancó (la compilación va en la publicación automática).
+- **El panel táctil real** (el toque y arrastre que ahora conserva por defecto) y **el deslizador de particiones con él**.
+- **El menú de Ventoy solo con Rebootera** en un USB real (se prueba la edición de `ventoy.json`, no el menú).
+- **Las descargas del navegador al USB**, **el modo oscuro de las webs** y **los botones de drivers oficiales** en la ventana real (se comprueba el código y la importación, no el kiosco).
+- **La búsqueda de la partición «DRIVERS» al arrancar** en un equipo real (se prueba con datos de ejemplo).
+- **El rendimiento** con el fondo activado en un equipo real: se quitaron las causas conocidas (ruido del fondo, desenfoque, paneles translúcidos sobre el fondo en movimiento, repintado de las tarjetas), pero no se midió en hardware.
+
 ## v0.15.0 (2026-10-20)
 
 | Prueba | Resultado |
@@ -261,7 +279,6 @@ Los diálogos nativos de elegir imágenes y carpetas (hay que pulsarlos con el r
 | Batería completa de VM (`test-all.sh`: ISO de depuración y definitiva en UEFI + Secure Boot y BIOS, USB de extremo a extremo, Wi-Fi/teclado/puntero, Debian con preseed, adopt, particiones y Windows) | 0 fallos: depuración 18 y 19, definitiva 2 y 2 (con el apagado desde la interfaz), USB 20, adopt 6, Debian 12, particiones 23, Wi-Fi y puntero 25, Windows 8 |
 | Arranque directo de la ISO (GRUB sin menú ni espera) | arranca hasta la interfaz en las cuatro pruebas de arranque |
 | Reinicio de la sesión al cambiar el teclado o el puntero | el compositor antiguo muere y el nuevo arranca con el teclado elegido (antes sobrevivía) |
-| `LoadInput` sin archivo guardado devuelve los valores por defecto | pruebas Go |
 | Catálogo contra las fuentes reales (35 entradas nuevas: placas, Ubuntu 22.04, Debian 12, Fedora 43, LMDE 7, AlmaLinux 9, Windows 10 LTSC en inglés) | todas resuelven, con firma OpenPGP donde el proyecto la publica |
 | Resolvedor "latest-sum" y nombre y foto de las imágenes | pruebas Go |
 | `go vet`, `go test ./...`, `staticcheck`, `tsc`, `knip` | sin avisos |

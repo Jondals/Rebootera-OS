@@ -91,7 +91,7 @@
   height: 42px;
   padding: 0 13px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 7px;
   background: transparent;
   color: var(--text-muted);
   font-family: inherit;
@@ -149,7 +149,7 @@
   height: 36px;
   padding: 0 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--panel);
   color: var(--text-muted);
   font-size: 13px;
@@ -299,4 +299,248 @@ main.keep .page {
     opacity: 0;
     transform: translateY(-6px) scale(0.98);
   }
+}
+
+/* ---- Botones que giran mientras buscan: se ve que la pulsación se atendió ---- */
+
+.is-spinning > .icon {
+  animation: spin 0.8s linear infinite;
+}
+
+:root[data-motion="reduced"] .is-spinning > .icon {
+  animation-duration: 0.8s !important;
+  animation-iteration-count: infinite !important;
+}
+
+button.is-spinning {
+  pointer-events: none;
+}
+
+/* ---- Pausar y cancelar la descarga de Rebootera: aire entre la barra y los botones ---- */
+
+.progress + .image-actions {
+  margin-top: 16px;
+}
+
+/* ---- Barra de descargas: un bloque sólido, ordenado y a todo el ancho ---- */
+
+.dl-bar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 14px;
+  margin: 20px 0 0;
+  padding: 12px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-solid);
+  box-shadow: var(--lift);
+}
+
+.dl-bar-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.dl-bar-icon .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.dl-bar-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dl-bar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dl-bar-stats {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.dl-bar-name {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .dl-bar-icon {
+    display: none;
+  }
+}
+
+/* La tarjeta con el desplegable abierto queda por encima de las que tiene al lado y debajo */
+
+.fam-card.fam-open {
+  z-index: 30;
+}
+
+/* Vista previa en GIF de una imagen */
+
+.item-gif {
+  width: 84px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+}
+
+.look-preview-wide {
+  width: 144px;
+  height: 84px;
+}
+
+.look-preview-wide .item-picture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Contraseña con ojo para mostrarla */
+
+.pw-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pw-field .text-input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.pw-toggle:hover,
+.pw-toggle[aria-pressed="true"] {
+  color: var(--accent);
+}
+
+.pw-toggle .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Redes Wi-Fi: el nombre se acorta y las etiquetas (conectada, recordada, WPA2) nunca saltan de línea */
+
+.wifi-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.wifi-row > .icon {
+  flex: none;
+}
+
+.wifi-row .wifi-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.wifi-row .badge,
+.wifi-row .mono-small {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* Aviso "sin red" de la barra superior: es un botón que lleva al Wi-Fi */
+
+button.chip-link {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+button.chip-link:hover {
+  border-color: var(--accent-border);
+  color: var(--text);
+}
+
+/* ---- Rendimiento ---- */
+
+/* El ruido del fondo (feTurbulence) era lo más caro de dibujar y apenas se nota: fuera. */
+.bg-grain {
+  display: none;
+}
+
+.bg {
+  contain: strict;
+}
+
+/* Con el fondo en movimiento en Rebootera OS, los paneles son opacos: lo que hay debajo cambia en cada fotograma y
+   mezclar cada panel translúcido con él era lo que hacía lento todo. */
+:root[data-bg="on"]:not([data-app="desktop"]) {
+  --panel: var(--surface-solid);
+}
+
+:root[data-bg="on"]:not([data-app="desktop"]) .orbit,
+:root[data-bg="on"]:not([data-app="desktop"]) .beam {
+  filter: none;
+}
+
+/* Sin GPU el fondo se mueve a saltos (unos 4 fotogramas por segundo) y sin haces de luz: cada fotograma se compone
+   por CPU, así se puede tener el fondo sin que la interfaz se arrastre. */
+:root[data-gfx="lite"][data-bg="on"] .orbit-a {
+  animation: spin 150s steps(600) infinite;
+}
+
+:root[data-gfx="lite"][data-bg="on"] .orbit-b {
+  animation: spin 210s steps(840) infinite reverse;
+}
+
+:root[data-gfx="lite"][data-bg="on"] .beam {
+  display: none;
+}
+
+:root[data-gfx="lite"] .page,
+:root[data-gfx="lite"] main {
+  animation: none;
+}
+
+/* Botones de las webs oficiales de un driver que falta */
+
+.driver-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 340px;
+}
+
+p + .progress {
+  margin-top: 10px;
 }

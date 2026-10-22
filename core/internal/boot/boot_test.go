@@ -147,3 +147,77 @@ func TestRespuestasNombreNoValido(t *testing.T) {
 		t.Fatal("un nombre de archivo de respuestas ajeno debe rechazarse")
 	}
 }
+
+// * imageList lee el plugin image_list de ventoy.json como una lista de textos.
+func imageList(t *testing.T) []string {
+	t.Helper()
+	config, err := readConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []string
+	list, _ := config[keyImageList].([]any)
+	for _, item := range list {
+		value, _ := item.(string)
+		out = append(out, value)
+	}
+	return out
+}
+
+// * TestMenuSoloRebootera comprueba que el menú de Ventoy solo enseña Rebootera, que durante una instalación enseña además la
+// * imagen elegida y que al volver a Rebootera vuelve a quedar solo.
+func TestMenuSoloRebootera(t *testing.T) {
+	root := fakeVault(t)
+	if got := imageList(t); len(got) != 1 || got[0] != RebooteraImage {
+		t.Fatalf("el kit debe traer el menú solo con Rebootera: %v", got)
+	}
+	if err := Prepare("isos/linux/debian.iso", Prep{}); err != nil {
+		t.Fatal(err)
+	}
+	if got := imageList(t); len(got) != 2 || got[1] != "/isos/linux/debian.iso" {
+		t.Fatalf("durante la instalación salen Rebootera y la imagen elegida: %v", got)
+	}
+	if _, err := Restore(); err != nil {
+		t.Fatal(err)
+	}
+	if got := imageList(t); len(got) != 1 || got[0] != RebooteraImage {
+		t.Fatalf("al volver, solo Rebootera: %v", got)
+	}
+	// * Otra versión de Rebootera instalada al lado también sale, con un nombre que se entienda.
+	os.MkdirAll(filepath.Join(root, "rebootera"), 0o755)
+	os.WriteFile(filepath.Join(root, "rebootera", "rebootera-os.previous.iso"), []byte("iso"), 0o644)
+	if _, err := Restore(); err != nil {
+		t.Fatal(err)
+	}
+	got := imageList(t)
+	if len(got) != 2 || got[1] != "/rebootera/rebootera-os.previous.iso" {
+		t.Fatalf("la otra versión de Rebootera debe salir en el menú: %v", got)
+	}
+	data, _ := os.ReadFile(filepath.Join(root, "ventoy", "ventoy.json"))
+	if !strings.Contains(string(data), "Rebootera OS (previous version)") {
+		t.Fatal("falta el nombre de la otra versión")
+	}
+}
+
+// * TestRestrictMenuUSBAntiguo arregla un USB de una versión anterior (sin image_list) y no vuelve a tocarlo.
+func TestRestrictMenuUSBAntiguo(t *testing.T) {
+	root := t.TempDir()
+	os.MkdirAll(filepath.Join(root, "ventoy"), 0o755)
+	file := filepath.Join(root, "ventoy", "ventoy.json")
+	os.WriteFile(file, []byte(`{"control":[{"VTOY_MENU_TIMEOUT":"1"}],"theme":{"file":"/ventoy/theme/theme.txt"}}`), 0o644)
+	if err := RestrictMenu(file); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := os.ReadFile(file)
+	if !strings.Contains(string(data), `"image_list"`) || !strings.Contains(string(data), "/ventoy/theme/theme.txt") {
+		t.Fatalf("debe añadir el menú sin perder lo demás: %s", data)
+	}
+	before, _ := os.Stat(file)
+	if err := RestrictMenu(file); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := os.Stat(file)
+	if !after.ModTime().Equal(before.ModTime()) {
+		t.Fatal("una segunda llamada no debe reescribir el archivo")
+	}
+}

@@ -26,8 +26,8 @@ export function reportReady(): void {
 }
 
 /**
- * Pide a la sesión que abra el navegador del sistema (Firefox, solo para navegar, en modo oscuro, sin telemetría y
- * con uBlock Origin y Dark Reader), si se indica en una página https concreta.
+ * Pide a la sesión que abra el navegador del sistema (navegador ligero de la sesión, en modo oscuro, sin telemetría y
+ * sin cookies ni historial), si se indica en una página https concreta.
  */
 export function openBrowser(url?: string): void {
   channel()?.postMessage(

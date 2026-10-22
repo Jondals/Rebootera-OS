@@ -6,6 +6,7 @@
 import { isLite } from "./prefs.js";
 import {
   getJSON,
+  postJSON,
   type Device,
   type Disk,
   type Job,
@@ -121,6 +122,30 @@ async function pollFast(): Promise<void> {
   notify();
 }
 
+let clearTimer = 0;
+
+/**
+ * Las descargas terminadas o canceladas se quitan solas de la cola unos segundos después (así no hay que limpiarla a mano).
+ * Las fallidas se quedan: tienen el botón de reintentar y el motivo del fallo.
+ */
+function scheduleClear(): void {
+  const finished = snapshot.transfers.some(function isFinished(job) {
+    return job.status === "done" || job.status === "cancelled";
+  });
+  if (!finished || clearTimer !== 0) {
+    return;
+  }
+  clearTimer = window.setTimeout(async function clear(): Promise<void> {
+    clearTimer = 0;
+    try {
+      await postJSON("/api/transfers/clear", { keepFailed: true });
+      await pollVault();
+    } catch {
+      // * Si no se pudo, se vuelve a intentar con el siguiente sondeo.
+    }
+  }, 4000);
+}
+
 /** Lee el Vault, la biblioteca y las transferencias (sondeo rápido). */
 async function pollVault(): Promise<void> {
   try {
@@ -132,6 +157,7 @@ async function pollVault(): Promise<void> {
       ]);
       snapshot.library = library;
       snapshot.transfers = transfers;
+      scheduleClear();
     } else {
       snapshot.library = [];
       snapshot.transfers = [];
