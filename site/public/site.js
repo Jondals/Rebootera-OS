@@ -1,8 +1,7 @@
 // * Comportamiento de la landing de Rebootera OS (sin dependencias): idioma y tema al instante, menús de la cabecera,
 // * descarga según el sistema del visitante (lee la release "latest" de GitHub), icono de la pestaña con los colores
-// * del tema, capturas que siguen al tema, carrusel, aparición al desplazarse y movimiento con el ratón (inclinación
-// * de la captura de portada y desplazamiento del fondo). Se carga al final del <body>; el tema guardado ya se aplicó
-// * antes de pintar (ver Layout.astro).
+// * del tema, capturas que siguen al tema, carrusel, aparición al desplazarse e inclinación de la captura de portada
+// * con el ratón. Se carga al final del <body>; el tema guardado ya se aplicó antes de pintar (ver Layout.astro).
 (function () {
   "use strict";
 
@@ -132,13 +131,6 @@
       swatches[j].style.setProperty("--s-bg", cssVar("--bg"));
       swatches[j].style.setProperty("--s-accent", cssVar("--accent"));
     }
-    var active = document.querySelector('[data-theme-opt="' + currentTheme() + '"]');
-    var nameEn = document.querySelector("[data-theme-name-en]");
-    var nameEs = document.querySelector("[data-theme-name-es]");
-    if (active && nameEn && nameEs) {
-      nameEn.textContent = active.getAttribute("data-name-en");
-      nameEs.textContent = active.getAttribute("data-name-es");
-    }
     var meta = document.getElementById("theme-color");
     if (meta) {
       meta.setAttribute("content", cssVar("--bg") || "#000000");
@@ -148,9 +140,17 @@
 
   /** Aplica un tema a toda la página. */
   function applyTheme(name) {
+    // * Sin transiciones durante el cambio: todo pasa al nuevo tema a la vez, sin arrastre.
+    root.classList.add("switching");
     root.setAttribute("data-theme", name);
     markTheme();
     updateShots();
+    auroraPalette();
+    window.requestAnimationFrame(function done() {
+      window.requestAnimationFrame(function release() {
+        root.classList.remove("switching");
+      });
+    });
   }
 
   /** Aplica el tema de la opción pulsada al instante y lo recuerda. */
@@ -301,10 +301,42 @@
     renderDownload();
   }
 
-  /** Dibuja el botón grande, los botones de sistema, las variantes y la nota del sistema elegido. */
+  /** Crea una sola vez los botones de variante de cada sistema (así pulsarlos no los vuelve a dibujar). */
+  function buildVariants() {
+    var box = document.getElementById("dl-variants");
+    Object.keys(PLATFORMS).forEach(function eachPlatform(id) {
+      var variants = PLATFORMS[id].variants;
+      if (variants.length < 2) {
+        return;
+      }
+      var group = document.createElement("div");
+      group.className = "flex items-center justify-center gap-2 lg:justify-start";
+      group.setAttribute("data-on", "false");
+      group.setAttribute("data-variants", id);
+      variants.forEach(function eachVariant(variant, index) {
+        var chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip";
+        chip.textContent = variant.label;
+        chip.setAttribute("data-variant", String(index));
+        chip.addEventListener("click", pickVariant);
+        group.appendChild(chip);
+      });
+      box.appendChild(group);
+    });
+  }
+
+  /** Actualiza el botón grande, el sistema marcado, la nota y las variantes; solo cambia lo que cambia de verdad. */
   function renderDownload() {
     var platform = PLATFORMS[chosen.id];
-    document.getElementById("dl-os").textContent = platform.name;
+    var label = document.getElementById("dl-os");
+    if (label.textContent !== platform.name) {
+      label.textContent = platform.name;
+      // * El nombre nuevo entra con un fundido corto (no salta de golpe).
+      if (!reduced && label.animate) {
+        label.animate([{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
+      }
+    }
     setLink(document.getElementById("dl-main"), BASE + platform.variants[chosen.variant].asset);
     var tabs = document.querySelectorAll("[data-os]");
     for (var i = 0; i < tabs.length; i++) {
@@ -316,21 +348,21 @@
     }
     var notes = document.querySelectorAll("[data-note]");
     for (var j = 0; j < notes.length; j++) {
-      notes[j].classList.toggle("hidden", notes[j].getAttribute("data-note") !== chosen.id);
+      notes[j].setAttribute("data-on", String(notes[j].getAttribute("data-note") === chosen.id));
     }
-    var box = document.getElementById("dl-variants");
     document.getElementById("dl-variants-wrap").setAttribute("data-open", String(platform.variants.length > 1));
-    if (platform.variants.length > 1) {
-      box.replaceChildren();
-      for (var k = 0; k < platform.variants.length; k++) {
-        var chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = "chip";
-        chip.textContent = platform.variants[k].label;
-        chip.setAttribute("data-variant", String(k));
-        chip.setAttribute("aria-pressed", String(k === chosen.variant));
-        chip.addEventListener("click", pickVariant);
-        box.appendChild(chip);
+    // * Si el sistema nuevo no tiene variantes, los botones del anterior se quedan mientras el bloque se cierra.
+    var groups = document.querySelectorAll("[data-variants]");
+    for (var g = 0; g < groups.length; g++) {
+      var shown = groups[g].getAttribute("data-variants") === chosen.id;
+      if (platform.variants.length > 1) {
+        groups[g].setAttribute("data-on", String(shown));
+      }
+      if (shown) {
+        var chips = groups[g].children;
+        for (var k = 0; k < chips.length; k++) {
+          chips[k].setAttribute("aria-pressed", String(k === chosen.variant));
+        }
       }
     }
   }
@@ -361,6 +393,7 @@
       tabs[i].addEventListener("click", pickPlatform);
     }
     setLink(document.getElementById("dl-iso"), BASE + "rebootera-os-amd64.iso");
+    buildVariants();
     chosen.id = detectPlatform() || "windows";
     chosen.variant = 0;
     renderDownload();
@@ -382,12 +415,17 @@
     box.textContent = (es ? "Versión " : "Version ") + lastRelease.version + " · " + (es ? "publicada el " : "published ") + when;
   }
 
-  /** La versión publicada se pide cuando el visitante interactúa por primera vez (no hace falta para pintar la página). */
+  var releaseAsked = false;
+
+  /** La versión publicada se pide al primer gesto del visitante o, como tarde, al segundo de cargar (no hace falta para pintar). */
   function loadReleaseOnce() {
     window.removeEventListener("pointerdown", loadReleaseOnce);
     window.removeEventListener("scroll", loadReleaseOnce);
     window.removeEventListener("keydown", loadReleaseOnce);
-    loadRelease();
+    if (!releaseAsked) {
+      releaseAsked = true;
+      loadRelease();
+    }
   }
 
   /** Lee la release "latest" de la API pública de GitHub (sin clave). Si no hay, la página no dice nada. */
@@ -402,16 +440,12 @@
       var data = JSON.parse(request.responseText);
       var notes = data.body || "";
       var version = (/version:\s*([0-9][^\s]*)/i.exec(notes) || [])[1] || data.name || "latest";
-      var sha = (/sha256:\s*([0-9a-f]{64})/i.exec(notes) || [])[1] || "";
       lastRelease = { version: version, published_at: data.published_at };
       data.assets.forEach(function eachAsset(asset) {
         if (/\.iso$/.test(asset.name)) {
           document.getElementById("iso-meta").textContent = " · " + megabytes(asset.size);
         }
       });
-      if (sha) {
-        document.getElementById("hash").textContent = "SHA-256 (ISO): " + sha;
-      }
       showVersion();
     };
     request.send();
@@ -446,8 +480,8 @@
 
   // ---------- Movimiento con el ratón y el scroll ----------
 
-  var pointer = { x: 0, y: 0, px: -999, py: -999 };
-  var eased = { x: 0, y: 0, scroll: 0, px: -999, py: -999 };
+  var pointer = { x: 0, y: 0 };
+  var eased = { x: 0, y: 0 };
   var running = false;
 
   /** Giro de reposo de la captura: de lado en pantallas anchas (donde va junto al texto) y recta en las demás. */
@@ -455,29 +489,18 @@
     return window.innerWidth >= 1024 ? -9 : 0;
   }
 
-  /** Un fotograma: acerca poco a poco lo mostrado a donde está el ratón (inclinación de la captura y fondo). */
+  /** Un fotograma: acerca poco a poco la inclinación de la captura a donde está el ratón. */
   function frame() {
     var dx = pointer.x - eased.x;
     var dy = pointer.y - eased.y;
-    var ds = window.scrollY - eased.scroll;
-    var dpx = pointer.px - eased.px;
-    var dpy = pointer.py - eased.py;
-    eased.px += dpx * 0.18;
-    eased.py += dpy * 0.18;
     eased.x += dx * 0.07;
     eased.y += dy * 0.07;
-    eased.scroll += ds * 0.12;
     var tilt = document.getElementById("tilt");
     if (tilt) {
       tilt.style.transform = "perspective(1800px) rotateY(" + (baseAngle() + eased.x * 4).toFixed(3) + "deg) rotateX(" + (baseAngle() * -0.3 - eased.y * 3).toFixed(3) + "deg)";
       document.getElementById("tilt-glow").style.transform = "translate(" + (-eased.x * 16).toFixed(2) + "px, " + (-eased.y * 12).toFixed(2) + "px)";
     }
-    var dawn = document.querySelector(".dawn");
-    if (dawn) {
-      var room = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      dawn.style.setProperty("--p", Math.min(1, Math.max(0, eased.scroll / room)).toFixed(4));
-    }
-    if (Math.abs(dx) + Math.abs(dy) + Math.abs(ds) + Math.abs(dpx) + Math.abs(dpy) > 0.05) {
+    if (Math.abs(dx) + Math.abs(dy) > 0.002) {
       window.requestAnimationFrame(frame);
     } else {
       running = false;
@@ -492,57 +515,267 @@
     }
   }
 
-  /** Recuerda dónde está el ratón (de -1 a 1 en cada eje). */
+  /** Recuerda dónde está el ratón (de -1 a 1 en cada eje) y mueve la luz de la tarjeta que tenga debajo. */
   function onPointerMove(event) {
     pointer.x = (event.clientX / window.innerWidth - 0.5) * 2;
     pointer.y = (event.clientY / window.innerHeight - 0.5) * 2;
-    pointer.px = event.clientX;
-    pointer.py = event.clientY;
     kick();
+    var card = event.target.closest && event.target.closest(".spot");
+    if (card) {
+      var box = card.getBoundingClientRect();
+      card.style.setProperty("--mx", (event.clientX - box.left).toFixed(0) + "px");
+      card.style.setProperty("--my", (event.clientY - box.top).toFixed(0) + "px");
+    }
   }
 
-  /** Devuelve la captura y el fondo a su sitio cuando el ratón sale de la ventana. */
+  /** Devuelve la captura a su sitio cuando el ratón sale de la ventana. */
   function onPointerLeave() {
     pointer.x = 0;
     pointer.y = 0;
-    pointer.px = -999;
-    pointer.py = -999;
     kick();
   }
 
-  /** La cabecera se vuelve transparente (con cristal esmerilado) en cuanto se baja un poco. */
-  function updateHeader() {
+  var scrollRoom = 1;
+  var scrollQueued = false;
+
+  /** Recalcula cuánto se puede bajar (solo al cargar y al cambiar el tamaño, no en cada fotograma). */
+  function measureScroll() {
+    scrollRoom = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    onScrollFrame();
+  }
+
+  /** La cabecera se vuelve translúcida en cuanto se baja un poco y el fondo avanza según lo que se ha bajado (de 0 a 1). */
+  function onScrollFrame() {
+    scrollQueued = false;
     var header = document.getElementById("header");
     if (header) {
       header.setAttribute("data-scrolled", String(window.scrollY > 12));
     }
-    var top = document.getElementById("to-top");
-    if (top) {
-      top.setAttribute("data-show", String(window.scrollY > 700));
+    aurora.target = Math.min(1, Math.max(0, window.scrollY / scrollRoom));
+    if (reduced) {
+      stillAurora();
     }
   }
 
-  /** Sube a la portada, con desplazamiento suave salvo que se pida reducir el movimiento. */
-  function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+  /** Pide un fotograma para el scroll (varios eventos seguidos se juntan en uno). */
+  function updateHeader() {
+    if (!scrollQueued) {
+      scrollQueued = true;
+      window.requestAnimationFrame(onScrollFrame);
+    }
   }
 
-  /** Conecta el movimiento (nada con "reducir movimiento"), el estado de la cabecera y el botón de volver arriba. */
+  /** Conecta el movimiento (nada con "reducir movimiento") y el estado de la cabecera. */
   function setupMotion() {
-    var topButton = document.getElementById("to-top");
-    if (topButton) {
-      topButton.addEventListener("click", scrollToTop);
-    }
     window.addEventListener("scroll", updateHeader, { passive: true });
-    updateHeader();
+    window.addEventListener("resize", measureScroll);
+    window.addEventListener("load", measureScroll);
+    measureScroll();
     if (reduced) {
       return;
     }
     window.addEventListener("mousemove", onPointerMove, { passive: true });
     document.addEventListener("mouseleave", onPointerLeave);
-    window.addEventListener("scroll", kick, { passive: true });
-    eased.scroll = window.scrollY;
     kick();
+  }
+
+  // ---------- Cifras que cuentan ----------
+
+  /** Cuenta un número desde cero hasta su valor en algo más de un segundo, frenando al final. */
+  function countUp(element) {
+    var goal = Number(element.getAttribute("data-count"));
+    var start = performance.now();
+    function step(now) {
+      var t = Math.min(1, (now - start) / 1300);
+      element.textContent = String(Math.round(goal * (1 - Math.pow(1 - t, 3))));
+      if (t < 1) {
+        window.requestAnimationFrame(step);
+      }
+    }
+    element.textContent = "0";
+    window.requestAnimationFrame(step);
+  }
+
+  /** Las cifras empiezan a contar cuando entran en pantalla (con "reducir movimiento" se quedan en su valor). */
+  function setupCounters() {
+    var items = document.querySelectorAll("[data-count]");
+    if (reduced || !("IntersectionObserver" in window)) {
+      return;
+    }
+    var observer = new IntersectionObserver(
+      function onSeen(entries) {
+        entries.forEach(function eachEntry(entry) {
+          if (entry.isIntersecting) {
+            countUp(entry.target);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.6 },
+    );
+    for (var i = 0; i < items.length; i++) {
+      observer.observe(items[i]);
+    }
+  }
+
+  // ---------- Aurora del fondo ----------
+
+  // * Cada cinta de luz: posición arriba (x, y) y abajo de la página (ly), cuánto se mece (ax, ay) y a qué ritmo
+  // * (fx, fy), en qué punto del vaivén empieza (ph), su tamaño (r), lo alargada que es (sx, sy), su giro (rot) y lo que
+  // * cabecea (sway). Todo en proporción al lienzo.
+  var BLOBS = [
+    { x: 0.25, y: 0.02, ly: 0.7, ax: 0.16, ay: 0.06, fx: 0.05, fy: 0.04, ph: 0, r: 0.42, sx: 2.2, sy: 0.55, rot: -0.35, sway: 0.18 },
+    { x: 0.78, y: 0.12, ly: 0.92, ax: 0.14, ay: 0.08, fx: 0.04, fy: 0.06, ph: 2.1, r: 0.4, sx: 2, sy: 0.5, rot: 0.4, sway: 0.22 },
+    { x: 0.5, y: -0.08, ly: 0.55, ax: 0.22, ay: 0.05, fx: 0.03, fy: 0.05, ph: 4.2, r: 0.38, sx: 2.6, sy: 0.4, rot: 0.08, sway: 0.15 },
+    { x: 0.92, y: 0.5, ly: 0.3, ax: 0.08, ay: 0.16, fx: 0.05, fy: 0.03, ph: 1.3, r: 0.34, sx: 0.6, sy: 1.9, rot: 0.2, sway: 0.2 },
+    { x: 0.06, y: 0.6, ly: 0.2, ax: 0.08, ay: 0.14, fx: 0.04, fy: 0.05, ph: 3.4, r: 0.3, sx: 0.65, sy: 1.8, rot: -0.15, sway: 0.2 },
+  ];
+  var aurora = { canvas: null, ctx: null, top: [], low: [], bg: "#000000", p: 0, target: 0, last: 0, running: false, mx: 0, my: 0 };
+
+  /** "#rrggbb" a [tono (0 a 360), saturación y luminosidad (0 a 1)]. */
+  function hexToHsl(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    var r = ((n >> 16) & 255) / 255;
+    var g = ((n >> 8) & 255) / 255;
+    var b = (n & 255) / 255;
+    var max = Math.max(r, g, b);
+    var min = Math.min(r, g, b);
+    var l = (max + min) / 2;
+    var d = max - min;
+    if (d === 0) {
+      return [0, 0, l];
+    }
+    var s = d / (1 - Math.abs(2 * l - 1));
+    var h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [(h * 60 + 360) % 360, s, l];
+  }
+
+  /** Color "hsla(...)" a partir de tono, saturación, luminosidad y opacidad. */
+  function hsla(h, s, l, a) {
+    return "hsla(" + (((h % 360) + 360) % 360).toFixed(1) + ", " + (s * 100).toFixed(1) + "%, " + (l * 100).toFixed(1) + "%, " + a + ")";
+  }
+
+  /** Colores de la aurora según el tema: el acento y tonos vecinos arriba, y otra mezcla de tonos al fondo de la página. */
+  function auroraPalette() {
+    var accent = cssVar("--accent");
+    var strong = cssVar("--accent-strong");
+    if (accent.charAt(0) !== "#" || strong.charAt(0) !== "#") {
+      return;
+    }
+    var a = hexToHsl(accent);
+    var s = hexToHsl(strong);
+    aurora.bg = cssVar("--bg") || "#000000";
+    aurora.top = [
+      [a[0], a[1], a[2] * 0.85],
+      [a[0] + 18, a[1], a[2] * 0.7],
+      [s[0] - 14, s[1], s[2] * 0.65],
+      [a[0] + 32, a[1] * 0.85, a[2] * 0.55],
+    ];
+    aurora.low = [
+      [a[0] - 22, a[1] * 0.9, a[2] * 0.6],
+      [s[0], s[1], s[2] * 0.75],
+      [a[0] + 40, a[1] * 0.7, a[2] * 0.5],
+      [a[0] + 10, a[1], a[2] * 0.7],
+    ];
+    drawAurora(aurora.last);
+  }
+
+  /** Ajusta el lienzo a la forma de la ventana (siempre diminuto: 96 píxeles de ancho). */
+  function sizeAurora() {
+    if (!aurora.canvas) {
+      return;
+    }
+    aurora.canvas.width = 96;
+    aurora.canvas.height = Math.max(40, Math.min(220, Math.round((96 * window.innerHeight) / window.innerWidth)));
+    drawAurora(aurora.last);
+  }
+
+  /** Pinta un fotograma de la aurora en el instante "time" (en segundos). */
+  function drawAurora(time) {
+    var ctx = aurora.ctx;
+    if (!ctx || !aurora.top.length) {
+      return;
+    }
+    var w = aurora.canvas.width;
+    var h = aurora.canvas.height;
+    var p = aurora.p;
+    var size = Math.max(w, h);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = aurora.bg;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = "lighter";
+    for (var i = 0; i < BLOBS.length; i++) {
+      var blob = BLOBS[i];
+      var top = aurora.top[i % aurora.top.length];
+      var low = aurora.low[i % aurora.low.length];
+      // * Cada cinta se inclina un poco hacia el ratón; las del fondo (las más altas en la lista) menos.
+      var lean = 0.05 - i * 0.006;
+      var x = (blob.x + blob.ax * Math.sin(time * blob.fx * 6.283 + blob.ph) + aurora.mx * lean) * w;
+      var y = (blob.y + (blob.ly - blob.y) * p + blob.ay * Math.cos(time * blob.fy * 6.283 + blob.ph) + aurora.my * lean) * h;
+      var radius = blob.r * size * (1 + 0.1 * Math.sin(time * 0.04 * 6.283 + blob.ph));
+      var hue = top[0] + (low[0] - top[0]) * p;
+      var sat = top[1] + (low[1] - top[1]) * p;
+      var light = Math.min(0.5, top[2] + (low[2] - top[2]) * p);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(blob.rot + blob.sway * Math.sin(time * 0.03 * 6.283 + blob.ph));
+      ctx.scale(blob.sx, blob.sy);
+      var gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+      gradient.addColorStop(0, hsla(hue, sat, light, 0.36));
+      gradient.addColorStop(0.35, hsla(hue, sat, light, 0.13));
+      gradient.addColorStop(1, hsla(hue, sat, light, 0));
+      ctx.fillStyle = gradient;
+      ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
+      ctx.restore();
+    }
+  }
+
+  /** Bucle de la aurora: unos 30 fotogramas por segundo, y el paso al color de abajo sigue al scroll con suavidad. */
+  function auroraFrame(now) {
+    if (document.hidden) {
+      aurora.running = false;
+      return;
+    }
+    window.requestAnimationFrame(auroraFrame);
+    if (now - aurora.lastFrame < 33) {
+      return;
+    }
+    aurora.lastFrame = now;
+    aurora.p += (aurora.target - aurora.p) * 0.08;
+    aurora.mx += (pointer.x - aurora.mx) * 0.05;
+    aurora.my += (pointer.y - aurora.my) * 0.05;
+    aurora.last = now / 1000;
+    drawAurora(aurora.last);
+  }
+
+  /** Arranca el bucle si estaba parado (al cargar y al volver a la pestaña). */
+  function startAurora() {
+    if (!aurora.running && aurora.ctx && !reduced && !document.hidden) {
+      aurora.running = true;
+      aurora.lastFrame = 0;
+      window.requestAnimationFrame(auroraFrame);
+    }
+  }
+
+  /** Con "reducir movimiento" la aurora no se mueve sola: solo se repinta al bajar, ya en su sitio. */
+  function stillAurora() {
+    aurora.p = aurora.target;
+    drawAurora(0);
+  }
+
+  /** Prepara el lienzo, los colores y el bucle. */
+  function setupAurora() {
+    aurora.canvas = document.getElementById("aurora");
+    aurora.ctx = aurora.canvas && aurora.canvas.getContext ? aurora.canvas.getContext("2d") : null;
+    if (!aurora.ctx) {
+      return;
+    }
+    sizeAurora();
+    auroraPalette();
+    aurora.canvas.setAttribute("data-ready", "true");
+    window.addEventListener("resize", sizeAurora);
+    document.addEventListener("visibilitychange", startAurora);
+    startAurora();
   }
 
   // ---------- Carrusel de capturas ----------
@@ -663,6 +896,9 @@
   window.addEventListener("pointerdown", loadReleaseOnce, { passive: true });
   window.addEventListener("scroll", loadReleaseOnce, { passive: true });
   window.addEventListener("keydown", loadReleaseOnce);
+  window.setTimeout(loadReleaseOnce, 1200);
+  setupAurora();
+  setupCounters();
   setupMotion();
   setupShowcase();
 })();

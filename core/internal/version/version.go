@@ -3,4 +3,4 @@
 package version
 
 // Version es la versión del sistema y de sus servicios.
-var Version = "0.20.0"
+var Version = "0.20.1"

@@ -1,15 +1,10 @@
 ---
-// * Botón único de idioma: una pastilla con el código del otro idioma (ES en inglés, EN en español) y su nombre. Al
-// * pulsarlo, cambia la página con un fundido. Lo conecta site.js.
-import L from "./L.astro";
-
-interface Props {
-  class?: string;
-}
-const { class: className = "" } = Astro.props;
+// * Selector de idioma: un globo y el código del idioma activo (EN o ES). Pulsarlo pasa al otro idioma al instante.
+// * Lo conecta site.js (data-toggle-lang).
+import Icon from "./Icon.astro";
 ---
 
-<button type="button" data-toggle-lang class={"lang-btn group inline-flex items-center gap-2.5 rounded-lg border border-line2 py-1.5 pl-1.5 pr-3 text-sm font-semibold text-muted transition hover:border-accent/60 hover:text-ink " + className} aria-label="Language / Idioma">
-  <span class="lang-chip"><L en="ES" es="EN" /></span>
-  <span><L en="Español" es="English" /></span>
+<button type="button" data-toggle-lang class="hdr-btn lang-btn inline-flex" aria-label="Language / Idioma">
+  <Icon name="globe" size={17} class="globe" />
+  <span class="en">EN</span><span class="es">ES</span>
 </button>

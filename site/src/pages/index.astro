@@ -4,13 +4,13 @@ import Layout from "../layouts/Layout.astro";
 import Background from "../components/Background.astro";
 import Header from "../components/Header.astro";
 import Hero from "../components/Hero.astro";
+import Stats from "../components/Stats.astro";
 import Systems from "../components/Systems.astro";
 import Features from "../components/Features.astro";
 import Showcase from "../components/Showcase.astro";
 import Steps from "../components/Steps.astro";
 import Faq from "../components/Faq.astro";
 import Footer from "../components/Footer.astro";
-import BackToTop from "../components/BackToTop.astro";
 ---
 
 <Layout
@@ -21,6 +21,7 @@ import BackToTop from "../components/BackToTop.astro";
   <Header />
   <main>
     <Hero />
+    <Stats />
     <Features />
     <Systems />
     <Showcase />
@@ -28,5 +29,4 @@ import BackToTop from "../components/BackToTop.astro";
     <Faq />
   </main>
   <Footer />
-  <BackToTop />
 </Layout>
