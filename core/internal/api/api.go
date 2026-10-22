@@ -36,6 +36,8 @@ const (
 	maxBodyBytes = 64 * 1024
 	// maxLookBytes admite la foto (ya reducida) que se le pone a una imagen de la biblioteca.
 	maxLookBytes = 256 * 1024
+	// maxPreviewBytes admite el GIF de vista previa (hasta 6 MB, más lo que añade el base64).
+	maxPreviewBytes = 9 << 20
 )
 
 // Agent es lo que la API necesita del agente privilegiado.
@@ -115,7 +117,6 @@ func (s *Server) Handler() http.Handler {
 		mux.Handle("POST /api/power", s.requireSession(s.requireCSRF(http.HandlerFunc(s.handlePower))))
 		s.registerWifi(mux)
 		s.registerKeyboard(mux)
-		s.registerInput(mux)
 		s.registerPartitions(mux)
 	} else {
 		s.registerDesktop(mux)
@@ -188,6 +189,9 @@ func (g *csrfGuard) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	limit := int64(maxBodyBytes)
 	if r.URL.Path == "/api/library/look" {
 		limit = maxLookBytes
+	}
+	if r.URL.Path == "/api/library/preview" {
+		limit = maxPreviewBytes
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	g.next.ServeHTTP(w, r)

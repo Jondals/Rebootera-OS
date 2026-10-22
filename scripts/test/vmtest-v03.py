@@ -163,35 +163,11 @@ def test_keyboard(vm, checks):
     saved = vm.run("cat /run/rebootera/vault/rebootera/state/keyboard.json; cat /run/rebootera/keyboard")
     checks.check("teclado: la elección se guarda en el Vault y en el estado del arranque",
                  '"layout":"us"' in saved.replace(" ", "") and saved.strip().endswith("us"), saved)
-    test_input(vm, checks)
 
 
 def labwc_config(vm):
     """Devuelve el rc.xml que start-kiosk generó para la sesión actual."""
     return vm.run("cat /run/user/$(id -u rebootera)/rebootera-labwc/rc.xml")
-
-
-def test_input(vm, checks):
-    """Puntero y panel táctil: toque para clic activado por defecto y ajustes que llegan a labwc."""
-    rc = labwc_config(vm)
-    checks.check("puntero: el toque para clic está activado por defecto", "<tap>yes</tap>" in rc and "<pointerSpeed>0.00</pointerSpeed>" in rc, rc[-400:])
-    status, state = usbtest.api(vm, "GET", "/api/input", None)
-    checks.check("puntero: GET /api/input devuelve los ajustes por defecto",
-                 status == 200 and state.get("input", {}).get("speed") == 50 and state["input"].get("tap") is True, "%s %s" % (status, state))
-    status, error = usbtest.api(vm, "POST", "/api/input", {"speed": 300, "tap": True, "natural": False})
-    checks.check("puntero: una sensibilidad fuera de rango se rechaza", status == 400, "%s %s" % (status, error))
-    status, ok = usbtest.api(vm, "POST", "/api/input", {"speed": 80, "tap": False, "natural": True})
-    checks.check("puntero: cambiar los ajustes responde bien", status == 200, "%s %s" % (status, ok))
-    rc = ""
-    deadline = time.time() + 60
-    while time.time() < deadline:
-        time.sleep(3)
-        rc = labwc_config(vm)
-        if "<pointerSpeed>0.60</pointerSpeed>" in rc:
-            break
-    checks.check("puntero: labwc arranca con la sensibilidad, sin toque para clic y con desplazamiento natural",
-                 "<pointerSpeed>0.60</pointerSpeed>" in rc and "<tap>no</tap>" in rc and "<naturalScroll>yes</naturalScroll>" in rc, rc[-500:])
-    usbtest.api(vm, "POST", "/api/input", {"speed": 50, "tap": True, "natural": False})
 
 
 def efi_state(vm):

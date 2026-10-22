@@ -71,3 +71,43 @@ func TestParticionDriversPorEtiqueta(t *testing.T) {
 		t.Fatalf("debería elegir la partición DRIVERS, no el Windows instalado: %+v", plan.Matches)
 	}
 }
+
+// * TestParticionDriversSinAbrir comprueba que una partición "DRIVERS" que el agente no pudo abrir sale con su motivo, y que
+// * la etiqueta anotada por el agente basta aunque udev no publicara el enlace by-label.
+func TestParticionDriversSinAbrir(t *testing.T) {
+	media := t.TempDir()
+	report := filepath.Join(t.TempDir(), "drivers-scan")
+	os.WriteFile(report, []byte("sdb3\tDRIVERS\terror: no se pudo abrir sdb3 (ntfs): invalid argument\nsdb4\tMis controladores\topen\n"), 0o644)
+	writeFile(t, filepath.Join(media, "sdb4", "intel", "vioscsi.inf"), []byte(storageINF))
+	previousReport, previousLabels := ReportPath, byLabelDir
+	ReportPath, byLabelDir = report, filepath.Join(t.TempDir(), "sin-udev")
+	defer func() { ReportPath, byLabelDir = previousReport, previousLabels }()
+
+	packages, used := ScanSources(Discover("", media))
+	if len(packages) != 1 || packages[0].SourceID != "sdb4:label" {
+		t.Fatalf("la partición con etiqueta del agente debe recorrerse entera: %+v", packages)
+	}
+	var failed *Source
+	for index := range used {
+		if used[index].Device == "sdb3" {
+			failed = &used[index]
+		}
+	}
+	if failed == nil || failed.Error == "" || failed.Packages != 0 {
+		t.Fatalf("falta la partición que no se pudo abrir, con su motivo: %+v", used)
+	}
+}
+
+// * TestEtiquetasDeDrivers comprueba qué etiquetas se toman por una partición de drivers.
+func TestEtiquetasDeDrivers(t *testing.T) {
+	for _, label := range []string{"DRIVERS", "Drivers HP", "SWSetup", "SW_SETUP", "Controladores", "DRV"} {
+		if !IsDriversLabel(label) {
+			t.Fatalf("%q debería ser una partición de drivers", label)
+		}
+	}
+	for _, label := range []string{"REBOOTERA", "Windows", "DATOS", ""} {
+		if IsDriversLabel(label) {
+			t.Fatalf("%q no debería serlo", label)
+		}
+	}
+}

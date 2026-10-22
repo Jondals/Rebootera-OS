@@ -16,6 +16,7 @@ import { playIntro } from "./intro.js";
 import { appMode, isDesktop, loadMode } from "./mode.js";
 import { homePage } from "./pages/home.js";
 import { overviewPage } from "./pages/overview.js";
+import { needWifi } from "./pages/wifi.js";
 import { forceLite, loadPrefs, loadVaultPrefs } from "./prefs.js";
 import {
   activeRoute,
@@ -90,6 +91,23 @@ function chip(iconPaths: string, text: string, tone: string): HTMLElement {
   return el("span", { class: "chip chip-" + tone }, [icon(iconPaths), el("span", {}, [text])]);
 }
 
+/** Lleva a Ajustes, al panel del Wi-Fi, para poder elegir la red y escribir la clave. */
+function openWifi(): void {
+  needWifi(t("wifi.needOffline"));
+  navigate("settings");
+}
+
+/** Aviso "Sin red": un botón que lleva directamente al Wi-Fi. */
+function offlineChip(): HTMLElement {
+  const node = el("button", { class: "chip chip-warn chip-link", type: "button" }, [
+    icon(icons.offline),
+    el("span", {}, [t("topbar.offline")]),
+  ]);
+  node.title = t("topbar.offlineHint");
+  node.addEventListener("click", openWifi);
+  return node;
+}
+
 /**
  * Refresca la barra superior y la tarjeta del USB. La barra solo avisa cuando algo falla (sin red,
  * sin USB): lo demás no hace falta para usar la aplicación y está en Ajustes.
@@ -101,7 +119,7 @@ function renderShell(): void {
       notice = chip(icons.usb, t("desktop.noUsbChip"), "warn");
     }
   } else if (snapshot.system !== null && onlineInterface(snapshot.system) === null) {
-    notice = chip(icons.offline, t("topbar.offline"), "warn");
+    notice = offlineChip();
   }
   byId("status-chip").replaceChildren(...(notice ? [notice] : []));
   renderDriveCard();

@@ -73,23 +73,21 @@ func main() {
 		}
 	}
 
-	// * Lo mismo con el puntero y el panel táctil (sensibilidad, toque para clic, desplazamiento).
-	if saved := api.LoadInput(); saved != nil && *saved != agentproto.DefaultInput {
-		if _, err := (api.SocketAgent{}).Send(agentproto.Request{Op: agentproto.OpInputSet, Input: saved}); err != nil {
-			log.Printf("puntero: no se pudieron aplicar los ajustes: %v", err)
-		}
-	}
-
 	// * Si el USB recuerda alguna red Wi-Fi, se conecta sola en cuanto el adaptador esté listo.
 	go api.AutoConnectWifi(api.SocketAgent{})
+	// * Lo que se descarga en el navegador (drivers de la web del fabricante) pasa solo al USB.
+	go api.WatchDownloads()
 
 	lib := library.New()
 	queue := transfers.New(lib)
 	go queue.Run()
 
+	service := api.New(os.DirFS(*uiDir), token, port, api.SocketAgent{}, api.Deps{Library: lib, Transfers: queue, Mode: api.ModeLive})
+	// * Los drivers de las particiones del equipo se buscan solos, sin esperar a que se abra la página de Drivers.
+	go service.WatchDrivers()
 	server := &http.Server{
 		Addr:              *listen,
-		Handler:           api.New(os.DirFS(*uiDir), token, port, api.SocketAgent{}, api.Deps{Library: lib, Transfers: queue, Mode: api.ModeLive}).Handler(),
+		Handler:           service.Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		IdleTimeout:       60 * time.Second,

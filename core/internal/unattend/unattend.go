@@ -39,6 +39,10 @@ type Options struct {
 	// sin contenido sugerido y sin la pantalla de "configuración rápida". En Enterprise, Education y LTSC
 	// el nivel 0 ("Security") se respeta; en Home y Pro Windows lo trata como el nivel básico.
 	ReduceTelemetry bool `json:"privacy"`
+	// DisableBitLocker (solo Windows) evita el cifrado automático del disco (BitLocker / cifrado de dispositivo).
+	DisableBitLocker bool `json:"bitlocker"`
+	// QoL (solo Windows) quita de serie Copilot, Recall, OneDrive, Widgets, el Outlook nuevo y el inicio rápido.
+	QoL bool `json:"qol"`
 }
 
 // privacyCommands son las órdenes que se ejecutan en la fase specialize (como SYSTEM, antes del primer
@@ -52,6 +56,37 @@ var privacyCommands = []string{
 	`reg add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v Disabled /t REG_DWORD /d 1 /f`,
 	`sc config DiagTrack start= disabled`,
 	`sc config dmwappushservice start= disabled`,
+}
+
+// bitLockerCommands impiden el cifrado automático de dispositivo al terminar la instalación.
+var bitLockerCommands = []string{
+	`reg add "HKLM\SYSTEM\CurrentControlSet\Control\BitLocker" /v PreventDeviceEncryption /t REG_DWORD /d 1 /f`,
+}
+
+// qolCommands son las mejoras de "calidad de vida": directivas de equipo, así que valen para todos los usuarios.
+var qolCommands = []string{
+	`reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f`,
+	`reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f`,
+	`reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\OneDrive" /v DisableFileSyncNGSC /t REG_DWORD /d 1 /f`,
+	`reg add "HKLM\SOFTWARE\Policies\Microsoft\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f`,
+	`reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f`,
+	`reg delete "HKLM\SOFTWARE\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\OutlookUpdate" /f`,
+	`reg delete "HKLM\SOFTWARE\Microsoft\WindowsUpdate\Orchestrator\UScheduler_Oobe\DevHomeUpdate" /f`,
+}
+
+// commands devuelve las órdenes de la fase specialize que piden las opciones, en este orden.
+func (o Options) commands() []string {
+	var out []string
+	if o.ReduceTelemetry {
+		out = append(out, privacyCommands...)
+	}
+	if o.DisableBitLocker {
+		out = append(out, bitLockerCommands...)
+	}
+	if o.QoL {
+		out = append(out, qolCommands...)
+	}
+	return out
 }
 
 // locale agrupa los códigos de un idioma en cada sistema.
@@ -198,17 +233,17 @@ var windowsTemplate = template.Must(template.New("autounattend").Funcs(template.
     </component>
   </settings>
 {{- end}}
-{{- if or .WindowsZone .PrivacyCommands}}
+{{- if or .WindowsZone .Commands}}
   <settings pass="specialize">
 {{- if .WindowsZone}}
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <TimeZone>{{.WindowsZone}}</TimeZone>
     </component>
 {{- end}}
-{{- if .PrivacyCommands}}
+{{- if .Commands}}
     <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <RunSynchronous>
-{{- range $i, $cmd := .PrivacyCommands}}
+{{- range $i, $cmd := .Commands}}
         <RunSynchronousCommand wcm:action="add">
           <Order>{{inc $i}}</Order>
           <Path>{{esc $cmd}}</Path>
@@ -266,12 +301,13 @@ func WindowsAnswerFile(o Options) (string, error) {
 	if err := o.Validate(); err != nil {
 		return "", err
 	}
-	var commands []string
+	var privacy []string
 	if o.ReduceTelemetry {
-		commands = privacyCommands
+		privacy = privacyCommands
 	}
 	data := map[string]any{
-		"PrivacyCommands": commands,
+		"PrivacyCommands": privacy,
+		"Commands":        o.commands(),
 		"Locale":          struct{ Windows, Inputs string }{locales[o.Language].windows, locales[o.Language].inputs},
 		"Drivers":         o.Drivers,
 		"DriverPath":      `X:\rebootera-drivers`,

@@ -30,8 +30,13 @@ import { openMakeRoom } from "./partdialogs.js";
 /** Claves de los pasos, en orden. */
 const STEPS = ["stepOs", "stepTarget", "stepDeploy"];
 
-/** Espacio que necesita cada tipo de sistema (Windows 11 pide 64 GB). */
+/** Espacio recomendado para cada tipo de sistema (Windows 11 pide 64 GB). */
 const NEEDED_BYTES = { windows: 64 * 2 ** 30, debian: 20 * 2 ** 30, other: 20 * 2 ** 30 };
+/**
+ * Espacio por debajo del cual ni se intenta: aun así, el instalador de cada sistema tiene la última palabra. Entre este
+ * mínimo y el recomendado se deja seguir con un aviso (antes el botón "Siguiente" se quedaba apagado sin más).
+ */
+const MIN_BYTES = { windows: 25 * 2 ** 30, debian: 10 * 2 ** 30, other: 10 * 2 ** 30 };
 /** Memoria mínima para Windows 11 (4 GB, con margen por la memoria reservada). */
 const MIN_RAM = 3.8e9;
 /** Cada cuántos ms se mira si una operación de particiones sigue en marcha. */
@@ -92,6 +97,9 @@ let planRequested = false;
 let takeDrivers = true;
 let winBypass = false;
 let privacy = false;
+let noOnline = false;
+let noBitLocker = false;
+let qol = false;
 let bootOnce = false;
 const answers: Answers = {
   enabled: false,
@@ -177,6 +185,9 @@ function installRequest(item: LibraryItem): Record<string, unknown> | Error {
     drivers: takeDrivers && system === "windows",
     winBypass: winBypass && system === "windows",
     privacy: privacy && system === "windows",
+    noOnline: noOnline && system === "windows",
+    bitlocker: noBitLocker && system === "windows",
+    qol: qol && system === "windows",
     bootOnce: bootOnce && snapshot.system?.firmware === "uefi",
   };
   if (answers.enabled && system !== "other") {
@@ -401,6 +412,12 @@ function neededBytes(): number {
   return item ? NEEDED_BYTES[systemOf(item)] : NEEDED_BYTES.other;
 }
 
+/** Espacio mínimo del sistema elegido. */
+function minimumBytes(): number {
+  const item = chosenItem();
+  return item ? MIN_BYTES[systemOf(item)] : MIN_BYTES.other;
+}
+
 /** Discos que se pueden ofrecer como destino (internos y extraíbles; nunca el USB de Rebootera). */
 function targetDisks(): PartDisk[] {
   return (partDisks ?? []).filter(function isTarget(disk) {
@@ -430,22 +447,33 @@ function targetPanel(disk: PartDisk, segment: Segment): HTMLElement {
   const need = neededBytes();
   const size = sizeOf(segment);
   const fits = size >= need;
+  const usable = size >= minimumBytes();
   const isFree = segment.number === 0;
   const good = isFree && fits;
+  // * Entre el mínimo y lo recomendado se puede seguir (con aviso); por debajo del mínimo, no.
+  const tight = usable && !fits;
   const text = isFree
     ? fits
       ? t("wizard.freeOk", { size: fmt.disk(size) })
-      : t("wizard.freeSmall", { have: fmt.disk(size), need: fmt.disk(need) })
+      : tight
+        ? t("wizard.freeTight", { have: fmt.disk(size), need: fmt.disk(need) })
+        : t("wizard.freeSmall", { have: fmt.disk(size), need: fmt.disk(minimumBytes()) })
     : fits
       ? t("wizard.partOk", { used: fmt.disk(segment.usedBytes) })
-      : t("wizard.partSmall", { have: fmt.disk(size), need: fmt.disk(need) });
+      : tight
+        ? t("wizard.partTight", {
+            have: fmt.disk(size),
+            need: fmt.disk(need),
+            used: fmt.disk(segment.usedBytes),
+          })
+        : t("wizard.partSmall", { have: fmt.disk(size), need: fmt.disk(minimumBytes()) });
   const locked = disk.layout.locked ?? "";
   const room = button(
     t("wizard.makeRoom"),
     function makeRoom(): void {
       openMakeRoom(disk.layout, need, isFree ? segment : null, partsStarted);
     },
-    { variant: fits ? "ghost" : "primary", iconPaths: icons.disk },
+    { variant: usable ? "ghost" : "primary", iconPaths: icons.disk },
   );
   room.disabled = locked !== "";
   return el("div", { class: "target-panel" }, [
@@ -464,7 +492,7 @@ function targetPanel(disk: PartDisk, segment: Segment): HTMLElement {
 
 /** Tarjeta de un disco con su mapa; al pulsar una pieza sale lo que pasará con ella. */
 function targetDiskCard(disk: PartDisk): HTMLElement {
-  const need = neededBytes();
+  const need = minimumBytes();
   const picked = findPiece([disk], targetKey);
   return el("article", { class: "disk-card" }, [
     diskHeader(disk),
@@ -500,7 +528,12 @@ function stepTarget(): Node[] {
     panel(
       t("wizard.targetTitle"),
       [
-        el("p", { class: "muted" }, [t("wizard.targetNeed", { size: fmt.disk(neededBytes()) })]),
+        el("p", { class: "muted" }, [
+          t("wizard.targetNeed", {
+            min: fmt.disk(minimumBytes()),
+            size: fmt.disk(neededBytes()),
+          }),
+        ]),
         ...disks.map(targetDiskCard),
         el("div", { class: "target-skip" }, [
           button(t("wizard.askInstaller"), chooseInInstaller, { variant: "ghost" }),
@@ -616,6 +649,27 @@ function toggleWinBypass(event: Event): void {
 /** Marca o desmarca reducir la telemetría de Windows. */
 function togglePrivacy(event: Event): void {
   privacy = (event.currentTarget as HTMLInputElement).checked;
+  lastSignature = "";
+  update();
+}
+
+/** Marca o desmarca no exigir una cuenta de Microsoft en línea. */
+function toggleNoOnline(event: Event): void {
+  noOnline = (event.currentTarget as HTMLInputElement).checked;
+  lastSignature = "";
+  update();
+}
+
+/** Marca o desmarca desactivar el cifrado automático (BitLocker). */
+function toggleNoBitLocker(event: Event): void {
+  noBitLocker = (event.currentTarget as HTMLInputElement).checked;
+  lastSignature = "";
+  update();
+}
+
+/** Marca o desmarca las mejoras de calidad de vida (sin Copilot, OneDrive, etc.). */
+function toggleQol(event: Event): void {
+  qol = (event.currentTarget as HTMLInputElement).checked;
   lastSignature = "";
   update();
 }
@@ -744,7 +798,15 @@ function stepInstallerSettings(): Node[] {
   if (system === "windows") {
     blocks.push(
       optionRow(t("wizard.winBypassTitle"), t("wizard.winBypassNote"), winBypass, toggleWinBypass),
+      optionRow(t("wizard.noOnlineTitle"), t("wizard.noOnlineNote"), noOnline, toggleNoOnline),
       optionRow(t("wizard.privacyTitle"), t("wizard.privacyNote"), privacy, togglePrivacy),
+      optionRow(
+        t("wizard.noBitLockerTitle"),
+        t("wizard.noBitLockerNote"),
+        noBitLocker,
+        toggleNoBitLocker,
+      ),
+      optionRow(t("wizard.qolTitle"), t("wizard.qolNote"), qol, toggleQol),
     );
   }
   if (snapshot.system?.firmware === "uefi") {
@@ -932,6 +994,9 @@ function update(): void {
     takeDrivers,
     winBypass,
     privacy,
+    noOnline,
+    noBitLocker,
+    qol,
     bootOnce,
     answers.enabled,
   ]);
@@ -984,7 +1049,7 @@ function canContinue(): boolean {
   }
   if (step === 1) {
     const piece = chosenPiece();
-    return askInstaller || (piece !== null && sizeOf(piece.segment) >= neededBytes());
+    return askInstaller || (piece !== null && sizeOf(piece.segment) >= minimumBytes());
   }
   return true;
 }

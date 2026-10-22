@@ -40,9 +40,9 @@
   --mono: "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
 
   /* Forma */
-  --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 20px;
+  --radius-sm: 5px;
+  --radius: 8px;
+  --radius-lg: 11px;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 

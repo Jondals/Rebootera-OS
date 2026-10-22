@@ -212,6 +212,8 @@ export interface LibraryItem {
   /** Nombre y foto que el usuario le puso a la imagen (el archivo no cambia). */
   title?: string;
   image?: string;
+  /** Dirección del GIF de vista previa que el usuario le puso, si lo tiene. */
+  preview?: string;
 }
 
 /** Entrada del catálogo de /api/catalog. */
@@ -316,6 +318,8 @@ export interface DriverSource {
   device?: string;
   folder?: string;
   packages: number;
+  /** Motivo por el que no se pudo abrir una partición de drivers que sí se encontró. */
+  error?: string;
 }
 
 /** Casado de los drivers encontrados con el hardware. */

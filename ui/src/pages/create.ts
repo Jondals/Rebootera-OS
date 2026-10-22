@@ -205,6 +205,8 @@ function mergeDevices(disks: USBDisk[], drives: Drive[]): Device[] {
 let drivesCache: Drive[] = [];
 let disksCache: USBDisk[] | null = null;
 let loading = false;
+/** Se está volviendo a leer los discos porque se pulsó "Actualizar" (el icono gira mientras tanto). */
+let refreshing = false;
 
 /** Filtro: solo las unidades que ya son un USB de Rebootera. */
 function onlyRebootera(drive: Drive): boolean {
@@ -265,11 +267,21 @@ async function loadTargets(fresh = false): Promise<void> {
   } catch (error) {
     loading = false;
     body?.replaceChildren(errorBox(error));
+  } finally {
+    if (refreshing) {
+      refreshing = false;
+      draw();
+    }
   }
 }
 
 /** Botón "Actualizar": vuelve a leer los discos de verdad. */
 function refreshTargets(): void {
+  if (refreshing) {
+    return;
+  }
+  refreshing = true;
+  draw();
   void loadTargets(true);
 }
 
@@ -463,6 +475,7 @@ function deviceCard(device: Device): HTMLElement {
 function usbPanel(): HTMLElement {
   const refresh = button(t("common.refresh"), refreshTargets, { iconPaths: icons.refresh });
   refresh.classList.add("btn-small");
+  refresh.classList.toggle("is-spinning", loading || refreshing);
   const parts: HTMLElement[] = devices.map(deviceCard);
   if (loading) {
     parts.push(el("p", { class: "muted" }, [t("desktop.searching")]));
@@ -537,7 +550,7 @@ function systemPanel(device: Device): HTMLElement {
   const updating = device.drive !== null && action === "update";
   const fileButton =
     source === "file"
-      ? button(iso ? iso : t("desktop.chooseIso"), pickIso, { iconPaths: icons.library })
+      ? button(iso ? iso : t("desktop.chooseIso"), pickIso, { iconPaths: icons.fileDisc })
       : null;
   return panel(
     t("desktop.stepSystem"),
@@ -553,7 +566,7 @@ function systemPanel(device: Device): HTMLElement {
       optionCard(
         "file",
         source === "file",
-        icons.library,
+        icons.fileDisc,
         t("desktop.srcMine"),
         t("desktop.sourceFileHint"),
         onSource,

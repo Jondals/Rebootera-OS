@@ -359,9 +359,17 @@ func (m *Manager) Reset() error {
 
 // * Clear quita de la lista los trabajos terminados, fallidos o cancelados.
 func (m *Manager) Clear() {
+	m.ClearFinished(true)
+}
+
+// * ClearFinished quita de la lista los trabajos terminados o cancelados y, si failed es true, también los fallidos.
+// * La interfaz lo llama sola con failed=false: un fallo se queda a la vista para poder reintentarlo.
+func (m *Manager) ClearFinished(failed bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.jobs = slices.DeleteFunc(m.jobs, isFinished)
+	m.jobs = slices.DeleteFunc(m.jobs, func(job *Job) bool {
+		return isFinished(job) && (failed || job.Status != StatusFailed)
+	})
 	m.save()
 }
 

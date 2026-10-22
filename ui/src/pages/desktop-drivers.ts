@@ -180,7 +180,7 @@ function stepsPanel(): HTMLElement {
 function addButton(): HTMLButtonElement {
   return button(t("desktop.addDrivers"), addFolder, {
     variant: "primary",
-    iconPaths: icons.drivers,
+    iconPaths: icons.folderOpen,
   });
 }
 

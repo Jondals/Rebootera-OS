@@ -179,3 +179,67 @@ func TestNombreYFoto(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// * TestVistaPreviaGIF guarda un GIF de vista previa, lo ofrece en el listado, lo conserva al cambiar el archivo de nombre y
+// * lo borra con la imagen; y rechaza lo que no es un GIF.
+func TestVistaPreviaGIF(t *testing.T) {
+	root := fakeVault(t)
+	rel := "isos/linux/a.iso"
+	os.WriteFile(filepath.Join(root, rel), []byte("contenido"), 0o644)
+	lib := New()
+	if _, err := lib.ListFresh(); err != nil {
+		t.Fatal(err)
+	}
+	// * "R0lGODlhAQABAAAAACw=" es un GIF89a de un píxel.
+	gif := "data:image/gif;base64,R0lGODlhAQABAAAAACw="
+	if err := lib.SetPreview(rel, gif); err != nil {
+		t.Fatal(err)
+	}
+	items, err := lib.ListFresh()
+	if err != nil || len(items) != 1 || !strings.HasPrefix(items[0].Preview, "/api/library/preview?path=isos%2Flinux%2Fa.iso&v=") {
+		t.Fatalf("el listado debe ofrecer la vista previa: %v %+v", err, items)
+	}
+	path, err := lib.PreviewPath(rel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data, err := os.ReadFile(path); err != nil || !strings.HasPrefix(string(data), "GIF89a") {
+		t.Fatalf("el GIF guardado no es el enviado: %v %q", err, data)
+	}
+	for _, bad := range []string{"data:image/png;base64,iVBORw0KGgo=", "data:image/gif;base64,AAAA", "data:image/gif;base64,@@@", "http://x/y.gif"} {
+		if err := lib.SetPreview(rel, bad); err == nil {
+			t.Fatalf("debería rechazar %q", bad)
+		}
+	}
+	if err := lib.SetPreview("isos/linux/no-existe.iso", gif); err == nil {
+		t.Fatal("una imagen que no existe debería rechazarse")
+	}
+	// * Cambiar la foto o el nombre no pierde el GIF.
+	if err := lib.SetLook(rel, "Mi Linux", ""); err != nil {
+		t.Fatal(err)
+	}
+	if items, _ := lib.ListFresh(); len(items) != 1 || items[0].Preview == "" {
+		t.Fatalf("el GIF se perdió al cambiar el nombre: %+v", items)
+	}
+	// * Borrar la imagen borra también su GIF.
+	if err := lib.Delete(rel); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); err == nil {
+		t.Fatal("el GIF debería haberse borrado con la imagen")
+	}
+	// * Quitar el GIF (texto vacío).
+	os.WriteFile(filepath.Join(root, rel), []byte("contenido"), 0o644)
+	if _, err := lib.ListFresh(); err != nil {
+		t.Fatal(err)
+	}
+	if err := lib.SetPreview(rel, gif); err != nil {
+		t.Fatal(err)
+	}
+	if err := lib.SetPreview(rel, ""); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := lib.PreviewPath(rel); err == nil {
+		t.Fatal("tras quitarlo ya no debe tener vista previa")
+	}
+}

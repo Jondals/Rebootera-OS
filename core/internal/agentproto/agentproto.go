@@ -40,35 +40,11 @@ const (
 	// * Teclado del kiosco: consultar la distribución y cambiarla (se aplica al momento).
 	OpKeyboardGet = "keyboard.get"
 	OpKeyboardSet = "keyboard.set"
-	// * Puntero y panel táctil del kiosco: consultar los ajustes y cambiarlos (se aplican al momento).
-	OpInputGet = "input.get"
-	OpInputSet = "input.set"
 	// * Gestor de particiones: mínimos de un sistema de archivos, empezar una operación y ver su estado.
 	OpPartInfo   = "part.info"
 	OpPartApply  = "part.apply"
 	OpPartStatus = "part.status"
 )
-
-// InputSettings son los ajustes del puntero y del panel táctil del kiosco.
-type InputSettings struct {
-	// Speed es la sensibilidad del puntero, de 0 (lenta) a 100 (rápida); 50 es la normal.
-	Speed int `json:"speed"`
-	// Tap activa el toque para hacer clic en el panel táctil.
-	Tap bool `json:"tap"`
-	// Natural invierte el sentido del desplazamiento con dos dedos.
-	Natural bool `json:"natural"`
-}
-
-// DefaultInput son los ajustes con los que arranca el kiosco: velocidad normal y toque para clic activado.
-var DefaultInput = InputSettings{Speed: 50, Tap: true, Natural: false}
-
-// * Validate comprueba que la velocidad esté en su rango.
-func (i InputSettings) Validate() error {
-	if i.Speed < 0 || i.Speed > 100 {
-		return fmt.Errorf("sensibilidad fuera de rango: %d", i.Speed)
-	}
-	return nil
-}
 
 // DefaultKeyboard es la distribución con la que arranca la interfaz.
 const DefaultKeyboard = "es"
@@ -103,8 +79,6 @@ type Request struct {
 	Confirm   string      `json:"confirm,omitempty"`
 	// Layout solo lo usa keyboard.set y el agente lo valida contra KeyboardLayouts.
 	Layout string `json:"layout,omitempty"`
-	// Input solo lo usa input.set y el agente lo valida (Validate).
-	Input *InputSettings `json:"input,omitempty"`
 }
 
 // Response es la respuesta del agente. Lines solo se rellena en las

@@ -65,6 +65,7 @@ func (s *Server) registerVault(mux *http.ServeMux) {
 		"/api/transfers/settings": s.handleGetBandwidth,
 		"/api/transfers":          s.handleTransfers,
 		"/api/library":            s.handleLibrary,
+		"/api/library/preview":    s.handleGetPreview,
 		"/api/installer/found":    s.handleFoundInstallers,
 	}
 	post := map[string]http.HandlerFunc{
@@ -83,6 +84,7 @@ func (s *Server) registerVault(mux *http.ServeMux) {
 		"/api/library/verify":     s.handleVerify,
 		"/api/library/delete":     s.handleDelete,
 		"/api/library/look":       s.handleLook,
+		"/api/library/preview":    s.handleSetPreview,
 	}
 	// * Abrir discos del equipo y arrancar instaladores solo tiene sentido
 	// * dentro de Rebootera OS, donde existe el agente.
@@ -315,9 +317,14 @@ func (s *Server) handleTransferAction(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
-// * handleTransferClear quita de la lista las transferencias terminadas.
+// * handleTransferClear quita de la lista las transferencias terminadas. Con {"keepFailed": true} deja las fallidas
+// * (así la interfaz limpia sola lo terminado sin esconder un error).
 func (s *Server) handleTransferClear(w http.ResponseWriter, r *http.Request) {
-	s.deps.Transfers.Clear()
+	var req struct {
+		KeepFailed bool `json:"keepFailed"`
+	}
+	_ = decode(r, &req)
+	s.deps.Transfers.ClearFinished(!req.KeepFailed)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
@@ -390,6 +397,39 @@ func (s *Server) handleLook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "saved"})
+}
+
+// previewRequest es el cuerpo de POST /api/library/preview: el GIF como data URL (vacío lo quita).
+type previewRequest struct {
+	Path string `json:"path"`
+	GIF  string `json:"gif"`
+}
+
+// * handleSetPreview guarda o quita el GIF de vista previa de una imagen.
+func (s *Server) handleSetPreview(w http.ResponseWriter, r *http.Request) {
+	var req previewRequest
+	if err := decode(r, &req); err != nil {
+		fail(w, err)
+		return
+	}
+	if err := s.deps.Library.SetPreview(req.Path, req.GIF); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error(), "code": codeInvalid})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "saved"})
+}
+
+// * handleGetPreview sirve el GIF de vista previa de una imagen.
+func (s *Server) handleGetPreview(w http.ResponseWriter, r *http.Request) {
+	path, err := s.deps.Library.PreviewPath(r.URL.Query().Get("path"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "image/gif")
+	w.Header().Set("Cache-Control", "private, max-age=31536000, immutable")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	http.ServeFile(w, r, path)
 }
 
 // deviceRequest es el cuerpo de las peticiones sobre un medio externo.

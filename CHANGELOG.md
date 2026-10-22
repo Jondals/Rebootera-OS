@@ -3,6 +3,42 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.21.0] - 2026-10-22
+
+### Added
+
+- **A GIF as the preview of an image.** In My images, "Customize" now lets you pick a GIF (up to 6 MB) for any image you have downloaded or added. It shows as the image's preview, still at first and moving when you point at it. It is stored on the USB next to the image and goes away with it.
+- **More systems and versions in the Download page:** Kubuntu, Xubuntu, Lubuntu, Ubuntu Budgie and Ubuntu Cinnamon 26.04 (and Kubuntu 22.04), Linux Mint 22.2, Debian 13 DVD, Kali netinst, openSUSE Leap 15.6 and the full DVD installers of Rocky Linux 9 and 10 and AlmaLinux 9 and 10. All come from the official sources, with their checksums (and signatures where they exist) checked.
+- **Official pages for a missing driver.** Next to each missing part there are now buttons that open, in the Rebootera browser, the official page of the chip maker (Intel, Realtek, NVIDIA, AMD...), the support page of your computer's maker with its exact model (Lenovo, HP, Dell, ASUS...) and the Microsoft Update Catalog with the hardware ID.
+- **The Rebootera browser downloads to the USB.** Whatever you download goes to `drivers/Descargas` on the USB; a .zip of drivers is unpacked by itself so Rebootera can read its .inf files. Safe unpacking: nothing can leave its folder and nothing is run.
+- **A button for "No network".** The notice in the top bar now takes you straight to the Wi-Fi panel, searching for networks, so you can pick yours and type the password.
+- **Show the Wi-Fi password** with an eye button in the password field.
+- **Icons that spin** on every "Search again", "Refresh" and "Scan networks" button while it works.
+
+### Changed
+
+- **Evaluation editions are gone.** No Windows or Windows Server evaluation images are offered any more (the 90 and 180 day ones): only Windows 10 and 11 Home and Pro, which download directly from Microsoft.
+- **The release notes** now carry the changes of that version (English and Spanish) instead of a checksum.
+- **The USB boot menu only shows Rebootera** (and another version of Rebootera if one was installed next to it). Your Windows or Linux images no longer show up there: you boot them from the install wizard, which adds the chosen one to the menu only for that install and removes it when Rebootera starts again. USBs from older versions are fixed when you update them.
+- **The Download bar** is rebuilt: an icon, how many downloads are running, the file in front with its percent, speed and time left, a full-width progress bar and a button for the queue. The queue window now updates by itself, and finished downloads leave it on their own after a few seconds (failed ones stay, with the Retry button).
+- **Much faster and smoother.** The Download page no longer rebuilds every card on each progress tick (that made the version dropdowns flicker and the page heavy): only the percent moves. The grain noise of the background is gone, the animated background no longer blurs by default and, with it on, the panels are solid and, without a GPU, it moves in steps instead of making everything lag. The background can now be switched on in Rebootera OS.
+- **Smaller corners** everywhere (less border radius).
+- **Clearer icons:** choosing a folder, a photo, a GIF or a disc image, and customizing an image, each have their own icon.
+- **The wizard lets you go on with a smaller partition.** "Next" no longer stays disabled when the partition or free space is below the recommended size: you can continue with a warning (the installer has the last word); only one that is really too small is refused.
+- **Pause and Cancel** no longer stick to the progress bar when creating a USB.
+
+### Fixed
+
+- Version dropdowns of the Download page flickered, and in Rebootera Desktop the open list could hide under the card below.
+- The Wi-Fi "WPA2" label jumped to another line on the connected network when its panel was open; a connected network now also says "Connected".
+- The language now changes at once, without restarting anything, even if saving the setting fails.
+- Drivers on a partition named DRIVERS were not found at boot: they are now searched by themselves right after starting and every time a disk or partition appears (not only when opening the Drivers page), the label is also read from the disk when udev has not published it, more labels count (Drivers, Controladores, SWSetup...), and if a DRIVERS partition cannot be opened the Drivers page says why.
+- The partition slider needed pressing and dragging with the touchpad: the touchpad now keeps the normal tap-and-drag.
+
+### Removed
+
+- **The pointer and touchpad settings** (pointer speed, tap to click and natural scrolling), with all their code (interface, API, agent and the labwc configuration). The touchpad now uses the default Linux behaviour. The touchpad driver loader (`rebootera-input.service`) stays: it only makes touchpads that are not detected on their own work.
+
 ## [0.20.1] - 2026-10-22
 
 ### Changed

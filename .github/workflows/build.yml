@@ -70,7 +70,6 @@ jobs:
           cp "out/Rebootera-Desktop-${VERSION}.exe" dist/Rebootera-Desktop-Windows.exe
           (cd dist && sha256sum rebootera-os-amd64.iso > rebootera-os-amd64.iso.sha256)
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "ISO_SHA=$(cut -d' ' -f1 dist/rebootera-os-amd64.iso.sha256)" >> "$GITHUB_ENV"
           ls -lh dist
 
       - name: Publish the release
@@ -90,17 +89,31 @@ jobs:
           fi
           [ -z "$CHOSEN" ] && CHOSEN="$(echo "$MESSAGE" | head -n 1)"
           [ -n "$CHOSEN" ] && TITLE="$CHOSEN"
-          WHAT="Automatic build of master."
+          # * Notas de la release: los cambios de esta versión, tal como están en CHANGELOG.md (inglés) y CHANGELOG.es.md
+          # * (español). Sin sumas ni hashes: Rebootera Desktop comprueba la ISO con el archivo .sha256 de la release.
+          section() {
+            awk -v v="$VERSION" 'index($0, "## [" v "]") == 1 { found = 1; next } /^## \[/ { found = 0 } found' "$1"
+          }
+          NOTES_FILE="$(mktemp)"
+          {
+            echo "$TITLE"
+            echo
+            if [ -n "$(section CHANGELOG.md | tr -d '[:space:]')" ]; then
+              section CHANGELOG.md
+              echo
+              echo "---"
+              echo
+              section CHANGELOG.es.md
+            else
+              echo "Automatic build of master."
+            fi
+            echo
+            echo "Files: \`Rebootera-Desktop-Windows.exe\`, \`Rebootera-Desktop-macOS-*\` and \`Rebootera-Desktop-Linux-*\` (the desktop app that creates the USB, one per system; the macOS and Linux ones are plain executables) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."
+          } >"$NOTES_FILE"
           # * Solo se reemplaza la release de esta misma versión; las demás se conservan.
           gh release delete "$TAG" -R "$REL_REPO" --cleanup-tag --yes || true
           gh release create "$TAG" dist/* -R "$REL_REPO" \
             "${TARGET[@]}" \
             --latest \
             --title "$TITLE" \
-            --notes "$WHAT
-
-          version: ${VERSION}
-          commit: ${GITHUB_SHA}
-          sha256: ${ISO_SHA}
-
-          Files: \`Rebootera-Desktop-Windows.exe\`, \`Rebootera-Desktop-macOS-*\` and \`Rebootera-Desktop-Linux-*\` (the desktop app that creates the USB, one per system; the macOS and Linux ones are plain executables) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."
+            --notes-file "$NOTES_FILE"

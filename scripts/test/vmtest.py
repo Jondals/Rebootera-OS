@@ -275,30 +275,26 @@ def test_system(vm, checks):
     root = vm.run("passwd -S root | cut -d' ' -f2")
     checks.check("root bloqueado para contraseña", root.strip().endswith("L"), root)
 
-    # * Panel táctil: el toque para clic viene activado en la configuración de labwc que generó start-kiosk.
-    tap = vm.run("grep -h '<tap>' /run/user/*/rebootera-labwc/rc.xml | head -1")
-    checks.check("toque para clic activado por defecto", "<tap>yes</tap>" in tap, tap)
+    # * Panel táctil: labwc no lleva ajustes propios del puntero (valores por defecto de libinput): el rc.xml que generó
+    # * start-kiosk no toca el panel táctil.
+    rc_touch = vm.run("grep -c 'libinput\\|<tap>\\|naturalScroll' /run/user/*/rebootera-labwc/rc.xml | head -1")
+    checks.check("sin ajustes propios del panel táctil en labwc", rc_touch.strip().endswith("0"), rc_touch)
 
-    # * Puntero y teclado se cambian sin reiniciar la interfaz: mismos procesos antes y después, rc.xml nuevo y
-    # * teclado virtual de Bloq Despl (el agente lo anota en el registro).
+    # * El teclado se cambia sin reiniciar la interfaz: mismos procesos antes y después y teclado virtual de Bloq Despl
+    # * (el agente lo anota en el registro).
     pids = "pgrep -x labwc; pgrep -x rebootera-shell"
     before = vm.run(pids).split()
     asagent = (
         "runuser -u rebootera-core -- python3 -c \"import socket,json,sys;s=socket.socket(socket.AF_UNIX);"
         "s.connect('/run/rebootera-agent/agent.sock');s.sendall((json.dumps(%s)+chr(10)).encode());print(s.recv(4096))\""
     )
-    vm.run(asagent % "{'op':'input.set','input':{'speed':80,'tap':True,'natural':True}}")
-    vm.run("sleep 3")
-    rc = vm.run("grep -h 'naturalScroll\\|pointerSpeed\\|tapAndDrag' /run/user/*/rebootera-labwc/rc.xml | sort -u")
-    checks.check("puntero: rc.xml nuevo al momento", "<naturalScroll>yes" in rc and "<pointerSpeed>0.60" in rc and "<tapAndDrag>no" in rc, rc.replace("\n", " "))
     vm.run(asagent % "{'op':'keyboard.set','layout':'us'}")
     vm.run("sleep 4")
     live = vm.run("echo us; journalctl -u rebootera-agent --no-pager -n 30 | grep -c 'sin reiniciar'")
     after = vm.run(pids).split()
     checks.check("teclado: cambiado con Bloq Despl virtual", "us" in live.split() and live.split()[-1] != "0", live.replace("\n", " "))
-    checks.check("puntero y teclado sin reiniciar la interfaz", before == after and len(before) >= 2, "%s -> %s" % (before, after))
+    checks.check("teclado sin reiniciar la interfaz", before == after and len(before) >= 2, "%s -> %s" % (before, after))
     vm.run(asagent % "{'op':'keyboard.set','layout':'es'}")
-    vm.run(asagent % "{'op':'input.set','input':{'speed':50,'tap':True,'natural':False}}")
 
     fw = vm.run("[ -d /sys/firmware/efi ] && echo uefi || echo bios")
     checks.check("modo de firmware", fw.strip().endswith(("bios" if vm.mode == "bios" else "uefi")), fw)

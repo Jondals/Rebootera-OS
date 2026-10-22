@@ -61,6 +61,8 @@ type Item struct {
 	// Title y Image son el nombre y la foto que el usuario le puso (el archivo no se toca).
 	Title string `json:"title,omitempty"`
 	Image string `json:"image,omitempty"`
+	// Preview es la dirección del GIF de vista previa que el usuario le puso, si tiene uno.
+	Preview string `json:"preview,omitempty"`
 }
 
 // meta es lo que se guarda de cada imagen entre arranques.
@@ -73,6 +75,8 @@ type meta struct {
 	Source    string `json:"source"`
 	Title     string `json:"title,omitempty"`
 	Image     string `json:"image,omitempty"`
+	// Preview es la versión del GIF de vista previa (0: no tiene).
+	Preview int64 `json:"preview,omitempty"`
 }
 
 // Library guarda los metadatos y el progreso de los cálculos de hash.
@@ -185,6 +189,9 @@ func (l *Library) refreshed() []Item {
 		if m, ok := l.db[item.Path]; ok {
 			item.SHA256, item.Expected, item.State, item.Source = m.SHA256, m.Expected, m.State, m.Source
 			item.Title, item.Image = m.Title, m.Image
+			if m.Preview != 0 {
+				item.Preview = previewURL(item.Path, m.Preview)
+			}
 		}
 		item.Progress = l.progress[item.Path]
 		items[i] = item
@@ -237,7 +244,7 @@ func (s *scan) visit(path string, entry fs.DirEntry, err error) error {
 		if known {
 			source = m.Source
 		}
-		m = meta{SizeBytes: info.Size(), ModUnix: info.ModTime().Unix(), State: StateUnchecked, Source: source, Expected: m.Expected, Title: m.Title, Image: m.Image}
+		m = meta{SizeBytes: info.Size(), ModUnix: info.ModTime().Unix(), State: StateUnchecked, Source: source, Expected: m.Expected, Title: m.Title, Image: m.Image, Preview: m.Preview}
 		s.lib.db[rel] = m
 		s.lib.save()
 	}
@@ -300,6 +307,7 @@ func (l *Library) Register(rel, sha, expected, source string) error {
 		Source:    source,
 		Title:     previous.Title,
 		Image:     previous.Image,
+		Preview:   previous.Preview,
 	}
 	return l.save()
 }
@@ -447,6 +455,7 @@ func (l *Library) Delete(rel string) error {
 	if err := os.Remove(full); err != nil {
 		return err
 	}
+	os.Remove(previewFile(rel))
 	delete(l.db, rel)
 	return l.save()
 }

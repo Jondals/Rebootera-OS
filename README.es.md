@@ -19,8 +19,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 | **Medios de instalación** | Añade una instalación hecha con cualquier herramienta (un USB de Rufus o Ventoy, una carpeta, una `.iso`) desde otro USB o disco (abierto en solo lectura) o, desde Windows, con Rebootera Desktop. Cualquier `.iso` copiada a la carpeta `isos` también aparece. |
 | **Asistente de instalación** | Comprobación de requisitos (UEFI, Secure Boot, TPM 2.0, memoria, disco), drivers críticos y disco de destino; después inicia el instalador original desde el menú de arranque. Opcional: responder automáticamente idioma, zona horaria y cuenta de usuario (Windows y Debian; el disco siempre lo eliges tú), llevar al instalador de Windows los drivers que casan, saltarse la comprobación de requisitos de Windows 11 y arrancar el instalador una sola vez (UEFI). |
 | **Asistente de drivers** | Todos los dispositivos PCI y USB, el driver de Linux en uso y los Hardware ID de Windows, destacando lo que necesita el instalador (disco y red). Los paquetes de drivers de Windows (`.inf`) se encuentran **solos** en cada arranque (en el USB, en carpetas de drivers de las particiones de este equipo y en un Windows instalado) y se casan con esos Hardware ID; la página dice de dónde sale cada uno. |
-| **Navegador** | Un navegador ligero dentro de Rebootera OS que abre al instante, solo para navegar: no guarda nada ni descarga archivos. |
-| **Puntero** | Velocidad del puntero, toque para hacer clic y desplazamiento natural, guardados en el USB. |
+| **Navegador** | Un navegador ligero dentro de Rebootera OS que abre al instante, en modo oscuro: no guarda cookies ni historial. Lo que descargas va al USB (`drivers/Descargas`; un .zip se descomprime solo). |
 | **Wi-Fi** | Conecta la sesión a una red inalámbrica desde Ajustes (WPA2/WPA3 y redes abiertas, también ocultas). |
 | **USB y discos** | Discos y particiones con su función y su uso. **Safe Disk Guard**: los discos internos y el USB de Rebootera están protegidos y solo se leen. |
 | **Discos y particiones** | Cada disco como una barra visual con tres acciones: crear o cambiar el tamaño de una partición, unirla con una vecina, borrarla (ext4 y NTFS se pueden redimensionar sin perder archivos). Cada cambio enseña antes los pasos exactos y pide escribir el nombre del disco; el USB desde el que arranca Rebootera nunca se toca. |
@@ -44,7 +43,7 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 **Desde Linux**, como root:
 
 ```bash
-scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.20.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.21.0-amd64.iso
 ```
 
 El script rechaza los discos no extraíbles y el disco del sistema.

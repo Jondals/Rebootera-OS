@@ -6,7 +6,7 @@
 // ! montadas; el resto de discos se editan con la confirmación "CHANGE <disco>".
 
 import { getJSON } from "../api.js";
-import { button, emptyState, errorBox, pageHeader, progress } from "../components.js";
+import { button, emptyState, errorBox, pageHeader, progress, spinning } from "../components.js";
 import { el, icon } from "../dom.js";
 import * as fmt from "../format.js";
 import { t } from "../i18n.js";
@@ -56,7 +56,7 @@ function render(root: HTMLElement): void {
   body = el("div", { class: "disk-list" });
   message = el("div", { class: "page-message", "aria-live": "polite" });
   lastSignature = "";
-  const refresh = button(t("common.refresh"), reload, { iconPaths: icons.refresh });
+  const refresh = button(t("common.refresh"), spinning(reload), { iconPaths: icons.refresh });
   root.append(
     el("div", { class: "page" }, [
       pageHeader(t("storage.title"), t("storage.subtitle"), [refresh]),

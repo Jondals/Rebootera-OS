@@ -1,7 +1,7 @@
 //go:build linux
 
-// * Cambios de puntero y teclado sin reiniciar la interfaz. Reiniciar el kiosco para cada ajuste era lento y, en algunos
-// * equipos, la sesión nueva no llegaba a dibujar. El puntero se recarga con SIGHUP a labwc; la distribución del teclado
+// * Cambios de teclado sin reiniciar la interfaz. Reiniciar el kiosco para cada ajuste era lento y, en algunos
+// * equipos, la sesión nueva no llegaba a dibujar. La distribución del teclado
 // * cambia con una pulsación de Bloq Despl enviada por un teclado virtual (labwc arranca con las dos distribuciones y
 // * grp:sclk_toggle, ver start-kiosk).
 package main
@@ -10,8 +10,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"os/user"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -54,17 +52,6 @@ type inputEvent struct {
 	Kind  uint16
 	Code  uint16
 	Value int32
-}
-
-// * reloadLabwc regenera rc.xml con los ajustes guardados y le manda SIGHUP a labwc para que los aplique ya.
-func reloadLabwc() {
-	account, err := user.Lookup(kioskUser)
-	if err != nil {
-		return
-	}
-	runtimeDir := "/run/user/" + account.Uid
-	run("runuser", "-u", kioskUser, "--", "/usr/lib/rebootera/write-labwc-config", filepath.Join(runtimeDir, "rebootera-labwc"))
-	run("pkill", "-HUP", "-u", kioskUser, "-x", "labwc")
 }
 
 // * ioctl llama a ioctl con un argumento numérico.

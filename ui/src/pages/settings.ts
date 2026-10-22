@@ -4,13 +4,12 @@
 import { miniTheme, pageHeader, panel } from "../components.js";
 import { el } from "../dom.js";
 import * as fmt from "../format.js";
-import { t, type Language } from "../i18n.js";
+import { setLanguage as setActiveLanguage, t, type Language } from "../i18n.js";
 import { applyPrefs, prefs, savePrefs, THEMES, type Theme } from "../prefs.js";
 import { refreshCurrent, type Page } from "../router.js";
 import { isDesktop } from "../mode.js";
 import { snapshot } from "../state.js";
 import { keyboardPanel } from "./keyboard.js";
-import { pointerPanel } from "./pointer.js";
 import { wifiPanel, wifiUpdate } from "./wifi.js";
 
 let about: HTMLElement | null = null;
@@ -68,12 +67,20 @@ function toggle(
   return el("label", { class: "setting-row" }, [el("span", {}, [label]), input]);
 }
 
-/** Cambia el idioma y redibuja toda la interfaz. */
+/**
+ * Cambia el idioma y redibuja toda la interfaz al momento, sin reiniciar nada. El idioma se pone antes de guardar: si
+ * guardar fallara (USB de solo lectura, almacenamiento bloqueado), la pantalla cambia igualmente.
+ */
 function setLanguage(value: string): void {
   prefs.language = value as Language;
-  savePrefs();
+  setActiveLanguage(prefs.language);
+  try {
+    savePrefs();
+  } catch {
+    // * Sin guardar, el cambio vale durante esta sesión.
+  }
   document.dispatchEvent(new CustomEvent("rebootera:language"));
-  refreshCurrent();
+  void refreshCurrent();
 }
 
 /** Activa o desactiva la intro. */
@@ -212,7 +219,6 @@ function render(root: HTMLElement): void {
             setLanguage,
           ),
         ]),
-        isDesktop() ? null : pointerPanel(),
         isDesktop() ? null : keyboardPanel(),
         panel(t("settings.more"), [
           toggle(t("settings.intro"), prefs.intro, setIntro),

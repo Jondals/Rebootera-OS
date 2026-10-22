@@ -19,8 +19,7 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 | **Installation media** | Add an installation made with any tool (a Rufus or Ventoy USB, a folder, a plain `.iso`) from another USB or disk (opened read-only) or, from Windows, with Rebootera Desktop. Any `.iso` copied to the `isos` folder also appears. |
 | **Installation Wizard** | Requirement check (UEFI, Secure Boot, TPM 2.0, memory, disk), critical drivers and target disk, then starts the original installer through the boot menu. Optional: answer language, time zone and user account automatically (Windows and Debian; the disk is always chosen by you), take matching drivers to the Windows installer, skip the Windows 11 requirement check, and start the installer only once (UEFI). |
 | **Driver Assistant** | Every PCI and USB device, the Linux driver in use and the Windows hardware IDs, highlighting what the installer needs (storage and network). Windows driver packages (`.inf`) are found **by themselves** at every start (on the USB, in driver folders of this computer's partitions and in an installed Windows) and matched against those hardware IDs; the page says where each one comes from. |
-| **Browser** | A light browser inside Rebootera OS that opens at once, only to browse: nothing is saved and nothing is downloaded. |
-| **Pointer** | Pointer speed, tap to click and natural scrolling, saved on the USB. |
+| **Browser** | A light browser inside Rebootera OS that opens at once, in dark mode: no cookies or history are saved. What you download goes to the USB (`drivers/Descargas`; a .zip is unpacked by itself). |
 | **Wi-Fi** | Connect the live session to a wireless network from Settings (WPA2/WPA3 and open networks, also hidden ones). |
 | **USB & Storage** | Disks and partitions with their role and usage. **Safe Disk Guard**: internal disks and the Rebootera USB are protected and only read. |
 | **Disks and partitions** | Every disk as a visual bar with three actions: create or resize a partition, merge it into a neighbour, delete it (ext4 and NTFS can be resized without losing files). Each change shows the exact steps first and asks you to type the disk name; the USB Rebootera runs from is never touched. |
@@ -44,7 +43,7 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 **From Linux** — as root:
 
 ```bash
-scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.20.0-amd64.iso
+scripts/usb/make-usb.sh --device /dev/sdX --confirm /dev/sdX --iso out/rebootera-os-0.21.0-amd64.iso
 ```
 
 The script refuses non-removable disks and the system disk.

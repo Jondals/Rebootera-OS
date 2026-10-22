@@ -93,6 +93,7 @@ export function isLite(): boolean {
  */
 export function forceLite(): void {
   lite = true;
+  document.documentElement.dataset.app = "desktop";
   // * Sin desenfoques ni brillos, pero el fondo con burbujas sigue animado: solo mueve capas y cuesta poco.
   keepMotion = true;
   applyPrefs();
@@ -103,7 +104,7 @@ export const prefs: Prefs = {
   theme: "amoled",
   background: "auto",
   scale: 100,
-  blur: "soft",
+  blur: "off",
   intro: true,
   reduceMotion: false,
 };
@@ -293,8 +294,13 @@ export function applyPrefs(): void {
   const root = document.documentElement;
   root.dataset.theme = THEMES.includes(prefs.theme) ? prefs.theme : "amoled";
   root.dataset.gfx = isLite() ? "lite" : "full";
-  root.dataset.motion = prefs.reduceMotion || (isLite() && !keepMotion) ? "reduced" : "full";
   root.dataset.bg = backgroundState();
+  // * Sin GPU el movimiento se apaga, salvo que se pida el fondo "siempre": entonces solo se mueve el fondo (a saltos, ver
+  // * topnav.css) y el resto de animaciones siguen quietas.
+  root.dataset.motion =
+    prefs.reduceMotion || (isLite() && !keepMotion && prefs.background !== "on")
+      ? "reduced"
+      : "full";
   // * El desenfoque del fondo cuesta en equipos modestos: allí no se aplica nunca.
   // * El desenfoque va en cada pieza del fondo (ver topnav.css) y con GPU cuesta poco aunque se mueva; sin GPU real (modo
   // * ligero) se apaga porque ahí cada fotograma se filtra por software.

@@ -173,3 +173,28 @@ func TestWindowsPrivacy(t *testing.T) {
 		t.Fatal("el preseed necesita idioma")
 	}
 }
+
+// * TestWindowsBitLockerAndQoL comprueba que el cifrado automático y las mejoras de calidad de vida
+// * añaden sus órdenes en specialize, sin mezclarse con la telemetría ni con el resto de ajustes.
+func TestWindowsBitLockerAndQoL(t *testing.T) {
+	xmlText, err := WindowsAnswerFile(Options{DisableBitLocker: true, QoL: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wellFormed(t, xmlText)
+	for _, want := range []string{
+		`pass="specialize"`, `PreventDeviceEncryption`, `TurnOffWindowsCopilot`, `DisableFileSyncNGSC`,
+		`HiberbootEnabled`, `OutlookUpdate`,
+	} {
+		if !strings.Contains(xmlText, want) {
+			t.Fatalf("falta %q en el XML:\n%s", want, xmlText)
+		}
+	}
+	if strings.Contains(xmlText, "DataCollection") || strings.Contains(xmlText, "ProtectYourPC") {
+		t.Fatalf("sin la opción de telemetría no debe haber ajustes de privacidad:\n%s", xmlText)
+	}
+	plain, _ := WindowsAnswerFile(Options{Language: "en"})
+	if strings.Contains(plain, "PreventDeviceEncryption") || strings.Contains(plain, "Copilot") {
+		t.Fatal("sin las opciones no debe haber órdenes de BitLocker ni de calidad de vida")
+	}
+}

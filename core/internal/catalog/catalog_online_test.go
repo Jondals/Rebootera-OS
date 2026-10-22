@@ -43,7 +43,7 @@ func TestFuentesReales(t *testing.T) {
 	}
 }
 
-// * short abrevia una suma; las imágenes de evaluación no publican ninguna.
+// * short abrevia una suma; algunas imágenes no publican ninguna.
 func short(sum string) string {
 	if len(sum) < 12 {
 		return "(sin suma)"

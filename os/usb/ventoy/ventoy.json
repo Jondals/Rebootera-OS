@@ -16,6 +16,7 @@
     "display_mode": "GUI",
     "fonts": ["/ventoy/theme/jbmono-16.pf2", "/ventoy/theme/jbmono-bold-16.pf2", "/ventoy/theme/jbmono-12.pf2"]
   },
+  "image_list": ["/rebootera/rebootera-os.iso"],
   "menu_alias": [
     { "image": "/rebootera/rebootera-os.iso", "alias": "Rebootera OS" }
   ]
