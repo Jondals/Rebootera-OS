@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -165,6 +166,11 @@ func (j *createJob) steps() (string, error) {
 		return "", err
 	}
 	root := letter + `:\`
+	// * La partición de arranque de Ventoy (VTOYEFI, 32 MB) no hace falta verla: se le quita la letra y se le pide a Windows
+	// * que no se la vuelva a dar. Si falla no es grave: solo sería un disco de más en el Explorador.
+	if _, err := RunElevated("powershell.exe", "-NoProfile -Command "+hideBootPartitionScript(j.disk), ventoyDir); err != nil {
+		log.Printf("no se pudo ocultar la partición de arranque: %v", err)
+	}
 
 	setPhase("copy-kit", 0)
 	if err := WriteKit(root, j.kit); err != nil {
@@ -184,6 +190,13 @@ func (j *createJob) steps() (string, error) {
 		return root, err
 	}
 	return root, nil
+}
+
+// * hideBootPartitionScript es el comando de PowerShell que oculta las particiones pequeñas (la de arranque de Ventoy) de un
+// * disco: diskpart marca el volumen para que Windows no le dé letra en este equipo y le quita la que tenga, y Set-Partition
+// * lo marca también en la propia tabla (GPT).
+func hideBootPartitionScript(disk int) string {
+	return fmt.Sprintf("\"Get-Partition -DiskNumber %d | Where-Object { $_.Size -le 64MB } | ForEach-Object { $l = $_.DriveLetter; if ($l) { ('select volume ' + $l), 'attributes volume set nodefaultdriveletter', ('remove letter=' + $l) | Out-File -Encoding ascii $env:TEMP\vt.txt; diskpart /s $env:TEMP\vt.txt | Out-Null }; try { Set-Partition -InputObject $_ -NoDefaultDriveLetter $true } catch {} }\"", disk)
 }
 
 // * PrepareVentoy descarga, verifica y extrae Ventoy sin tocar ningún disco

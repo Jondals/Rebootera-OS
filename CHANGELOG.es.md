@@ -7,6 +7,7 @@ Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
 ### Añadido
 
+- **La partición pequeña de arranque (VTOYEFI) ya no sale en Windows.** Al crear o actualizar un USB desde Rebootera Desktop se le quita la letra y se le pide a Windows que no se la vuelva a dar en ese equipo.
 - **Cambiar el nombre de las particiones** (ext4, NTFS, exFAT y FAT): el nombre se ve en Windows y Linux y no se tocan los archivos.
 - **Un navegador ligero que abre al instante.** El botón Navegador ya no arranca Firefox desde el USB (tardaba muchísimo): abre una ventana en el mismo proceso de la interfaz, con atrás, adelante, recargar, barra de direcciones que también busca, barra de carga y botón de cerrar. No se guarda nada (ni cookies ni historial) y no descarga archivos. Firefox, uBlock Origin y Dark Reader salen de la imagen, que además pesa menos.
 - **Las redes Wi-Fi se recuerdan.** Al conectar hay un interruptor "Recordar esta red en el USB" (activado por defecto); en el siguiente arranque Rebootera se conecta sola en cuanto el adaptador está listo. Las redes recordadas se marcan en la lista y "Desconectar" las olvida. La contraseña se guarda en el Vault de tu propio USB.

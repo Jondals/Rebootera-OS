@@ -7,6 +7,7 @@ Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
 ### Added
 
+- **The small boot partition (VTOYEFI) no longer shows in Windows.** Creating or updating a USB from Rebootera Desktop removes its drive letter and asks Windows not to give it one again on that computer.
 - **Rename partitions** (ext4, NTFS, exFAT and FAT): the name shows in Windows and Linux and the files are not touched.
 - **A light browser that opens at once.** The Browser button no longer starts Firefox from the USB (it took ages): it opens a window in the same process as the interface, with back, forward, reload, an address bar that also searches, a loading bar and a close button. Nothing is saved (no cookies, no history) and it does not download files. Firefox, uBlock Origin and Dark Reader are gone from the image, which also makes it smaller.
 - **Wi-Fi networks are remembered.** When you connect there is a "Remember this network on the USB" switch (on by default); at the next start Rebootera connects by itself as soon as the adapter is ready. Remembered networks are marked in the list and "Disconnect" forgets them. The password is stored in the Vault of your own USB.

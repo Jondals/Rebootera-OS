@@ -66,7 +66,8 @@ jobs:
 
       - name: Collect the files with their fixed names
         run: |
-          sudo chown -R "$USER" out
+          sudo mkdir -p dist
+          sudo chown -R "$USER" out dist
           VERSION="$(sed -n 's/^var Version = "\(.*\)"/\1/p' core/internal/version/version.go)"
           mkdir -p dist
           cp "out/rebootera-os-${VERSION}-amd64.iso" dist/rebootera-os-amd64.iso
