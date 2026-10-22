@@ -35,9 +35,9 @@ Spanish version: [README.es.md](README.es.md) · Changes: [CHANGELOG.md](CHANGEL
 
 ## Getting a Rebootera USB
 
-**Download:** the public website and releases (repository `Jondals/Rebootera-OS`, private) always offer the latest build: `Rebootera-Desktop.exe` for Windows and `rebootera-os-amd64.iso`. Both are rebuilt on every push to `master` and published in the [`latest` release](https://github.com/Jondals/Rebootera-OS/releases/tag/latest).
+**Download:** the public website and releases (repository `Jondals/Rebootera-OS`, private) always offer the latest build: `Rebootera-Desktop-Windows.exe` for Windows and `rebootera-os-amd64.iso`. Both are rebuilt when code reaches `master`, and each time a new release is published ([all releases](https://github.com/Jondals/Rebootera-OS/releases)).
 
-**Channels:** `master` is the stable channel (release `latest`). The `beta` branch is created automatically from the first stable release and publishes the `beta` prerelease on every push to it: that is where changes are tried before merging them into `master`.
+**Branches:** work on `beta` (only the tests run there) and open a pull request `beta` to `master`: merging it builds and publishes a new release `v<version>` and keeps the previous ones.
 
 **From Windows** — run `Rebootera Desktop.exe` and open **Create USB** (the first option). Each USB drive is listed once; pick yours and choose what to do with it: **update Rebootera** (if it already has it, nothing is erased), **add Rebootera and keep my files** (for a drive made with Rufus, for example) or **erase it and start clean**. Then choose where Rebootera OS comes from: the **latest version** (the default; downloaded and checked against its published SHA-256 before anything is erased) or **my Rebootera ISO**. Windows asks for administrator permission to prepare the drive, and erasing or changing a disk needs the exact confirmation text. Images and drivers are added later from Download, My images and Installation media; drivers need no adding, Rebootera finds them by itself.
 
@@ -88,7 +88,7 @@ REBOOTERA (exFAT)
 ## Website and automatic builds
 
 - `site/` is the landing page (plain HTML, English and Spanish). `.github/workflows/pages.yml` publishes it to GitHub Pages; in the repository settings, **Pages → Source** must be set to *GitHub Actions* once.
-- `.github/workflows/build.yml` builds the ISO and `Rebootera-Desktop.exe` inside a Debian 13 container on every push to `master` and replaces the `latest` release with them in this repository (no secrets needed). The website is deployed separately on Vercel. The page reads the version, date and SHA-256 of that release, and Rebootera Desktop downloads the ISO from it. The first build only exists after the first push.
+- `.github/workflows/build.yml` builds the ISO and `Rebootera-Desktop-Windows.exe` inside a Debian 13 container when code reaches `master` and publishes a new `v<version>` release with them in this repository (no secrets needed). The website is deployed separately on Vercel. The page reads the version, date and SHA-256 of that release, and Rebootera Desktop downloads the ISO from it. The first build only exists after the first push.
 
 ## Building
 
@@ -126,7 +126,7 @@ wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-d
 It takes about a minute. The script builds the interface, embeds it together with the files of a new Rebootera USB (boot menu settings and theme), adds the icon and the Windows manifest, and cross-compiles. The result is:
 
 - `out/Rebootera-Desktop-<version>.exe`: a single file, no installation. It needs the Microsoft Edge WebView2 Runtime, which Windows 10 and 11 already include. Close the app before rebuilding it.
-- With `--all`, `dist/rebootera-desktop-linux-amd64`, `-linux-arm64`, `-darwin-amd64` and `-darwin-arm64`: one binary each, with no dependencies (`out/` only holds the ISO and the .exe). For a window of its own it uses a Chromium-based browser if one is installed; otherwise it opens your default browser.
+- With `--all`, `dist/Rebootera-Desktop-Linux-x64`, `-Linux-arm64`, `-macOS-Intel` and `-macOS-AppleSilicon`: one binary each, with no dependencies (`out/` only holds the ISO and the .exe). For a window of its own it uses a Chromium-based browser if one is installed; otherwise it opens your default browser.
 
 ### 4. Make a Rebootera USB
 

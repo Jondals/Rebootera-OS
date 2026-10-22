@@ -36,7 +36,12 @@ build_unix() {
 	for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
 		os=${target%/*}
 		arch=${target#*/}
-		name="rebootera-desktop-$os-$arch"
+		case "$os-$arch" in
+			linux-amd64) name="Rebootera-Desktop-Linux-x64" ;;
+			linux-arm64) name="Rebootera-Desktop-Linux-arm64" ;;
+			darwin-amd64) name="Rebootera-Desktop-macOS-Intel" ;;
+			darwin-arm64) name="Rebootera-Desktop-macOS-AppleSilicon" ;;
+		esac
 		GOOS=$os GOARCH=$arch go build -trimpath \
 			-ldflags "-s -w -X rebootera/core/internal/version.Version=$version" \
 			-o "$out/$name" ./cmd/rebootera-desktop

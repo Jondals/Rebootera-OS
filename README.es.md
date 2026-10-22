@@ -35,9 +35,9 @@ Versión en inglés: [README.md](README.md) · Cambios: [CHANGELOG.es.md](CHANGE
 
 ## Cómo conseguir un USB de Rebootera
 
-**Descarga:** la web y las releases públicas (repositorio `Jondals/Rebootera-OS`; el código fuente es privado) ofrecen siempre la última compilación: `Rebootera-Desktop.exe` para Windows y `rebootera-os-amd64.iso`. Ambas se recompilan en cada push a `master` y se publican en la [release `latest`](https://github.com/Jondals/Rebootera-OS/releases/tag/latest).
+**Descarga:** la web y las releases públicas (repositorio `Jondals/Rebootera-OS`; el código fuente es privado) ofrecen siempre la última compilación: `Rebootera-Desktop-Windows.exe` para Windows y `rebootera-os-amd64.iso`. Ambas se recompilan al llegar código a `master` y cada vez se publica una release nueva ([todas las releases](https://github.com/Jondals/Rebootera-OS/releases)).
 
-**Canales:** `master` es el canal estable (release `latest`). La rama `beta` se crea sola a partir de la primera release estable y publica la prerelease `beta` en cada push: ahí se prueban los cambios antes de pasarlos a `master`.
+**Ramas:** se trabaja en `beta` (ahí solo corren las pruebas) y se abre una pull request `beta` a `master`: al fusionarla se compila y se publica una release `v<versión>` nueva, y se conservan las anteriores.
 
 **Desde Windows**: ejecuta `Rebootera Desktop.exe` y abre **Crear USB** (la primera opción). Cada pendrive sale una sola vez; elige el tuyo y decide qué hacer con él: **actualizar Rebootera** (si ya lo tiene, no se borra nada), **añadir Rebootera y conservar mis archivos** (para un pendrive hecho con Rufus, por ejemplo) o **borrarlo y empezar de cero**. Después elige de dónde sale Rebootera OS: la **última versión** (lo predeterminado; descargada y comprobada con su SHA-256 publicado antes de borrar nada) o **mi ISO de Rebootera**. Windows pedirá permiso de administrador para preparar el pendrive, y borrar o cambiar un disco exige escribir el texto de confirmación exacto. Las imágenes y los drivers se añaden después desde Descargar, Mis imágenes y Medios de instalación; los drivers no hace falta añadirlos, Rebootera los encuentra solo.
 
@@ -88,7 +88,7 @@ REBOOTERA (exFAT)
 ## Web y compilaciones automáticas
 
 - `site/` es la landing page (HTML sencillo, en español e inglés). `.github/workflows/pages.yml` la publica en GitHub Pages; en los ajustes del repositorio hay que poner una vez **Pages → Source** en *GitHub Actions*.
-- `.github/workflows/build.yml` compila la ISO y `Rebootera-Desktop.exe` dentro de un contenedor Debian 13 en cada push a `master` y sustituye la release `latest` por ellos. La web lee de esa release la versión, la fecha y el SHA-256, y Rebootera Desktop descarga de ella la ISO. La primera compilación solo existe tras el primer push.
+- `.github/workflows/build.yml` compila la ISO y `Rebootera-Desktop-Windows.exe` dentro de un contenedor Debian 13 al llegar código a `master` y publican una release `v<versión>` nueva. La web lee de esa release la versión, la fecha y el SHA-256, y Rebootera Desktop descarga de ella la ISO. La primera compilación solo existe tras el primer push.
 
 ## Construir
 
@@ -126,7 +126,7 @@ wsl -d RebooteraBuild --exec bash "/mnt/d/dev/Rebootera OS/scripts/build/build-d
 Tarda alrededor de un minuto. El script compila la interfaz, la incrusta junto con los archivos de un USB de Rebootera nuevo (ajustes y tema del menú de arranque), añade el icono y el manifiesto de Windows y compila para Windows. El resultado es:
 
 - `out/Rebootera-Desktop-<version>.exe`: un único archivo, sin instalación. Necesita Microsoft Edge WebView2 Runtime, que ya viene con Windows 10 y 11. Cierra la aplicación antes de volver a construirla.
-- Con `--all`, `dist/rebootera-desktop-linux-amd64`, `-linux-arm64`, `-darwin-amd64` y `-darwin-arm64`: un binario cada uno, sin dependencias (`out/` solo lleva la ISO y el .exe). Para tener ventana propia usa un navegador basado en Chromium si hay uno instalado; si no, abre tu navegador predeterminado.
+- Con `--all`, `dist/Rebootera-Desktop-Linux-x64`, `-Linux-arm64`, `-macOS-Intel` y `-macOS-AppleSilicon`: un binario cada uno, sin dependencias (`out/` solo lleva la ISO y el .exe). Para tener ventana propia usa un navegador basado en Chromium si hay uno instalado; si no, abre tu navegador predeterminado.
 
 ### 4. Crear un USB de Rebootera
 

@@ -2,16 +2,12 @@
 # publica en una release, de donde los descarga la landing page y Rebootera
 # Desktop ("Crear USB" y "Actualizar"). Las releases se publican en este mismo repositorio
 # con el token que da GitHub a cada ejecución (no hace falta ningún secreto).
-# Hay dos canales:
+# Solo se publica al llegar código a master (por ejemplo, al fusionar la PR beta -> master):
+# cada vez se crea una release nueva con la etiqueta "v<versión>" y se marca como la última.
+# Las anteriores se conservan. Un push a beta no compila ni publica nada (lo prueba test.yml).
+# Si se vuelve a publicar la misma versión, se reemplaza solo la release de esa versión.
 #
-#   master -> release "latest" (estable), con el nombre que tú elijas (ver abajo). Al publicarla, si la rama "beta" no
-#             existe se crea desde este commit; si existe y no tiene commits
-#             propios se avanza hasta aquí; y la release "beta" se publica con
-#             los mismos archivos.
-#   beta   -> release "beta" (prerelease), donde se prueban los cambios antes de
-#             pasarlos a master. Nunca toca "latest".
-#
-# Nombre de la release de master: al fusionar beta en master (o cualquier push), el título sale de
+# Nombre de la release: al fusionar beta en master (o cualquier push a master), el título sale de
 #   1. una línea "Release: <nombre>" en el mensaje del commit (o del merge), si la hay;
 #   2. si no, del título de la pull request cuando es un merge de GitHub ("Merge pull request #N ...");
 #   3. si no, la primera línea del mensaje del commit (así basta con escribir un buen mensaje al hacer push).
@@ -23,7 +19,7 @@ name: Build and publish
 
 on:
   push:
-    branches: [master, beta]
+    branches: [master]
     paths-ignore:
       - "site/**"
       - "docs/images/**"
@@ -32,7 +28,7 @@ on:
 permissions:
   contents: write
 
-# * Un push nuevo cancela la compilación anterior: "latest" siempre es la última.
+# * Un push nuevo cancela la compilación anterior: la release más reciente siempre es la última.
 concurrency:
   group: build-${{ github.ref_name }}
   cancel-in-progress: true
@@ -71,43 +67,35 @@ jobs:
           VERSION="$(sed -n 's/^var Version = "\(.*\)"/\1/p' core/internal/version/version.go)"
           mkdir -p dist
           cp "out/rebootera-os-${VERSION}-amd64.iso" dist/rebootera-os-amd64.iso
-          cp "out/Rebootera-Desktop-${VERSION}.exe" dist/Rebootera-Desktop.exe
+          cp "out/Rebootera-Desktop-${VERSION}.exe" dist/Rebootera-Desktop-Windows.exe
           (cd dist && sha256sum rebootera-os-amd64.iso > rebootera-os-amd64.iso.sha256)
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "ISO_SHA=$(cut -d' ' -f1 dist/rebootera-os-amd64.iso.sha256)" >> "$GITHUB_ENV"
           ls -lh dist
 
-      - name: Publish the release of this channel
+      - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
           REL_REPO: ${{ github.repository }}
-          BRANCH: ${{ github.ref_name }}
         run: |
           TARGET=()
           [ "$REL_REPO" = "$GITHUB_REPOSITORY" ] && TARGET=(--target "$GITHUB_SHA")
-          if [ "$BRANCH" = "master" ]; then
-            TAG=latest
-            FLAGS=--latest
-            TITLE="Rebootera OS ${VERSION} (latest build)"
-            # * Nombre elegido: línea "Release: ..." del commit o, en un merge de pull request, el título de la PR.
-            MESSAGE="$(git log -1 --format=%B "$GITHUB_SHA")"
-            CHOSEN="$(echo "$MESSAGE" | sed -n 's/^[Rr]elease:[[:space:]]*//p' | head -n 1)"
-            if [ -z "$CHOSEN" ] && echo "$MESSAGE" | head -n 1 | grep -q '^Merge pull request'; then
-              CHOSEN="$(echo "$MESSAGE" | sed -n '3p')"
-            fi
-            [ -z "$CHOSEN" ] && CHOSEN="$(echo "$MESSAGE" | head -n 1)"
-            [ -n "$CHOSEN" ] && TITLE="$CHOSEN"
-            WHAT="Automatic build of the last push to master (stable)."
-          else
-            TAG=beta
-            FLAGS=--prerelease
-            TITLE="Rebootera OS ${VERSION} (beta build)"
-            WHAT="Automatic build of the last push to the beta branch. Use it to try changes before they reach master."
+          TAG="v${VERSION}"
+          TITLE="Rebootera OS ${VERSION}"
+          # * Nombre elegido: línea "Release: ..." del commit o, en un merge de pull request, el título de la PR.
+          MESSAGE="$(git log -1 --format=%B "$GITHUB_SHA")"
+          CHOSEN="$(echo "$MESSAGE" | sed -n 's/^[Rr]elease:[[:space:]]*//p' | head -n 1)"
+          if [ -z "$CHOSEN" ] && echo "$MESSAGE" | head -n 1 | grep -q '^Merge pull request'; then
+            CHOSEN="$(echo "$MESSAGE" | sed -n '3p')"
           fi
+          [ -z "$CHOSEN" ] && CHOSEN="$(echo "$MESSAGE" | head -n 1)"
+          [ -n "$CHOSEN" ] && TITLE="$CHOSEN"
+          WHAT="Automatic build of master."
+          # * Solo se reemplaza la release de esta misma versión; las demás se conservan.
           gh release delete "$TAG" -R "$REL_REPO" --cleanup-tag --yes || true
           gh release create "$TAG" dist/* -R "$REL_REPO" \
             "${TARGET[@]}" \
-            $FLAGS \
+            --latest \
             --title "$TITLE" \
             --notes "$WHAT
 
@@ -115,34 +103,4 @@ jobs:
           commit: ${GITHUB_SHA}
           sha256: ${ISO_SHA}
 
-          Files: \`Rebootera-Desktop.exe\` (Windows app that creates the USB), \`rebootera-desktop-linux-*\` and \`rebootera-desktop-darwin-*\` (the desktop app for Linux and macOS, plain executables) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."
-
-      - name: Create or advance the beta branch and publish the beta release
-        if: github.ref_name == 'master'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REL_REPO: ${{ github.repository }}
-        run: |
-          TARGET=()
-          [ "$REL_REPO" = "$GITHUB_REPOSITORY" ] && TARGET=(--target "$GITHUB_SHA")
-          git fetch origin beta 2>/dev/null || true
-          if ! git rev-parse --verify --quiet origin/beta >/dev/null; then
-            echo "The beta branch does not exist: creating it from $GITHUB_SHA"
-          elif git merge-base --is-ancestor origin/beta "$GITHUB_SHA"; then
-            echo "beta has no commits of its own: moving it to $GITHUB_SHA"
-          else
-            echo "beta has commits that are not in master: left untouched (merge master into beta by hand)."
-            exit 0
-          fi
-          # * Con GITHUB_TOKEN este push no lanza otra compilación: la release "beta" se publica aquí mismo.
-          git push origin "$GITHUB_SHA:refs/heads/beta"
-          gh release delete beta -R "$REL_REPO" --cleanup-tag --yes || true
-          gh release create beta dist/* -R "$REL_REPO" \
-            "${TARGET[@]}" \
-            --prerelease \
-            --title "Rebootera OS ${VERSION} (beta build)" \
-            --notes "Same build as the latest release, published when the beta branch was created or moved to it.
-
-          version: ${VERSION}
-          commit: ${GITHUB_SHA}
-          sha256: ${ISO_SHA}"
+          Files: \`Rebootera-Desktop-Windows.exe\`, \`Rebootera-Desktop-macOS-*\` and \`Rebootera-Desktop-Linux-*\` (the desktop app that creates the USB, one per system; the macOS and Linux ones are plain executables) and \`rebootera-os-amd64.iso\` (the Rebootera OS image)."

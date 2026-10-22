@@ -7,7 +7,7 @@
   "use strict";
 
   var REPO = "Jondals/Rebootera-OS";
-  var BASE = "https://github.com/" + REPO + "/releases/download/latest/";
+  var BASE = "https://github.com/" + REPO + "/releases/latest/download/";
   var body = document.body;
   var root = document.documentElement;
   var lastRelease = null;
@@ -245,19 +245,19 @@
   // ---------- Descarga ----------
 
   var PLATFORMS = {
-    windows: { name: "Windows", variants: [{ label: "x64", asset: "Rebootera-Desktop.exe" }] },
+    windows: { name: "Windows", variants: [{ label: "x64", asset: "Rebootera-Desktop-Windows.exe" }] },
     macos: {
       name: "macOS",
       variants: [
-        { label: "Apple silicon", asset: "rebootera-desktop-darwin-arm64" },
-        { label: "Intel", asset: "rebootera-desktop-darwin-amd64" },
+        { label: "Apple silicon", asset: "Rebootera-Desktop-macOS-AppleSilicon" },
+        { label: "Intel", asset: "Rebootera-Desktop-macOS-Intel" },
       ],
     },
     linux: {
       name: "Linux",
       variants: [
-        { label: "x64", asset: "rebootera-desktop-linux-amd64" },
-        { label: "arm64", asset: "rebootera-desktop-linux-arm64" },
+        { label: "x64", asset: "Rebootera-Desktop-Linux-x64" },
+        { label: "arm64", asset: "Rebootera-Desktop-Linux-arm64" },
       ],
     },
   };
@@ -393,7 +393,7 @@
   /** Lee la release "latest" de la API pública de GitHub (sin clave). Si no hay, la página no dice nada. */
   function loadRelease() {
     var request = new XMLHttpRequest();
-    request.open("GET", "https://api.github.com/repos/" + REPO + "/releases/tags/latest");
+    request.open("GET", "https://api.github.com/repos/" + REPO + "/releases/latest");
     request.setRequestHeader("Accept", "application/vnd.github+json");
     request.onload = function onLoad() {
       if (request.status !== 200) {
