@@ -1,20 +1,29 @@
 ---
-// * Cabecera fija: marca, enlaces a las secciones, desplegable de temas, idioma y botón de descarga. En el móvil, los
-// * enlaces, los temas y el idioma se juntan en un único menú desplegable.
+// * Cabecera fija: marca, enlaces a las secciones, botón de temas (un anillo con los colores de todos) y selector de
+// * idioma. En el móvil, los enlaces, los temas y el idioma se juntan en un único menú.
 import L from "./L.astro";
 import Icon from "./Icon.astro";
 import ThemePicker from "./ThemePicker.astro";
 import LangSwitch from "./LangSwitch.astro";
+import { THEMES } from "../data/themes";
 
 const links = [
+  { href: "#top", en: "Home", es: "Inicio" },
   { href: "#features", en: "Features", es: "Funciones" },
   { href: "#systems", en: "Systems", es: "Sistemas" },
   { href: "#how", en: "How it works", es: "Cómo funciona" },
   { href: "#faq", en: "Questions", es: "Preguntas" },
 ];
+
+/** Los acentos de todos los temas, para el anillo del botón. */
+const ring = THEMES.map(function accent(theme) {
+  return theme.accent;
+})
+  .concat(THEMES[0].accent)
+  .join(", ");
 ---
 
-<header id="header" data-scrolled="false" class="fixed inset-x-0 top-0 z-50 border-b border-transparent transition-[background-color,border-color,backdrop-filter] duration-500 data-[scrolled=true]:border-line data-[scrolled=true]:bg-bg/35 data-[scrolled=true]:backdrop-blur-2xl">
+<header id="header" data-scrolled="false" class="fixed inset-x-0 top-0 z-50 border-b border-transparent transition-[background-color,border-color] duration-500 data-[scrolled=true]:border-line data-[scrolled=true]:bg-bg/80">
   <div class="mx-auto flex h-[68px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-5">
     <a href="#top" class="flex items-center gap-3">
       <svg width="34" height="34" class="shrink-0" aria-hidden="true"><use href="#rbt-logo"></use></svg>
@@ -35,28 +44,25 @@ const links = [
 
     <div class="flex items-center gap-2">
       <div class="relative hidden md:block">
-        <button type="button" data-menu-btn="themes" aria-expanded="false" aria-haspopup="true" class="flex items-center gap-2.5 rounded-lg border border-line2 py-2 pl-2.5 pr-3 text-sm text-xs font-semibold text-muted transition hover:text-ink">
-          <span class="theme-now"></span>
-          <span class="min-w-[4.5rem] text-left"><span class="en" data-theme-name-en></span><span class="es" data-theme-name-es></span></span>
-          <Icon name="chevron" size={14} />
+        <button type="button" data-menu-btn="themes" aria-expanded="false" aria-haspopup="true" aria-label="Theme / Tema" class="hdr-btn inline-flex w-10">
+          <span class="theme-ring" style={"--ring: " + ring}></span>
         </button>
-        <div data-menu="themes" data-open="false" class="menu-panel absolute right-0 top-[calc(100%+10px)] w-[236px] rounded-xl border border-line2 bg-panel/95 p-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+        <div data-menu="themes" data-open="false" class="menu-panel absolute right-0 top-[calc(100%+10px)] w-[320px] rounded-xl border border-line2 bg-panel p-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)]">
+          <p class="px-2 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-dim"><L en="Theme" es="Tema" /></p>
           <ThemePicker />
         </div>
       </div>
 
       <div class="hidden md:block"><LangSwitch /></div>
 
-      <a href="#download" class="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-onaccent shadow-[0_8px_30px_-8px_rgba(var(--accent-rgb),0.7)] transition hover:-translate-y-px hover:brightness-110"><L en="Download" es="Descargar" /></a>
-
-      <button type="button" data-menu-btn="mobile" aria-expanded="false" aria-label="Menu" class="grid h-10 w-10 place-items-center rounded-lg border border-line2 text-muted transition hover:text-ink md:hidden">
+      <button type="button" data-menu-btn="mobile" aria-expanded="false" aria-label="Menu" class="hdr-btn inline-flex w-10 md:hidden">
         <span data-icon-open><Icon name="menu" size={20} /></span>
         <span data-icon-close class="hidden"><Icon name="close" size={20} /></span>
       </button>
     </div>
   </div>
 
-  <div data-menu="mobile" data-open="false" class="menu-panel absolute inset-x-3 top-[76px] max-h-[calc(100dvh-92px)] overflow-y-auto rounded-xl border border-line2 bg-panel/95 p-3 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl md:hidden">
+  <div data-menu="mobile" data-open="false" class="menu-panel absolute inset-x-3 top-[76px] max-h-[calc(100dvh-92px)] overflow-y-auto rounded-xl border border-line2 bg-panel p-3 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] md:hidden">
     <nav class="grid gap-0.5 text-[15px]" aria-label="Mobile">
       {
         links.map(function link(item) {

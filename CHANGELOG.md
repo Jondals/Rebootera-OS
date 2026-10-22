@@ -3,6 +3,20 @@
 All notable changes to Rebootera OS. Dates use the format YYYY-MM-DD.
 Spanish version: [CHANGELOG.es.md](CHANGELOG.es.md).
 
+## [0.20.1] - 2026-10-22
+
+### Changed
+
+- **One new release per version.** The automatic build only publishes when code reaches `master` (when the pull request from `beta` is merged) and creates the `v<version>` release, marked as the latest. Older ones are kept. A push to `beta` only runs the tests.
+- **File names that say the system:** `Rebootera-Desktop-Windows.exe`, `Rebootera-Desktop-macOS-AppleSilicon`, `Rebootera-Desktop-macOS-Intel`, `Rebootera-Desktop-Linux-x64` and `Rebootera-Desktop-Linux-arm64`. Rebootera Desktop and the website always download from the latest release.
+- **Website redone:** an animated aurora background in the theme's colours that changes as you scroll, new theme and language pickers, smooth system switching in the download, a row of figures, cards with a light that follows the mouse, a new footer with links to GitHub and the downloads, and a "Home" link in the header. The back-to-top button and the header Download button are gone.
+
+### Fixed
+
+- The automatic build published nothing: the step that collects the files could not write to `dist/`, which root created inside the container.
+- The variant buttons (Apple silicon, Intel, x64, arm64) were rebuilt on every click.
+- The mobile menu button also showed on desktop.
+
 ## [0.20.0] - 2026-10-20
 
 ### Added

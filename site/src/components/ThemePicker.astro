@@ -1,31 +1,17 @@
 ---
-// * Selector de temas: ocho tarjetas pequeñas con una miniatura de la aplicación en los colores de cada tema (como en
-// * los ajustes de la propia aplicación). Al abrir el desplegable entran una tras otra. site.js marca el activo
-// * (aria-checked) y aplica el que se pulse.
+// * Selector de temas: una cuadrícula de muestras planas (un círculo con el fondo del tema y un punto con su acento),
+// * con el nombre debajo. site.js marca la activa (aria-checked) y aplica la que se pulse.
 import { THEMES } from "../data/themes";
 import L from "./L.astro";
-
-/** Variables de la miniatura de un tema (para que se vea con sus colores aunque no sea el activo). */
-function mockStyle(theme: (typeof THEMES)[number], index: number): string {
-  return ["--m-bg: " + theme.bg, "--m-surface: " + theme.surface, "--m-edge: rgba(" + theme.tint + ", 0.28)", "--m-accent: " + theme.accent, "--i: " + index].join("; ");
-}
 ---
 
-<div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Theme">
+<div class="theme-grid" role="radiogroup" aria-label="Theme">
   {
-    THEMES.map(function option(theme, index) {
+    THEMES.map(function option(theme) {
       return (
-        <button type="button" role="radio" aria-checked="false" data-theme-opt={theme.id} data-name-en={theme.name.en} data-name-es={theme.name.es} class="theme-card group text-left" style={mockStyle(theme, index)}>
-          <span class="mock">
-            <i class="side"></i>
-            <i class="bar b1"></i>
-            <i class="bar b2"></i>
-            <i class="btn"></i>
-            <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
-          </span>
-          <span class="mt-1.5 block truncate px-0.5 text-xs font-semibold">
+        <button type="button" role="radio" aria-checked="false" data-theme-opt={theme.id} class="theme-orb" style={"--o-bg: " + theme.bg + "; --o-accent: " + theme.accent + "; --o-strong: " + theme.strong}>
+          <span class="orb"></span>
+          <span class="truncate">
             <L en={theme.name.en} es={theme.name.es} />
           </span>
         </button>

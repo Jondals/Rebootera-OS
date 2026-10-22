@@ -1,0 +1,32 @@
+---
+// * Franja de cifras bajo la portada: cada número cuenta desde cero al aparecer en pantalla (lo anima site.js con
+// * data-count). Los datos salen del catálogo de Rebootera (core/internal/catalog).
+import L from "./L.astro";
+
+const stats = [
+  { n: 152, en: "images in the catalog", es: "imágenes en el catálogo" },
+  { n: 43, en: "different systems", es: "sistemas distintos" },
+  { n: 1, en: "USB for all of them", es: "USB para todos ellos" },
+  { n: 0, en: "disks touched without asking", es: "discos tocados sin preguntar" },
+];
+---
+
+<section class="relative z-10 mx-auto max-w-6xl px-5 pb-8">
+  <div class="reveal grid grid-cols-2 divide-line overflow-hidden rounded-3xl border border-line bg-panel/70 md:grid-cols-4 md:divide-x">
+    {
+      stats.map(function stat(item) {
+        return (
+          <div class="px-6 py-7 text-center">
+            <div class="font-display text-4xl tracking-tight text-ink md:text-5xl">
+              <span data-count={item.n}>{item.n}</span>
+              <span class="text-accent">{item.suffix || ""}</span>
+            </div>
+            <div class="mt-2 text-sm text-muted">
+              <L en={item.en} es={item.es} />
+            </div>
+          </div>
+        );
+      })
+    }
+  </div>
+</section>

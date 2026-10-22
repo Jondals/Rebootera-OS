@@ -94,7 +94,7 @@ const checks = [
       features.map(function card(feature, index) {
         return (
           <article
-            class={"reveal group relative overflow-hidden rounded-3xl border border-line bg-panel/60 p-7 backdrop-blur transition hover:-translate-y-0.5 hover:border-line2 " + (feature.wide ? "md:col-span-2" : "")}
+            class={"spot reveal group relative overflow-hidden rounded-3xl border border-line bg-panel/70 p-7 transition hover:-translate-y-0.5 hover:border-line2 " + (feature.wide ? "md:col-span-2" : "")}
             style={"--d: " + (index % 3) * 90 + "ms"}
           >
             <div class="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-accent/10 blur-3xl transition group-hover:bg-accent/20"></div>

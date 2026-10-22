@@ -3,6 +3,20 @@
 Todos los cambios importantes de Rebootera OS. Las fechas usan el formato AAAA-MM-DD.
 Versión en inglés: [CHANGELOG.md](CHANGELOG.md).
 
+## [0.20.1] - 2026-10-22
+
+### Cambiado
+
+- **Una release nueva por versión.** La compilación automática solo publica al llegar código a `master` (al fusionar la pull request de `beta`) y crea la release `v<versión>`, que se marca como la última. Las anteriores se conservan. Un push a `beta` solo pasa las pruebas.
+- **Nombres de archivo que dicen el sistema:** `Rebootera-Desktop-Windows.exe`, `Rebootera-Desktop-macOS-AppleSilicon`, `Rebootera-Desktop-macOS-Intel`, `Rebootera-Desktop-Linux-x64` y `Rebootera-Desktop-Linux-arm64`. Rebootera Desktop y la web descargan siempre de la última release.
+- **Web rehecha:** fondo de aurora animado con los colores del tema que cambia al bajar, selector de temas y de idioma nuevos, cambio de sistema en la descarga sin saltos, franja de cifras, tarjetas con una luz que sigue al ratón, pie nuevo con enlaces a GitHub y a las descargas, y enlace "Inicio" en la cabecera. Se quitaron el botón de volver arriba y el botón Descargar de la cabecera.
+
+### Corregido
+
+- La compilación automática no publicaba nada: el paso que recoge los archivos no podía escribir en `dist/`, que creaba root dentro del contenedor.
+- Los botones de variante (Apple silicon, Intel, x64, arm64) se volvían a crear en cada pulsación.
+- El botón de menú del móvil salía también en escritorio.
+
 ## [0.20.0] - 2026-10-20
 
 ### Añadido

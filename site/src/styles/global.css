@@ -50,6 +50,7 @@
 
 :root {
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -95,10 +96,9 @@ body {
   display: none;
 }
 
-/* Fondo: luz del color del tema, dos nubes que se mueven con el scroll (--p, de 0 a 1, lo pone site.js), una
-   retícula de puntos y grano. Solo se animan transform y opacity. */
+/* Fondo: la aurora la pinta site.js en un lienzo de 96 x 54 píxeles que aquí se estira a toda la pantalla (el
+   escalado suaviza los bordes mejor que cualquier desenfoque y no cuesta nada). La retícula y el viñeteado son CSS. */
 .dawn {
-  --p: 0;
   position: fixed;
   inset: 0;
   z-index: 0;
@@ -107,92 +107,73 @@ body {
   background: var(--bg);
 }
 
-.dawn-sky {
+.dawn-aurora {
   position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(120% 70% at 50% -10%, rgba(var(--accent-rgb), 0.2), transparent 62%),
-    radial-gradient(90% 60% at 100% 100%, rgba(var(--accent-rgb), 0.07), transparent 70%);
+  inset: -6%;
+  width: 112%;
+  height: 112%;
+  opacity: 0;
+  transition: opacity 1200ms var(--ease);
 }
 
-.dawn-orb {
-  position: absolute;
-  border-radius: 50%;
-  will-change: transform;
-}
-
-.dawn-orb-a {
-  left: -18vmax;
-  top: 8vh;
-  width: 62vmax;
-  height: 62vmax;
-  background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.13), transparent);
-  transform: translate3d(calc(var(--p) * 22vw), calc(var(--p) * 30vh), 0);
-  animation: drift 26s ease-in-out infinite alternate;
-}
-
-.dawn-orb-b {
-  right: -22vmax;
-  top: 38vh;
-  width: 70vmax;
-  height: 70vmax;
-  background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.09), transparent);
-  transform: translate3d(calc(var(--p) * -26vw), calc(var(--p) * -24vh), 0);
-  animation: drift 34s ease-in-out infinite alternate-reverse;
+.dawn-aurora[data-ready="true"] {
+  opacity: 1;
 }
 
 .dawn-grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1.4px);
-  background-size: 34px 34px;
-  opacity: 0.5;
-  -webkit-mask-image: radial-gradient(75% 65% at 50% 38%, #000 10%, transparent 100%);
-  mask-image: radial-gradient(75% 65% at 50% 38%, #000 10%, transparent 100%);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1.4px);
+  background-size: 32px 32px;
+  -webkit-mask-image: radial-gradient(80% 55% at 50% 0%, #000, transparent 100%);
+  mask-image: radial-gradient(80% 55% at 50% 0%, #000, transparent 100%);
 }
 
+.dawn-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(130% 90% at 50% 40%, transparent 45%, color-mix(in srgb, var(--bg) 80%, transparent) 100%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--bg) 25%, transparent), transparent 30%);
+}
+
+/* Grano: ruido fijo muy tenue (sin modos de fusión, así no cuesta nada al moverse lo de debajo) */
 .dawn-grain {
   position: absolute;
   inset: 0;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-@keyframes drift {
-  from {
-    margin: 0;
-  }
-  to {
-    margin: 4vmax 0 0 3vmax;
-  }
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Aparición al desplazarse */
 .reveal {
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(18px) scale(0.985);
+  filter: blur(6px);
   transition:
-    opacity 450ms var(--ease),
-    transform 450ms var(--ease);
-  transition-delay: calc(var(--d, 0ms) * 0.4);
+    opacity 700ms var(--ease-out),
+    transform 800ms var(--ease-out),
+    filter 700ms var(--ease-out);
+  transition-delay: calc(var(--d, 0ms) * 0.6);
 }
 
 .reveal.in {
   opacity: 1;
   transform: none;
+  filter: none;
 }
 
-/* Menús desplegables de la cabecera (temas y menú del móvil) */
+/* Menús desplegables de la cabecera (temas y menú del móvil): fondo sólido (sin desenfoque, que es lo que frenaba) y
+   una entrada corta que solo mueve opacity y transform */
 .menu-panel {
   visibility: hidden;
   opacity: 0;
-  transform: translateY(-8px) scale(0.97);
+  transform: translate3d(0, -6px, 0);
   transform-origin: top right;
   transition:
-    opacity 220ms ease,
-    transform 320ms var(--ease),
-    visibility 0s linear 320ms;
+    opacity 160ms var(--ease),
+    transform 200ms var(--ease),
+    visibility 0s linear 200ms;
 }
 
 .menu-panel[data-open="true"] {
@@ -202,142 +183,128 @@ body {
   transition-delay: 0s;
 }
 
-/* Tarjeta de un tema: miniatura de la aplicación con sus colores. Entran una tras otra al abrir el desplegable */
-.theme-card {
-  display: block;
-  padding: 6px;
-  border: 1px solid var(--border);
+/* Botones de la cabecera: tema e idioma, del mismo alto y con el mismo cristal */
+.hdr-btn {
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 55%, transparent);
   color: var(--muted);
-  transition:
-    border-color 320ms var(--ease),
-    background-color 320ms var(--ease),
-    color 320ms var(--ease),
-    transform 320ms var(--ease);
 }
 
-.theme-card:hover,
-.theme-card:focus-visible {
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
+.hdr-btn:hover,
+.hdr-btn[aria-expanded="true"] {
+  border-color: rgba(var(--accent-rgb), 0.6);
+  color: var(--text);
+}
+
+/* Anillo con los colores de todos los temas, que gira al señalarlo */
+.theme-ring {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: conic-gradient(var(--ring));
+  -webkit-mask: radial-gradient(circle, transparent 5.4px, #000 5.8px);
+  mask: radial-gradient(circle, transparent 5.4px, #000 5.8px);
+  transition: transform 600ms var(--ease);
+}
+
+button:hover > .theme-ring,
+button[aria-expanded="true"] > .theme-ring {
+  transform: rotate(180deg);
+}
+
+/* Temas: una cuadrícula de muestras planas. Cada una es un círculo con el fondo del tema y un punto con su acento
+   dentro; al señalarla el punto crece y la activa lleva un anillo de su color. Los colores van en variables propias
+   (--o-*) para verse aunque no sea el tema activo */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.theme-orb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px 8px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.theme-orb:hover,
+.theme-orb:focus-visible {
   background: var(--panel-2);
   color: var(--text);
 }
 
-.theme-card[aria-checked="true"] {
-  border-color: var(--accent);
+.theme-orb[aria-checked="true"] {
   color: var(--text);
 }
 
-.theme-card .mock {
+.theme-orb .orb {
   position: relative;
-  display: block;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  border-radius: 7px;
-  border: 1px solid var(--m-edge);
-  background: var(--m-bg);
-}
-
-.mock i {
-  position: absolute;
-  display: block;
-}
-
-.mock .side {
-  inset: 0 auto 0 0;
-  width: 24%;
-  background: var(--m-surface);
-  border-right: 1px solid var(--m-edge);
-}
-
-.mock .bar {
-  left: 32%;
-  right: 8%;
-  height: 16%;
-  border-radius: 3px;
-  background: var(--m-surface);
-  border: 1px solid var(--m-edge);
-}
-
-.mock .bar.b1 {
-  top: 16%;
-}
-
-.mock .bar.b2 {
-  top: 40%;
-}
-
-.mock .btn {
-  left: 32%;
-  bottom: 14%;
-  width: 30%;
-  height: 15%;
-  border-radius: 3px;
-  background: var(--m-accent);
-  transition: box-shadow 320ms var(--ease);
-}
-
-.theme-card:hover .btn {
-  box-shadow: 0 0 14px var(--m-accent);
-}
-
-.mock .tick {
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  width: 16px;
-  height: 16px;
-  padding: 3px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
   border-radius: 50%;
-  background: var(--m-accent);
-  color: var(--m-bg);
-  opacity: 0;
-  transform: scale(0.6);
-  transition:
-    opacity 500ms var(--ease),
-    transform 500ms var(--ease);
+  background: var(--o-bg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  transition: box-shadow 220ms var(--ease-out);
 }
 
-.theme-card[aria-checked="true"] .tick {
-  opacity: 1;
-  transform: none;
+.theme-orb .orb::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--o-accent);
+  transition: transform 220ms var(--ease-out);
 }
 
-.menu-panel .theme-card {
-  opacity: 0;
-  transform: translateY(8px);
+.theme-orb:hover .orb::after,
+.theme-orb:focus-visible .orb::after {
+  transform: scale(1.25);
 }
 
-.menu-panel[data-open="true"] .theme-card {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 350ms var(--ease) calc(30ms + var(--i) * 25ms),
-    transform 350ms var(--ease) calc(30ms + var(--i) * 25ms),
-    border-color 320ms var(--ease),
-    background-color 320ms var(--ease),
-    color 320ms var(--ease);
+.theme-orb[aria-checked="true"] .orb {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 0 0 2px var(--panel),
+    0 0 0 3.5px var(--o-accent);
 }
 
-.menu-panel[data-open="true"] .theme-card:hover,
-.menu-panel[data-open="true"] .theme-card:focus-visible {
-  transform: translateY(-2px);
-  transition:
-    transform 320ms var(--ease),
-    border-color 320ms var(--ease),
-    background-color 320ms var(--ease),
-    color 320ms var(--ease);
+/* Idioma: un globo y el código del idioma activo; pulsar pasa al otro. Mismo alto y cristal que el botón de temas */
+.lang-btn {
+  gap: 8px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
-/* Muestra de un tema (botón de la cabecera): mitad fondo, mitad acento */
-.swatch {
-  display: block;
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: linear-gradient(135deg, var(--s-bg) 50%, var(--s-accent) 50%);
+.lang-btn .globe {
+  color: var(--accent);
+  transition: transform 500ms var(--ease);
+}
+
+.lang-btn:hover .globe {
+  transform: rotate(25deg);
+}
+
+/* Al cambiar de tema se apagan las transiciones un instante: así todo cambia a la vez y sin arrastre */
+.switching *,
+.switching *::before,
+.switching *::after {
+  transition: none !important;
 }
 
 /* Selector de sistema de la descarga: tres opciones y un indicador que se desliza de una a otra */
@@ -605,7 +572,7 @@ body {
 }
 
 .faq-in > div {
-  padding: 0 24px 24px;
+  padding: 8px 24px 26px;
   font-size: 15px;
   line-height: 1.625;
   color: var(--muted);
@@ -672,9 +639,6 @@ body {
 
 /* Sin movimiento: nada se anima */
 @media (prefers-reduced-motion: reduce) {
-  .dawn-orb {
-    animation: none;
-  }
   .faq-a,
   .faq-in,
   .faq .chev {
@@ -703,23 +667,6 @@ body {
   color: var(--brand);
 }
 
-/* Botón de volver arriba: entra al bajar un poco */
-.totop {
-  opacity: 0;
-  transform: translateY(10px);
-  pointer-events: none;
-}
-
-.totop[data-show="true"] {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-}
-
-.totop[data-show="true"]:hover {
-  transform: translateY(-2px);
-}
-
 /* Sin selección de texto ni arrastrar imágenes (el hash de la ISO sí se puede copiar) */
 body {
   -webkit-user-select: none;
@@ -737,102 +684,134 @@ svg {
   user-select: text;
 }
 
-/* Versiones (arquitectura) de la descarga: el hueco está siempre reservado (así nada salta) y entran con un fundido */
+/* Versiones (arquitectura) de la descarga: el bloque crece y se encoge con suavidad y los botones no se vuelven a crear */
 .variants-wrap {
-  height: 3.1rem;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0;
-  transform: translateY(-6px);
   pointer-events: none;
   transition:
-    opacity 380ms var(--ease),
-    transform 380ms var(--ease);
+    grid-template-rows 600ms cubic-bezier(0.45, 0, 0.2, 1),
+    opacity 380ms var(--ease-out);
+}
+
+.variants-wrap > div {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .variants-wrap[data-open="true"] {
+  grid-template-rows: 1fr;
   opacity: 1;
-  transform: none;
   pointer-events: auto;
 }
 
-.chip {
-  animation: chip-in 380ms var(--ease) both;
-}
 
-.chip:nth-child(2) {
-  animation-delay: 60ms;
-}
-
-@keyframes chip-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-}
-
-[data-note]:not(.hidden) {
-  animation: chip-in 380ms var(--ease) both;
-}
-
-/* Icono del botón de tema: un anillo con los colores de todos los temas, que gira al señalarlo */
-.theme-ring {
-  display: block;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--ring);
-  -webkit-mask: radial-gradient(circle, transparent 5.2px, #000 5.6px);
-  mask: radial-gradient(circle, transparent 5.2px, #000 5.6px);
-  transition: transform 700ms var(--ease);
-}
-
-button:hover > .theme-ring {
-  transform: rotate(180deg);
-}
-
-/* Pastilla del botón de idioma */
-.lang-chip {
-  display: grid;
-  min-width: 30px;
-  height: 26px;
-  place-items: center;
-  padding: 0 6px;
-  border-radius: 6px;
-  background: rgba(var(--accent-rgb), 0.16);
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  transition:
-    background-color 320ms var(--ease),
-    color 320ms var(--ease);
-}
-
-.lang-btn:hover .lang-chip {
-  background: var(--accent);
-  color: var(--on-accent);
-}
 
 /* Preguntas: la fila se tiñe al señalarla */
 .faq-q:hover {
   background: var(--panel-2);
 }
 
-/* Botón de tema: un punto del color del tema activo con su halo */
-.theme-now {
-  display: block;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow:
-    0 0 0 3px rgba(var(--accent-rgb), 0.22),
-    0 0 14px rgba(var(--accent-rgb), 0.7);
-  transition:
-    background-color 320ms var(--ease),
-    box-shadow 320ms var(--ease),
-    transform 320ms var(--ease);
+
+/* Tarjetas: una luz suave del color del tema sigue al ratón por dentro y por el borde (site.js escribe --mx y --my) */
+.spot {
+  position: relative;
+  isolation: isolate;
 }
 
-button:hover > .theme-now {
-  transform: scale(1.15);
+.spot::before,
+.spot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms var(--ease);
+}
+
+.spot::before {
+  background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), rgba(var(--accent-rgb), 0.09), transparent 45%);
+}
+
+.spot::after {
+  z-index: 0;
+  padding: 1px;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(var(--accent-rgb), 0.6), transparent 50%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+.spot:hover::before,
+.spot:hover::after {
+  opacity: 1;
+}
+
+/* Botones principales: un destello cruza el botón al señalarlo */
+.shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.45) 50%, transparent 65%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+.shine:hover::after {
+  transform: translateX(120%);
+  transition: transform 750ms var(--ease);
+}
+
+/* Pie: la palabra de la marca, enorme y cortada por abajo, rellena con la luz del tema que se apaga hacia abajo */
+.footer-word {
+  margin-top: -0.05em;
+  margin-bottom: -0.24em;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 21vw, 19rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  background: linear-gradient(to bottom, rgba(var(--accent-rgb), 0.28), rgba(var(--accent-rgb), 0.02) 75%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  pointer-events: none;
+}
+
+/* Bloques que se cambian por otro en el mismo sitio (nota del sistema y botones de variante): todos ocupan la misma
+   celda y el que toca aparece con un fundido mientras el anterior se va, sin saltos */
+.stack {
+  display: grid;
+}
+
+.stack > * {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(5px);
+  transition:
+    opacity 380ms var(--ease-out),
+    transform 480ms var(--ease-out),
+    visibility 0s linear 380ms;
+}
+
+.stack > [data-on="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: 80ms, 80ms, 0s;
 }

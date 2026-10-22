@@ -15,10 +15,11 @@ const steps = [
     <h2 class="font-display text-4xl tracking-tight md:text-5xl"><L en="From nothing to installed in three steps" es="De cero a instalado en tres pasos" /></h2>
   </div>
   <div class="relative grid gap-6 md:grid-cols-3">
+    <div class="pointer-events-none absolute left-[16%] right-[16%] top-[3.6rem] hidden h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent md:block"></div>
     {
       steps.map(function step(item, index) {
         return (
-          <div class="reveal relative rounded-3xl border border-line bg-panel/60 p-7 backdrop-blur" style={"--d: " + index * 120 + "ms"}>
+          <div class="spot reveal relative overflow-hidden rounded-3xl border border-line bg-panel/70 p-7" style={"--d: " + index * 120 + "ms"}>
             <div class="relative mb-5 grid h-14 w-14 place-items-center rounded-xl border border-accent/50 bg-bg font-display text-2xl text-accent shadow-[0_0_30px_-6px_rgba(var(--accent-rgb),0.6)]">{item.n}</div>
             <h3 class="font-display text-2xl"><L en={item.title.en} es={item.title.es} /></h3>
             <p class="mt-3 text-[15px] leading-relaxed text-muted"><L en={item.text.en} es={item.text.es} /></p>

@@ -1,14 +1,13 @@
 ---
-// * Fondo de toda la página: una luz de color del tema que cae desde arriba, dos nubes suaves que se desplazan con el
-// * scroll, una retícula de puntos muy tenue que se difumina hacia los bordes y un poco de grano. Todo es CSS (sin
-// * imágenes ni SVG pesados) y solo mueve transform. public/site.js escribe el progreso del scroll (--p). Es
-// * decorativo: no recibe clics.
+// * Fondo de toda la página: una aurora (cintas de luz que fluyen, giran y se mezclan) dibujada por public/site.js en un
+// * lienzo diminuto que el navegador amplía, así sale muy suave y casi no gasta. Los colores salen del tema y cambian
+// * al bajar por la página. Encima, una retícula de puntos muy tenue arriba y un viñeteado que oscurece los bordes
+// * para que el texto se lea siempre, y un grano finísimo (una imagen fija) que le da textura. Es decorativo.
 ---
 
 <div class="dawn" aria-hidden="true">
-  <div class="dawn-sky"></div>
-  <div class="dawn-orb dawn-orb-a"></div>
-  <div class="dawn-orb dawn-orb-b"></div>
+  <canvas id="aurora" class="dawn-aurora" width="96" height="54"></canvas>
   <div class="dawn-grid"></div>
+  <div class="dawn-vignette"></div>
   <div class="dawn-grain"></div>
 </div>
